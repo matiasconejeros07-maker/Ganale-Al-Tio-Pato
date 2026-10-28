@@ -28,9 +28,12 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
 
 ## Pesos y tienda
 
-- **Cada pelota paga distinto por punto:** moneda $1 → $1 · $5 → $2 · $10 → $3 · $50 → $4 · $100 → $5 · $500 → $6 · billete $1.000 → $7 · $2.000 → $8 · $5.000 → $9 · $10.000 → $10 · **$20.000 → $20**.
-  Ese valor se multiplica por **«Monedas dobles»**: ×1 del rebote 1 al 99, ×2 del 100 al 199, ×3 del 200 al 299, y así. Ejemplo: con el billete de $20.000, una partida de 120 rebotes da 20 × 141 = $2.820.
+- **Eslogan: «¡Rebota, gana y hazte millonario! 💰»** (aparece en el menú).
+- **Cada pelota paga distinto por punto:** moneda $1 → $1 · $5 → $2 · $10 → $3 · $50 → $4 · $100 → $5 · $500 → $6 · billete $1.000 → $7 · $2.000 → $8 · $5.000 → $9 · $10.000 → $10 · $20.000 → $20 ·
+  **lingote de plata ($50.000) → $200 · lingote de oro ($500.000) → $1.000 · diamante ($1.000.000) → $10.000**.
+  Ese valor se multiplica por **«Monedas dobles»**: ×1 del rebote 1 al 99, ×2 del 100 al 199, ×3 del 200 al 299, y así. Ejemplo: con el diamante, una partida de 120 rebotes da 10.000 × 141 = $1.410.000.
   Al llegar al rebote 100 aparece el aviso animado **«¡Monedas dobles! ×2»** (×3 en el 200…) y una insignia ×N junto al marcador. La pelota con la que empiezas la partida es la que paga toda la partida.
+- **Personaje secreto:** el **Tío Pato Millonario** (el Tío Pato de oro) cuesta **$100.000.000**. En la tienda aparece como una carta misteriosa («Personaje secreto») hasta que se compra. Su arte provisorio está en `oro/` (las mismas capas del Tío Pato pintadas de oro); se puede reemplazar por uno propio con el mismo nombre de archivos.
 - **Dificultad:** hasta el rebote 99 el juego es ágil pero amable (la pelota acelera poco y la barra se achica poco). Desde el 100 sube de verdad:
   la pelota acelera mucho más rápido y la barra se achica hasta el 28%. Los valores están al inicio del código de `index.html` (`SPEED0`, `STEP_LO`, `STEP_HI`, `SPEED_MAX`, `SHRINK_LO`, `SHRINK_HI`).
 - **Los golpes del personaje son aleatorios:** cada vez que te devuelve la pelota la manda en una dirección al azar (de casi vertical a muy abierta).
@@ -39,7 +42,7 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
     Las demás skins son imágenes sueltas (`trajes/`): cada una tiene su dibujo calmado y su dibujo enojado, al que cambia cuando el personaje se enoja (rebote 55), con temblor, brillo rojo, vapor y fuego.
   - **Fondos:** Atardecer, Cristal, Aurora boreal, Galaxia, Holográfico y Synthwave (difuminados y animados).
   - **Barras:** Oro líquido, Llamarada, Cristal, Neón, Galaxia, Arcoíris y Holográfica; cada una con su color, brillo, partículas y un anillo de luz en cada rebote.
-  - **Pelotas:** empiezas con la **moneda de $1** (que gira en el sentido del reloj y brilla). Se compran las monedas de $5, $10, $50, $100 y $500 (giran igual) y los billetes de $1.000, $2.000, $5.000, $10.000 y $20.000 (que revolotean). Precio = su valor en pesos; cada una muestra cuánto paga por punto.
+  - **Pelotas:** empiezas con la **moneda de $1** (que gira en el sentido del reloj y brilla). Se compran las monedas de $5, $10, $50, $100 y $500 (giran igual), los billetes de $1.000, $2.000, $5.000, $10.000 y $20.000 (que revolotean) y los lingotes de plata y de oro y el diamante (giran y brillan). Precio = su valor en pesos; cada una muestra cuánto paga por punto.
 - Sin cuentas (modo local) los pesos y compras quedan solo en ese celular.
 - El catálogo y los precios están en `tienda.js`. Si cambias algo, ejecuta `node herramientas/generar-reglas.js`
   (regenera `firebase-rules.json`, porque las reglas también validan precios y pesos) y vuelve a pegar las reglas en Firebase → Realtime Database → Reglas → Publicar.

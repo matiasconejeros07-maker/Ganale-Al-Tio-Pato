@@ -3,7 +3,7 @@
 // Firebase (las reglas también validan precios y recompensas, por eso deben coincidir con este archivo).
 window.TIENDA = {
   // Economía: cada punto vale lo que paga tu pelota (ball[].rate) multiplicado por «Monedas dobles»: ×1 del punto 1 al 99, ×2 del 100 al 199, ×3 del 200 al 299…
-  eco: { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500 },
+  eco: { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500, cMax: 1000000000000 },
 
   // Personajes: el rival que te devuelve la pelota. Los dos primeros tienen carpeta con las capas del ángel y del demonio; el resto son imágenes sueltas
   // (sin alas ni aureola) que se enojan con temblor, brillo rojo y vapor. stat = dibujo calmado · stat2 = dibujo enojado, al que cambian cuando el personaje se enoja.
@@ -20,7 +20,10 @@ window.TIENDA = {
     { id: 'bigotes',  n: 'Tío Pato Simi',       price: 500, stat: 'trajes/bigotes.webp',  stat2: 'trajes/bigotes-enojado.webp',  asp: 1.92, asp2: 1.61, name: 'el Tío Pato Simi',       g: 'm',
       av: { w: 76, fx: .47, fy: .375 }, av2: { w: 80, fx: .62, fy: .41 }, css: { steam: '64% 12%' }, note: 'Bigote, sombrero de copa y bata' },
     { id: 'tios',     n: 'Tíos Patitos',        price: 500, stat: 'trajes/tios.webp',     stat2: 'trajes/tios-enojados.webp',    asp: .83,  asp2: .86,  name: 'los Tíos Patitos',       g: 'p', dw: 1.5,
-      av: { w: 70, fx: .49, fy: .31 }, av2: { w: 70, fx: .50, fy: .31 }, css: { steam: '48% 6%' }, note: 'La pareja: te devuelven la pelota de la mano' }
+      av: { w: 70, fx: .49, fy: .31 }, av2: { w: 70, fx: .50, fy: .31 }, css: { steam: '48% 6%' }, note: 'La pareja: te devuelven la pelota de la mano' },
+    // Personaje secreto: aparece como una carta misteriosa hasta que lo compras. Usa el mismo rig del Tío Pato, pintado de oro (carpeta oro/).
+    { id: 'millonario', n: 'Tío Pato Millonario', price: 100000000, dir: 'oro/', name: 'el Tío Pato Millonario', g: 'm', secret: true, glow: true,
+      css: { wl: '43.5% 64.5%', wr: '59% 63.7%', tr: '60.3% 35.5%', tail: '40% 76%', steam: '58% 22%', avW: '142px', avL: '-47px', avT: '-56px' }, note: 'De oro macizo: el sueño de todo millonario' }
   ],
 
   bg: [
@@ -58,6 +61,9 @@ window.TIENDA = {
     { id: 'b2000',   n: 'Billete $2.000',  price: 2000,  rate: 8,  img: 'skins/b2000.webp',   fx: 'flutter', w: 1.6,  trail: '#c9a6ee' },
     { id: 'b5000',   n: 'Billete $5.000',  price: 5000,  rate: 9,  img: 'skins/b5000.webp',   fx: 'flutter', w: 1.6,  trail: '#f08a94' },
     { id: 'b10000',  n: 'Billete $10.000', price: 10000, rate: 10, img: 'skins/b10000.webp',  fx: 'flutter', w: 1.6,  trail: '#7cc4f0' },
-    { id: 'b20000',  n: 'Billete $20.000', price: 20000, rate: 20, img: 'skins/b20000.webp',  fx: 'flutter', w: 1.6,  trail: '#f0a070' }
+    { id: 'b20000',  n: 'Billete $20.000', price: 20000, rate: 20, img: 'skins/b20000.webp',  fx: 'flutter', w: 1.6,  trail: '#f0a070' },
+    { id: 'plata',   n: 'Lingote de plata', price: 50000,   rate: 200,   img: 'skins/plata.webp',    fx: 'spin', w: 1.7, trail: '#cfd6e2', note: 'Un lingote de verdad' },
+    { id: 'oro',     n: 'Lingote de oro',   price: 500000,  rate: 1000,  img: 'skins/oro.webp',      fx: 'spin', w: 1.7, trail: '#ffd54a' },
+    { id: 'diamante', n: 'Diamante',        price: 1000000, rate: 10000, img: 'skins/diamante.webp', fx: 'spin', w: 1.15, trail: '#8fd3ff', note: 'La joya de la corona' }
   ]
 };
