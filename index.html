@@ -529,16 +529,24 @@
   .ball { position: absolute; inset: 0; display: grid; place-items: center; }
   .ball img { width: calc(100% * var(--bw, 1)); max-width: none; height: auto; display: block; -webkit-user-drag: none; will-change: transform; }
   .ball.spin img { animation: coinSpin 1.6s linear infinite; filter: drop-shadow(0 3px 3px rgba(0,0,0,.28)); }
+  /* lingotes y diamante: no giran, saltan (se aplastan al caer y se estiran al subir) */
+  .ball.jump img { animation: gemJump .8s infinite; transform-origin: 50% 100%; filter: drop-shadow(0 3px 3px rgba(0,0,0,.28)); }
   /* destellos: dos estrellitas que aparecen un instante sobre la moneda (la moneda en sí no cambia de brillo) */
-  .ball.spin::before, .ball.spin::after { content: ""; position: absolute; width: 42%; aspect-ratio: 1; pointer-events: none; opacity: 0; z-index: 1;
+  .ball.spin::before, .ball.spin::after, .ball.jump::before, .ball.jump::after { content: ""; position: absolute; width: 42%; aspect-ratio: 1; pointer-events: none; opacity: 0; z-index: 1;
     background: radial-gradient(circle, #fff 0 14%, rgba(255,255,255,0) 46%), linear-gradient(90deg, transparent 4%, #fff 50%, transparent 96%) center / 100% 13% no-repeat, linear-gradient(0deg, transparent 4%, #fff 50%, transparent 96%) center / 13% 100% no-repeat;
     filter: drop-shadow(0 0 2px rgba(255, 184, 40, .95)); animation: destello 2.8s ease-in-out infinite; }
-  .ball.spin::before { top: 6%; right: 8%; }
-  .ball.spin::after { bottom: 12%; left: 6%; animation-delay: 1.4s; }
+  .ball.spin::before, .ball.jump::before { top: 6%; right: 8%; }
+  .ball.spin::after, .ball.jump::after { bottom: 12%; left: 6%; animation-delay: 1.4s; }
   @keyframes destello { 0%, 60%, 100% { opacity: 0; transform: scale(.15) rotate(0deg); } 70%, 78% { opacity: 1; transform: scale(1) rotate(20deg); } 90% { opacity: 0; transform: scale(.4) rotate(45deg); } }
   .ball.flutter img { animation: flutter .9s ease-in-out infinite; }
   .ball.emoji { font-size: calc(56px * var(--k, 1)); line-height: 1; animation: spin .75s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes gemJump {
+    0%, 100% { transform: translateY(0) scale(1.1, .86); animation-timing-function: cubic-bezier(.2, .7, .3, 1); }        /* aplastado en el suelo, sale disparado */
+    22% { transform: translateY(-21%) scale(.93, 1.12); animation-timing-function: ease-out; }                           /* subiendo, estirado */
+    50% { transform: translateY(-29%) scale(1, 1); animation-timing-function: ease-in; }                                  /* arriba del todo */
+    82% { transform: translateY(-3%) scale(.95, 1.07); animation-timing-function: ease-in; }                              /* cayendo, estirado */
+  }
   @keyframes coinSpin { to { transform: rotate(360deg); } }       /* la moneda gira como una rueda, en el sentido del reloj */
   @keyframes flutter { 0%, 100% { transform: rotate(-11deg) scale(1, 1); } 25% { transform: rotate(3deg) scale(1.05, .8); } 50% { transform: rotate(12deg) scale(1, 1); } 75% { transform: rotate(-4deg) scale(1.05, .8); } }
 
@@ -586,6 +594,7 @@
   .item.vip { border-color: #c27a00; background: linear-gradient(180deg, #fffaf0, #fff0c8); box-shadow: 0 0 0 1px rgba(194,122,0,.5), 0 6px 18px rgba(194,122,0,.18); }
   .item.vip.on { border-color: #111; box-shadow: 0 0 0 2px #111; }
   .item .pv .ball { position: relative; inset: auto; width: 62px; height: 62px; }
+  .item .pv .ball.jump { margin-top: 12px; }
   .item .pv.chpv { background: radial-gradient(circle at 50% 40%, #fffbe0, #f3e9a8); }
   .item .pv.chpv img { position: absolute; left: 50%; top: 50%; height: 84px; width: auto; transform: translate(-50%, -50%); animation: 5s ease-in-out infinite; }
   .item .pv.chpv img:first-child { animation-name: chSwapA; }
@@ -658,7 +667,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .bgx, .bgx i, .bgx i::before, .bgx::before, .bgx::after, #paddle, #paddle::before, #paddle::after, .pvbar, .pvbar::before, .pvbar::after { animation: none !important; }
-    #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .item .pv.mystery b, .item .pv.mystery i, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .hero, .rain span, #rotate .ico, #mult.show, .item .pv.chpv img { animation: none; }
+    #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .item .pv.mystery b, .item .pv.mystery i, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .ball.jump::before, .ball.jump::after, .hero, .rain span, #rotate .ico, #mult.show, .item .pv.chpv img { animation: none; }
     #arena.jolt { animation: none; }
   }
 </style>
