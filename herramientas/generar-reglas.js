@@ -69,7 +69,7 @@ const rules = { rules: {
     '.read': 'auth != null && auth.uid === $uid',
     '.write': 'auth != null && auth.uid === $uid',
     '.validate': "newData.hasChildren(['c', 'sp'])",
-    c: { '.validate': "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 100000000"
+    c: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.cMax}`
       + " && (newData.val() === (data.exists() ? data.val() : 0)"
       + ` || (${P}.child('lr').exists() && (!data.parent().child('lr').exists() || ${P}.child('lr').val() > data.parent().child('lr').val())`
       + ` && newData.val() - (data.exists() ? data.val() : 0) === ${RUN}.child('p').val()))` },

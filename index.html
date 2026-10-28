@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Gánale al Tío Pato</title>
-<meta name="description" content="Rebota el billete contra el Tío Pato: empieza como un ángel amistoso y termina convertido en diablo. Juega en línea o instálalo en tu celular.">
+<meta name="description" content="¡Rebota, gana y hazte millonario! Rebota la moneda contra el Tío Pato: empieza como un ángel amistoso y termina convertido en diablo. Juega en línea o instálalo en tu celular.">
 <meta name="theme-color" content="#fff7c2" id="themeColor">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -447,6 +447,14 @@
   .item .pv.chpv img:first-child { animation-name: chSwapA; }
   .item .pv.chpv img:last-child { animation-name: chSwapB; }
   .item .pv.chpv.one img { animation: none; opacity: 1; }
+  .item .pv.mystery { background: radial-gradient(circle at 50% 38%, #4a2a86, #150a2e 78%); }
+  .item .pv.mystery b { font-size: 58px; line-height: 1; font-weight: 900; background: linear-gradient(180deg, #fff3a0, #ffc928 55%, #c27a00); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(255, 200, 40, .85)); animation: mysteryPulse 2.4s ease-in-out infinite; }
+  .item .pv.mystery i { position: absolute; width: 10px; height: 10px; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; animation: destello 2.8s ease-in-out infinite; }
+  .item .pv.mystery i:nth-child(1) { left: 18%; top: 22%; } .item .pv.mystery i:nth-child(2) { right: 16%; top: 40%; animation-delay: .9s; } .item .pv.mystery i:nth-child(3) { left: 30%; bottom: 16%; animation-delay: 1.7s; }
+  @keyframes mysteryPulse { 50% { transform: scale(1.08); } }
+  .item.secret { border-color: #c27a00; box-shadow: 0 0 0 1px #c27a00, 0 6px 18px rgba(194, 122, 0, .22); }
+  /* el Tío Pato Millonario brilla como el oro */
+  #duck.glow .rig { filter: drop-shadow(0 0 9px rgba(255, 196, 40, .95)); }
   @keyframes chSwapA { 0%, 38% { opacity: 1; } 50%, 88% { opacity: 0; } 100% { opacity: 1; } }
   @keyframes chSwapB { 0%, 38% { opacity: 0; } 50%, 88% { opacity: 1; } 100% { opacity: 0; } }
   .item .nm { font-weight: 800; font-size: 15px; line-height: 1.15; }
@@ -476,6 +484,8 @@
   #menu .stage .hero { height: calc(var(--st) * .8); animation: float 2.4s ease-in-out infinite; filter: drop-shadow(0 8px 8px rgba(0,0,0,.16)); }
   #menu .ttl { margin: 0; font-size: clamp(26px, 8vw, 32px); line-height: 1.08; font-weight: 900; letter-spacing: -.01em; }
   #menu .ttl em { display: block; font-style: normal; background: linear-gradient(90deg, #111, #5b3b00 70%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+  #menu .slogan { margin: -4px 0 0; font-size: clamp(15px, 4.6vw, 18px); font-weight: 900; line-height: 1.2; }
+  #menu .slogan span { background: linear-gradient(90deg, #a86a00, #e0a000 50%, #8a5a00); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
   #menu .tag { margin: 0; max-width: 28ch; font-size: 14.5px; line-height: 1.4; color: #6b6840; }
   #menu .rec { min-height: 28px; display: flex; align-items: center; justify-content: center; font-size: 13.5px; font-weight: 800; color: #7a5a00; }
   #menu .rec:not(:empty) { background: rgba(255,255,255,.7); border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; }
@@ -504,7 +514,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .bgx, .bgx i, .bgx::before, .bgx::after, #paddle, #paddle::before, #paddle::after, .pvbar, .pvbar::before, .pvbar::after { animation: none !important; }
-    #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .hero, .rain span, #rotate .ico, #mult.show, .item .pv.chpv img { animation: none; }
+    #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .item .pv.mystery b, .item .pv.mystery i, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .hero, .rain span, #rotate .ico, #mult.show, .item .pv.chpv img { animation: none; }
     #arena.jolt { animation: none; }
   }
 </style>
@@ -542,6 +552,7 @@
       <div class="mid">
         <div class="stage"><span class="hero" id="heroBox"><span style="font-size:84px">🦆</span></span></div>
         <h1 class="ttl" id="ttl">Gánale al <em id="ttlName">Tío Pato</em></h1>
+        <p class="slogan"><span>¡Rebota, gana y hazte millonario!</span> 💰</p>
         <p class="tag" id="tagline">Rebota la moneda con tu barra y junta pesos. El Tío Pato siempre te la devuelve.</p>
         <div class="rec" id="bestMenu"></div>
         <!-- con cuentas: inicia sesión o crea tu cuenta (nombre + contraseña) -->
@@ -1076,6 +1087,7 @@
     set(botAv, '--avW', c.avW); set(botAv, '--avL', c.avL); set(botAv, '--avT', c.avT);
     if (ch.stat && ch.av) { set(botAv, '--avW', ch.av.w + 'px'); set(botAv, '--avL', (22 - ch.av.fx * ch.av.w).toFixed(1) + 'px'); set(botAv, '--avT', (22 - ch.av.fy * ch.av.w * ch.asp).toFixed(1) + 'px'); }   // centra la cara en el círculo de 44 px
     const pl = ch.g === 'p';
+    duck.classList.toggle('glow', !!ch.glow);
     set(duck, '--dw', ch.dw || 1);
     $('ttl').firstChild.textContent = 'Gánale ' + (pl ? 'a los ' : ch.g === 'f' ? 'a la ' : 'al '); $('ttlName').textContent = ch.n.replace(/^Los /, '');
     $('tagline').textContent = `Rebota la moneda con tu barra y junta pesos. ${cap(ch.name)} siempre te la ${pl ? 'devuelven' : 'devuelve'}.`;
@@ -1414,7 +1426,9 @@
   function shopMsg(t, ok) { const m = $('shopMsg'); m.textContent = t || ''; m.className = 'status' + (ok ? ' ok' : t ? ' err' : ''); }
   function previewFor(it) {
     const pv = document.createElement('div');
-    if (shopTab === 'ch') {
+    if (shopTab === 'ch' && it.secret && !owns('ch', it.id)) {                  // personaje secreto: carta misteriosa hasta que lo compras
+      pv.className = 'pv mystery'; pv.innerHTML = '<b>?</b><i></i><i></i><i></i>';
+    } else if (shopTab === 'ch') {
       pv.className = 'pv chpv';
       if (HAS_ART && it.stat) { if (!it.stat2) pv.classList.add('one'); pv.appendChild(picOf(it.stat)); if (it.stat2) pv.appendChild(picOf(it.stat2)); }      // con dibujo enojado: se alternan los dos
       else if (HAS_ART) for (const f of ['hero_angel.png', 'hero_devil.png']) { const im = new Image(); im.src = it.dir + f; im.alt = ''; im.draggable = false; pv.appendChild(im); }
@@ -1435,10 +1449,12 @@
     for (const [id, k] of TABS) $(id).classList.toggle('on', shopTab === k);
     const grid = $('shopGrid'); grid.textContent = '';
     for (const it of CAT[shopTab]) {
-      const card = document.createElement('div'); card.className = 'item' + (wallet.eq[shopTab] === it.id ? ' on' : '');
-      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = it.n;
+      const hidden = !!it.secret && !owns(shopTab, it.id);
+      const card = document.createElement('div'); card.className = 'item' + (wallet.eq[shopTab] === it.id ? ' on' : '') + (it.secret ? ' secret' : '');
+      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = hidden ? 'Personaje secreto' : it.n;
       const nt = document.createElement('div'); nt.className = 'nt';
-      nt.textContent = shopTab === 'ball' ? `Paga ${money(it.rate)} por punto${it.note ? ' · ' + it.note : ''}` : (it.note || (it.price ? '' : 'Incluido'));
+      if (hidden) nt.textContent = 'Solo para millonarios. ¿Quién será?';
+      else nt.textContent = shopTab === 'ball' ? `Paga ${money(it.rate)} por punto${it.note ? ' · ' + it.note : ''}` : (it.note || (it.price ? '' : 'Incluido'));
       const btn = document.createElement('button'); btn.type = 'button';
       if (wallet.eq[shopTab] === it.id) { btn.className = 'cur'; btn.textContent = 'Equipado ✓'; btn.disabled = true; }
       else if (owns(shopTab, it.id)) { btn.className = 'eq'; btn.textContent = 'Equipar'; btn.onclick = () => equip(shopTab, it.id); }

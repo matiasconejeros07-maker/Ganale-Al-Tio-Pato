@@ -14,7 +14,7 @@
           ".validate": "newData.isString() && (newData.val() === 'peso1' || root.child('wallets').child($uid).child('own').child('ball_' + newData.val()).val() === true)"
         },
         "r": {
-          ".validate": "newData.isNumber() && newData.val() === (newData.parent().child('b').val() === 'peso1' ? 1 : newData.parent().child('b').val() === 'peso5' ? 2 : newData.parent().child('b').val() === 'peso10' ? 3 : newData.parent().child('b').val() === 'peso50' ? 4 : newData.parent().child('b').val() === 'peso100' ? 5 : newData.parent().child('b').val() === 'peso500' ? 6 : newData.parent().child('b').val() === 'b1000' ? 7 : newData.parent().child('b').val() === 'b2000' ? 8 : newData.parent().child('b').val() === 'b5000' ? 9 : newData.parent().child('b').val() === 'b10000' ? 10 : newData.parent().child('b').val() === 'b20000' ? 20 : 0)"
+          ".validate": "newData.isNumber() && newData.val() === (newData.parent().child('b').val() === 'peso1' ? 1 : newData.parent().child('b').val() === 'peso5' ? 2 : newData.parent().child('b').val() === 'peso10' ? 3 : newData.parent().child('b').val() === 'peso50' ? 4 : newData.parent().child('b').val() === 'peso100' ? 5 : newData.parent().child('b').val() === 'peso500' ? 6 : newData.parent().child('b').val() === 'b1000' ? 7 : newData.parent().child('b').val() === 'b2000' ? 8 : newData.parent().child('b').val() === 'b5000' ? 9 : newData.parent().child('b').val() === 'b10000' ? 10 : newData.parent().child('b').val() === 'b20000' ? 20 : newData.parent().child('b').val() === 'plata' ? 200 : newData.parent().child('b').val() === 'oro' ? 1000 : newData.parent().child('b').val() === 'diamante' ? 10000 : 0)"
         },
         "e": {
           ".validate": "newData.isNumber() && newData.val() === now && !data.exists() && data.parent().child('s').exists() && newData.parent().child('s').val() === data.parent().child('s').val() && newData.parent().hasChildren(['s', 'b', 'r', 'h', 'p'])"
@@ -61,7 +61,7 @@
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['c', 'sp'])",
         "c": {
-          ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 100000000 && (newData.val() === (data.exists() ? data.val() : 0) || (newData.parent().child('lr').exists() && (!data.parent().child('lr').exists() || newData.parent().child('lr').val() > data.parent().child('lr').val()) && newData.val() - (data.exists() ? data.val() : 0) === newData.parent().parent().parent().child('runs').child($uid).child('p').val()))"
+          ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (newData.val() === (data.exists() ? data.val() : 0) || (newData.parent().child('lr').exists() && (!data.parent().child('lr').exists() || newData.parent().child('lr').val() > data.parent().child('lr').val()) && newData.val() - (data.exists() ? data.val() : 0) === newData.parent().parent().parent().child('runs').child($uid).child('p').val()))"
         },
         "sp": {
           ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && (!data.exists() || newData.val() >= data.val()) && newData.val() <= newData.parent().child('c').val()"
@@ -84,6 +84,9 @@
           },
           "ch_tios": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 500)"
+          },
+          "ch_millonario": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 100000000)"
           },
           "bg_atardecer": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 100)"
@@ -153,6 +156,15 @@
           },
           "ball_b20000": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 20000)"
+          },
+          "ball_plata": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 50000)"
+          },
+          "ball_oro": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 500000)"
+          },
+          "ball_diamante": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 1000000)"
           },
           "$other": {
             ".validate": false
