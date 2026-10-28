@@ -1,0 +1,1759 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Gánale al Tío Pato</title>
+<meta name="description" content="Rebota el billete contra el Tío Pato: empieza como un ángel amistoso y termina convertido en diablo. Juega en línea o instálalo en tu celular.">
+<meta name="theme-color" content="#fff7c2" id="themeColor">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tío Pato">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+  :root {
+    --bg: #fff7c2;
+    --ink: #111;
+    --score: #a3a07a;
+    --ghost: rgba(140, 130, 50, .38);
+    --lose: #c0392b;
+    --card: #fffdf0;
+    --line: rgba(120, 110, 40, .18);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    transition: background-color .9s ease;
+    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
+  }
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+  body.end { background: linear-gradient(180deg, #7b3ff2 0%, #b21ee0 55%, #e0149f 100%); transition: none; }
+  body.end #close svg, body.hell #close svg { stroke: #fff; }
+  body.end .num, body.hell .num { color: rgba(255,255,255,.78); }
+  body.hell { --ghost: rgba(255,255,255,.12); }
+
+  /* ---------- franja de puntajes: compacta y encima del juego, para que el Pato quede en lo más alto ---------- */
+  header {
+    position: absolute; left: 0; right: 0; top: 0; z-index: 3; pointer-events: none;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    padding: calc(env(safe-area-inset-top) + 20px) 16px 0;
+    height: calc(env(safe-area-inset-top) + 66px);
+  }
+  body:not(.ingame) header { display: none; }
+  #close {
+    position: absolute; left: max(10px, env(safe-area-inset-left)); top: calc(env(safe-area-inset-top) + 16px); pointer-events: auto;
+    width: 40px; height: 40px; border: 0; background: none; cursor: pointer; padding: 9px;
+  }
+  #close svg { width: 100%; height: 100%; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
+  .num {
+    min-width: 3ch; font-size: 24px; font-weight: 800; letter-spacing: .02em;
+    color: var(--score); font-variant-numeric: tabular-nums; text-align: center;
+    transition: color .2s, transform .15s;
+  }
+  .num.bump { transform: scale(1.22); color: #6d6a3d; }
+  .avatars { display: flex; position: relative; }
+  .avatar {
+    position: relative; width: 44px; height: 44px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 24px;
+    border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15);
+  }
+  .avatar.me { background: radial-gradient(circle at 35% 30%, #4a4a4a, #151515); z-index: 1; color: #fff; font-weight: 800; font-size: 20px; }
+  .avatar.bot { background: radial-gradient(circle at 35% 30%, #e8e8e8, #8d8d8d); margin-left: -7px; overflow: visible; }
+  .avatar.bot.pic { background: radial-gradient(circle at 50% 45%, #cfd3dc, #6f7380); }
+  .avatar.bot #botFace { position: relative; display: block; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: grid; place-items: center; }
+  .avatar.bot .ava { position: absolute; width: var(--avW, 142px); max-width: none; height: auto; left: var(--avL, -47px); top: var(--avT, -56px); pointer-events: none; }
+  .avatar.bot .ava.horns { transition: opacity .5s; }
+  .crown {
+    position: absolute; top: -20px; left: 50%; font-size: 25px; line-height: 1;
+    transform: translateX(-50%) scale(0); transition: transform .25s cubic-bezier(.3,1.6,.5,1);
+    pointer-events: none; z-index: 2;
+  }
+  .avatar.lead .crown { transform: translateX(-50%) scale(1); }
+
+  /* ---------- zona de juego ---------- */
+  #arena { position: absolute; inset: 0; z-index: 1; touch-action: none; }
+  #arena.jolt { animation: jolt .16s linear; }
+  @keyframes jolt { 20% { transform: translate(4px, -3px); } 40% { transform: translate(-4px, 3px); } 60% { transform: translate(3px, 2px); } 80% { transform: translate(-2px, -2px); } }
+  #big {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: min(46vw, 24vh, 260px); font-weight: 400; color: var(--ghost);
+    pointer-events: none; z-index: 0; transform: translateY(-4%);
+  }
+  #big.tick { animation: tick .9s ease-out; }
+  @keyframes tick { 0% { transform: translateY(-4%) scale(1.25); opacity: .2; } 100% { transform: translateY(-4%) scale(1); opacity: 1; } }
+  #fx { position: absolute; left: 0; top: 0; z-index: 1; pointer-events: none; }
+
+  #target {
+    position: absolute; left: 0; top: 0; z-index: 2;
+    width: calc(56px * var(--k, 1)); height: calc(56px * var(--k, 1)); line-height: 1; will-change: transform; pointer-events: none;
+    filter: drop-shadow(0 5px 5px rgba(0,0,0,.14));
+  }
+
+  /* ----- El Tío Pato: ángel amistoso → desafiante → enojado → diablo -----
+     Variables: --angel / --devil (0..1, qué capas se ven) · --anger (0..1) · --shake · --flap (velocidad de aleteo). */
+  #duck { position: absolute; left: 0; top: var(--duck-top, 26px); z-index: 1; width: calc(141px * var(--k, 1) * var(--dw, 1)); height: calc(170px * var(--k, 1)); pointer-events: none; visibility: hidden; will-change: transform; --angel: 1; --devil: 0; --anger: 0; --shake: 0px; --flap: 1.5s; }
+  #duck .rig { position: relative; width: 100%; height: 100%; }
+  #duck.mad .rig { animation: fume .11s linear infinite; }
+  #duck .ly { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; -webkit-user-drag: none; transition: opacity .6s; }
+  #duck .angel { opacity: var(--angel); }
+  #duck .devil { opacity: var(--devil); }
+  #duck .face { opacity: 0; transition: opacity .35s; }
+  #duck[data-face="0"] .f0, #duck[data-face="1"] .f1, #duck[data-face="2"] .f2, #duck[data-face="3"] .f3 { opacity: 1; }
+  #duck .wl { transform-origin: var(--wl, 43.5% 64.5%); animation: flapL var(--flap) ease-in-out infinite; }
+  #duck .wr { transform-origin: var(--wr, 59% 63.7%); animation: flapR var(--flap) ease-in-out infinite; }
+  #duck .stat { object-fit: contain; object-position: 50% 100%; transform-origin: 50% 90%; animation: statBob 1.8s ease-in-out infinite; filter: saturate(calc(1 + var(--devil) * .3)) drop-shadow(0 0 calc(var(--anger) * 10px) rgba(255, 50, 20, .95)); }
+  @keyframes statBob { 50% { transform: translateY(-4px) rotate(1.2deg); } }
+  #duck .halo { animation: bob 2.4s ease-in-out infinite; filter: drop-shadow(0 0 7px rgba(255, 214, 70, .95)); }
+  #duck.mad .halo { animation: bob 2.4s ease-in-out infinite, flicker .3s steps(2) infinite; }
+  #duck .horns { filter: drop-shadow(0 0 5px rgba(255, 60, 20, .8)); }
+  #duck .trident { transform-origin: var(--tr, 60.3% 35.5%); animation: wave 1.6s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(255, 70, 20, .95)); }
+  #duck .tail { transform-origin: var(--tail, 40% 76%); animation: sway .9s ease-in-out infinite; }
+  #duck[data-face="3"] .f3 { filter: drop-shadow(0 0 9px rgba(255, 80, 20, .85)); }
+  #duckFace { display: grid; place-items: center; width: 100%; height: 100%; font-size: calc(52px * var(--k, 1)); }
+  #steam { position: absolute; left: var(--sx, 58%); top: var(--sy, 22%); font-size: calc(26px * var(--k, 1)); opacity: clamp(0, calc(var(--anger) * 2.2 - .1), 1); animation: puff .7s ease-in-out infinite; }
+  @keyframes flapL { 50% { transform: rotate(calc(8deg + var(--anger) * 6deg)); } }
+  @keyframes flapR { 50% { transform: rotate(calc(-8deg - var(--anger) * 6deg)); } }
+  @keyframes bob { 50% { transform: translateY(-4px); } }
+  @keyframes flicker { 50% { opacity: .35; } }
+  @keyframes wave { 50% { transform: rotate(4deg); } }
+  @keyframes sway { 50% { transform: rotate(9deg); } }
+  @keyframes fume { 25% { translate: calc(var(--shake) * -1) 0; } 75% { translate: var(--shake) 0; } }
+  @keyframes swing { 30% { transform: rotate(-12deg) translateY(6px) scale(1.06); } 100% { transform: none; } }
+  @keyframes puff { 50% { transform: scale(1.25) rotate(8deg); } }
+  #duck .rig.swing { animation: swing .26s ease-out; }
+  #bubble {
+    position: absolute; top: 100%; left: 50%; transform: translateX(calc(-50% + var(--bx, 0px))); scale: .85; transform-origin: top center;
+    white-space: nowrap; font-size: clamp(12px, 3.6vw, 14px); font-weight: 800; color: #111; background: #fff; padding: 6px 12px;
+    border-radius: 14px; box-shadow: 0 3px 10px rgba(0,0,0,.18); opacity: 0; transition: opacity .2s, scale .2s;
+  }
+  #bubble::before { content: ""; position: absolute; left: calc(50% - var(--bx, 0px)); top: -5px; width: 10px; height: 10px; background: #fff; transform: translateX(-50%) rotate(45deg); }
+  #bubble.on { opacity: 1; scale: 1; }
+  body.hell #bubble { background: #2a0608; color: #ffb199; box-shadow: 0 0 14px rgba(255, 70, 20, .6); }
+  body.hell #bubble::before { background: #2a0608; }
+
+  #paddle {
+    position: absolute; left: 0; top: 0; height: calc(16px * var(--k, 1)); border-radius: 999px; background: #111; z-index: 2;
+    visibility: hidden; will-change: transform; box-shadow: 0 5px 12px rgba(0,0,0,.22);
+    transition: height .08s, margin-top .08s;
+  }
+  #paddle.hit { height: calc(11px * var(--k, 1)); margin-top: calc(3px * var(--k, 1)); }
+
+  .pop {
+    position: absolute; z-index: 4; font-weight: 800; font-size: 22px; color: #6d6a3d;
+    pointer-events: none; animation: pop .6s ease-out forwards;
+  }
+  body.hell .pop { color: #ffb199; }
+  @keyframes pop { from { opacity: 1; transform: translate(-50%, -10px); } to { opacity: 0; transform: translate(-50%, -64px); } }
+
+  /* ---------- pantallas (inicio / final / marcadores) ---------- */
+  .screen {
+    position: absolute; inset: 0; z-index: 5; display: none; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px; text-align: center;
+    padding: calc(env(safe-area-inset-top) + 60px) max(20px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 20px) max(20px, env(safe-area-inset-left));
+    background: rgba(255, 247, 194, .96); overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  .screen > * { flex-shrink: 0; }
+  .screen::before, .screen::after { content: ""; margin: auto; }
+  .screen.show { display: flex; }
+  .screen h1 { margin: 0; font-size: 32px; font-weight: 800; line-height: 1.1; }
+  .screen p { margin: 0; color: #6b6840; font-size: 16px; max-width: 30ch; line-height: 1.4; }
+  .hero { display: inline-block; height: clamp(96px, 19vh, 150px); animation: float 2.2s ease-in-out infinite; filter: drop-shadow(0 8px 8px rgba(0,0,0,.15)); }
+  .hero img { height: 100%; width: auto; display: block; }
+  @keyframes float { 50% { transform: translateY(-10px) rotate(-2deg); } }
+  .btn {
+    margin-top: 10px; border: 0; cursor: pointer; background: #111; color: #fff;
+    font: inherit; font-size: 18px; font-weight: 700; padding: 16px 44px; border-radius: 999px;
+    transition: transform .1s;
+  }
+  .btn:active { transform: scale(.96); }
+  .btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--ink); margin-top: 0; padding: 12px 32px; font-size: 16px; }
+  .best { font-size: 14px; color: #8a8658; min-height: 1.2em; }
+  .status { font-size: 14px; color: #6b6840; min-height: 1.3em; }
+  .status.err { color: var(--lose); }
+
+  #name, .field {
+    width: min(100%, 300px); font: inherit; font-size: 20px; font-weight: 700; text-align: center;
+    padding: 14px 16px; border-radius: 16px; border: 2px solid var(--ink); background: #fff; color: var(--ink);
+    outline: none; -webkit-user-select: text; user-select: text; margin-top: 6px;
+  }
+  #name:focus, .field:focus { box-shadow: 0 0 0 4px rgba(17,17,17,.12); }
+  #name.shake, .field.shake { animation: shake .35s; border-color: var(--lose); }
+  /* inicio de sesión */
+  .authbox { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+  .authbox[hidden], #userBox[hidden], #logout[hidden], #name[hidden], #play[hidden] { display: none; }
+  .seg { display: flex; width: min(100%, 300px); background: rgba(0,0,0,.07); border-radius: 999px; padding: 3px; }
+  .seg button { flex: 1; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 700; color: var(--ink); padding: 9px 6px; border-radius: 999px; cursor: pointer; }
+  .seg button.on { background: #111; color: #fff; }
+  .pw { position: relative; width: min(100%, 300px); }
+  .pw .field { width: 100%; padding-right: 52px; }
+  #eye { position: absolute; right: 6px; top: calc(50% + 3px); transform: translateY(-50%); width: 40px; height: 40px; border: 0; background: none; font-size: 20px; cursor: pointer; opacity: .65; }
+  .authbox .btn { margin-top: 4px; width: min(100%, 300px); }
+  .authbox .btn:disabled { opacity: .55; }
+  #authMsg { min-height: 1.3em; max-width: 32ch; text-align: center; }
+  .hello { font-size: 20px; font-weight: 800; }
+  .link { background: none; border: 0; font: inherit; font-size: 14px; font-weight: 600; color: #6b6840; cursor: pointer; padding: 6px; text-decoration: underline; }
+  @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+  /* final: pantalla morada con lluvia de billetes */
+  #result { background: transparent; overflow: hidden; gap: 6px; color: #fff; }
+  #result > * { position: relative; z-index: 1; }
+  #result .rain { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .rain span { position: absolute; top: -60px; animation: fall linear infinite; }
+  @keyframes fall { to { transform: translateY(115vh) rotate(540deg); } }
+  .verdict { font-size: 24px; font-weight: 800; text-shadow: 0 2px 12px rgba(0,0,0,.25); }
+  .final { font-size: 72px; font-weight: 800; line-height: 1; text-shadow: 0 2px 12px rgba(0,0,0,.25); font-variant-numeric: tabular-nums; }
+  .final small { font-size: 28px; font-weight: 800; }
+  .sub { white-space: pre-line; font-size: 15px; font-weight: 600; opacity: .95; text-shadow: 0 1px 6px rgba(60,0,90,.55); max-width: 32ch; }
+  #result .hero { height: clamp(84px, 15vh, 128px); animation: none; }
+  #result .btn { background: #111; width: min(100%, 340px); display: flex; align-items: center; justify-content: center; gap: 10px; }
+  #result .btn.ghost { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.7); }
+  #result .link { background: none; border: 0; color: #fff; font: inherit; font-size: 16px; font-weight: 600; padding: 10px; cursor: pointer; opacity: .9; }
+  #result .status { color: rgba(255,255,255,.95); }
+  #result .status.err { color: #ffd6d0; }
+  #result .best { color: rgba(255,255,255,.85); }
+  #result .status, #result .best, #result .link { text-shadow: 0 1px 6px rgba(60,0,90,.55); }
+  #diagOut { margin: 0; width: min(100%, 340px); text-align: left; white-space: pre-wrap; word-break: break-word; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; color: #fff; background: rgba(20,0,40,.55); border-radius: 12px; padding: 10px 12px; -webkit-user-select: text; user-select: text; }
+  #diagOut[hidden], #diagBtn[hidden] { display: none; }
+
+  /* ---------- marcadores ---------- */
+  #board { justify-content: flex-start; gap: 8px; overflow: hidden; }
+  #board::before, #board::after { display: none; }
+  #board h1 { font-size: 28px; margin-top: 4px; }
+  .board-note { font-size: 13px; color: #8a8658; min-height: 1.2em; max-width: 38ch; }
+  #list {
+    list-style: none; margin: 0; padding: 0; width: min(100%, 440px);
+    flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+  }
+  #list li {
+    display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 8px;
+    padding: 12px 16px; border-bottom: 1px solid var(--line); text-align: left; font-size: 17px;
+  }
+  #list li:last-child { border-bottom: 0; }
+  #list .rk { font-weight: 800; color: #8a8658; font-variant-numeric: tabular-nums; text-align: center; }
+  #list .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #list .sc { font-weight: 800; font-variant-numeric: tabular-nums; }
+  #list li.top .rk { font-size: 22px; }
+  #list li.mine { background: #fff0a0; }
+  #list .empty { display: block; text-align: center; color: #8a8658; padding: 28px 16px; }
+  #backBoard { margin-top: 4px; }
+
+  /* celulares bajitos (iPhone SE, Android compactos) */
+  @media (max-height: 700px) {
+    .screen { gap: 6px; }
+    .screen h1 { font-size: 26px; }
+    .screen p { font-size: 14px; }
+    .btn { padding: 13px 38px; font-size: 17px; margin-top: 6px; }
+    .btn.ghost { padding: 10px 28px; }
+    .final { font-size: 58px; }
+    #name { padding: 11px 14px; font-size: 18px; }
+  }
+  @media (max-width: 340px) { .num { font-size: 21px; min-width: 2.6ch; } header { gap: 8px; } }
+
+  /* instalar la app */
+  .sheet { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.45); }
+  .sheet[hidden], #rotate[hidden] { display: none; }
+  .sheet .card {
+    width: min(100%, 460px); background: #fffdf0; color: var(--ink); border-radius: 22px 22px 0 0; text-align: left;
+    padding: 22px 22px calc(env(safe-area-inset-bottom) + 22px); box-shadow: 0 -10px 40px rgba(0,0,0,.25);
+  }
+  .sheet h2 { margin: 0 0 10px; font-size: 20px; }
+  .sheet ol { margin: 0 0 14px; padding-left: 22px; font-size: 16px; line-height: 1.5; }
+  .sheet .btn { width: 100%; margin: 0; }
+  /* el juego es vertical: en horizontal se pausa y pide girar el celular */
+  #rotate { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: #fff7c2; color: #111; text-align: center; padding: 24px; font-weight: 700; }
+  #rotate .ico { font-size: 48px; animation: turn 2.4s ease-in-out infinite; }
+  @keyframes turn { 0%, 30% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0); } }
+  @media (orientation: landscape) and (max-height: 520px) { #rotate { display: flex; } #rotate[hidden] { display: flex; } }
+
+
+  /* ---------- fondos premium: degradados difuminados, holográficos y animados ---------- */
+  #app { z-index: 1; }
+  .bgx { position: absolute; inset: 0; overflow: hidden; background: var(--b, #fff6c0); }
+  .bgx i { position: absolute; display: block; border-radius: 50%; pointer-events: none; will-change: transform; }
+  #theme { position: fixed; z-index: 0; display: none; }
+  body.themed #theme, body.themed #hellfx { display: block; }
+  body.end #theme, body.end #hellfx { display: none; }
+  /* cuando el Pato se vuelve diablo, el infierno tiñe también los fondos premium */
+  #hellfx { position: fixed; inset: 0; z-index: 0; display: none; pointer-events: none; opacity: 0; transition: opacity 1.4s;
+    background: radial-gradient(130% 90% at 50% 105%, rgba(255,90,20,.72), rgba(160,10,20,.62) 45%, rgba(30,0,6,.82) 100%); }
+  body.hell #hellfx { opacity: 1; }
+  body.dark #close svg { stroke: #fff; }
+  body.dark .num { color: rgba(255,255,255,.8); }
+  body.dark { --ghost: rgba(255,255,255,.12); }
+  body.dark .pop { color: #fff; }
+  body.themed:not(.dark):not(.hell) .num { color: rgba(30,30,60,.55); }
+  body.themed:not(.dark):not(.hell) { --ghost: rgba(30,30,60,.09); }
+  @keyframes drift1 { to { transform: translate(7%, -7%) scale(1.08); } }
+  @keyframes drift2 { to { transform: translate(18%, 14%) scale(1.15); } }
+  @keyframes drift3 { to { transform: translate(-16%, -12%) scale(1.1); } }
+  @keyframes sheen { from { transform: translateX(-55%); } to { transform: translateX(55%); } }
+  @keyframes holoShift { to { background-position: 400% 50%; } }
+  @keyframes glare { 0%, 100% { transform: translateX(-38%) rotate(-20deg); } 50% { transform: translateX(38%) rotate(-20deg); } }
+  @keyframes twinkle { from { opacity: .55; } to { opacity: 1; } }
+  @keyframes gridMove { to { background-position: 0 38px, 0 0; } }
+
+  .bgx[data-bg="atardecer"] { --b: #ffb199; background: linear-gradient(180deg, #ffe6b8 0%, #ffbf9b 32%, #ff8fb6 62%, #8c7dff 100%); }
+  .bgx[data-bg="atardecer"] i:nth-child(1) { width: 78%; aspect-ratio: 1; left: 11%; bottom: 8%; background: radial-gradient(circle, #fffbe4 0%, #ffe09a 42%, rgba(255,196,120,0) 70%); filter: blur(8px); animation: drift1 16s ease-in-out infinite alternate; }
+  .bgx[data-bg="atardecer"] i:nth-child(2) { width: 70%; aspect-ratio: 1; left: -22%; top: -6%; background: #ff9ccf; filter: blur(60px); opacity: .7; animation: drift2 18s ease-in-out infinite alternate; }
+  .bgx[data-bg="atardecer"] i:nth-child(3) { width: 80%; aspect-ratio: 1; right: -30%; bottom: -10%; background: #7a6bff; filter: blur(70px); opacity: .75; animation: drift3 20s ease-in-out infinite alternate; }
+
+  .bgx[data-bg="cristal"] { --b: #dcecff; background: linear-gradient(160deg, #f1f8ff 0%, #d6e9ff 45%, #e6ddff 100%); }
+  .bgx[data-bg="cristal"] i:nth-child(1) { width: 70%; aspect-ratio: 1; left: -15%; top: 4%; background: #9fd6ff; filter: blur(55px); opacity: .65; animation: drift2 17s ease-in-out infinite alternate; }
+  .bgx[data-bg="cristal"] i:nth-child(2) { width: 75%; aspect-ratio: 1; right: -25%; top: 38%; background: #c9b8ff; filter: blur(60px); opacity: .6; animation: drift3 19s ease-in-out infinite alternate; }
+  .bgx[data-bg="cristal"] i:nth-child(3) { width: 60%; aspect-ratio: 1; left: 15%; bottom: -8%; background: #fff; filter: blur(40px); opacity: .9; animation: drift1 15s ease-in-out infinite alternate; }
+  .bgx[data-bg="cristal"]::after { content: ""; position: absolute; inset: -20%; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,0) 32%, rgba(255,255,255,.6) 46%, rgba(255,255,255,0) 60%); animation: sheen 9s linear infinite alternate; }
+
+  .bgx[data-bg="aurora"] { --b: #0b1b34; background: linear-gradient(180deg, #050c1c 0%, #0a1a33 55%, #0c2447 100%); }
+  .bgx[data-bg="aurora"] i:nth-child(1) { width: 90%; aspect-ratio: 1; left: -30%; top: -10%; background: #22d3b0; filter: blur(70px); opacity: .55; animation: drift2 16s ease-in-out infinite alternate; }
+  .bgx[data-bg="aurora"] i:nth-child(2) { width: 80%; aspect-ratio: 1; right: -30%; top: 12%; background: #8b5cf6; filter: blur(75px); opacity: .6; animation: drift3 19s ease-in-out infinite alternate; }
+  .bgx[data-bg="aurora"] i:nth-child(3) { width: 90%; aspect-ratio: 1; left: 0; bottom: -30%; background: #f472b6; filter: blur(80px); opacity: .45; animation: drift1 21s ease-in-out infinite alternate; }
+  .bgx[data-bg="aurora"]::after { content: ""; position: absolute; inset: -10% -30%; pointer-events: none; filter: blur(26px); background: linear-gradient(100deg, transparent 20%, rgba(80,255,200,.2) 40%, rgba(160,120,255,.22) 60%, transparent 80%); animation: sheen 12s ease-in-out infinite alternate; }
+
+  .bgx[data-bg="galaxia"] { --b: #0a0a1f; background: radial-gradient(ellipse 80% 55% at 25% 18%, rgba(120,60,200,.75), transparent 70%), radial-gradient(ellipse 70% 50% at 85% 72%, rgba(20,100,200,.6), transparent 70%), radial-gradient(ellipse 60% 40% at 40% 95%, rgba(220,60,160,.4), transparent 70%), #070716; }
+  .bgx[data-bg="galaxia"] i:nth-child(1) { width: 90%; aspect-ratio: 1; left: -20%; top: 28%; background: #7c3aed; filter: blur(80px); opacity: .32; animation: drift1 22s ease-in-out infinite alternate; }
+  .bgx[data-bg="galaxia"] i:nth-child(2) { width: 70%; aspect-ratio: 1; right: -25%; top: -5%; background: #ec4899; filter: blur(80px); opacity: .25; animation: drift3 24s ease-in-out infinite alternate; }
+  .bgx[data-bg="galaxia"] i:nth-child(3) { width: 60%; aspect-ratio: 1; left: 20%; bottom: -15%; background: #3b82f6; filter: blur(70px); opacity: .3; animation: drift2 26s ease-in-out infinite alternate; }
+  .bgx[data-bg="galaxia"]::before { content: ""; position: absolute; inset: 0; pointer-events: none; animation: twinkle 3.5s ease-in-out infinite alternate;
+    background-image: radial-gradient(1.4px 1.4px at 12% 14%, #fff, transparent), radial-gradient(1px 1px at 28% 32%, #cfe4ff, transparent), radial-gradient(1.6px 1.6px at 44% 9%, #fff, transparent), radial-gradient(1px 1px at 63% 21%, #ffd9ff, transparent), radial-gradient(1.4px 1.4px at 82% 12%, #fff, transparent), radial-gradient(1px 1px at 91% 38%, #cfe4ff, transparent), radial-gradient(1.5px 1.5px at 8% 47%, #fff, transparent), radial-gradient(1px 1px at 36% 58%, #fff, transparent), radial-gradient(1.4px 1.4px at 57% 44%, #ffd9ff, transparent), radial-gradient(1px 1px at 76% 61%, #fff, transparent), radial-gradient(1.5px 1.5px at 94% 72%, #cfe4ff, transparent), radial-gradient(1px 1px at 17% 78%, #fff, transparent), radial-gradient(1.4px 1.4px at 48% 84%, #fff, transparent), radial-gradient(1px 1px at 69% 91%, #ffd9ff, transparent), radial-gradient(1.5px 1.5px at 88% 93%, #fff, transparent), radial-gradient(1px 1px at 4% 92%, #cfe4ff, transparent); }
+
+  .bgx[data-bg="holo"] { --b: #e9c8ff; background: linear-gradient(120deg, #ffb8e8, #ffe3b8, #fbffb8, #b8ffdc, #b8e8ff, #d4b8ff, #ffb8e8); background-size: 400% 400%; animation: holoShift 14s linear infinite; }
+  .bgx[data-bg="holo"] i:nth-child(1) { width: 170%; height: 38%; left: -35%; top: 22%; border-radius: 0; background: linear-gradient(100deg, transparent, rgba(255,255,255,.8) 50%, transparent); filter: blur(14px); animation: glare 7s ease-in-out infinite; }
+  .bgx[data-bg="holo"] i:nth-child(2) { width: 70%; aspect-ratio: 1; left: -10%; bottom: -6%; background: rgba(255,255,255,.55); filter: blur(50px); animation: drift1 16s ease-in-out infinite alternate; }
+  .bgx[data-bg="holo"] i:nth-child(3) { width: 60%; aspect-ratio: 1; right: -20%; top: -4%; background: rgba(120,200,255,.5); filter: blur(60px); animation: drift3 18s ease-in-out infinite alternate; }
+
+  .bgx[data-bg="synth"] { --b: #3d0a6b; background: linear-gradient(180deg, #14052e 0%, #3a0b6e 40%, #c8208a 68%, #ff8a3d 82%, #2a0840 82.1%, #12031f 100%); }
+  .bgx[data-bg="synth"] i:nth-child(1) { width: 56%; aspect-ratio: 1; left: 22%; bottom: 18%; background: linear-gradient(180deg, #fff27a, #ff9a3c 45%, #ff2e97); filter: drop-shadow(0 0 24px rgba(255,80,160,.8));
+    -webkit-mask-image: repeating-linear-gradient(180deg, #000 0 11px, transparent 11px 15px); mask-image: repeating-linear-gradient(180deg, #000 0 11px, transparent 11px 15px); }
+  .bgx[data-bg="synth"] i:nth-child(2) { left: -50%; right: -50%; bottom: -22%; height: 40%; border-radius: 0; transform-origin: top; transform: perspective(260px) rotateX(58deg);
+    background: linear-gradient(rgba(255,78,205,.9) 1.5px, transparent 1.5px) 0 0 / 100% 38px, linear-gradient(90deg, rgba(255,78,205,.9) 1.5px, transparent 1.5px) 0 0 / 54px 100%; animation: gridMove 2.4s linear infinite; }
+  .bgx[data-bg="synth"] i:nth-child(3) { left: 0; right: 0; bottom: 16%; height: 5%; border-radius: 0; background: linear-gradient(transparent, rgba(255,140,210,.65), transparent); filter: blur(7px); }
+
+  /* ---------- skins de la barra: colores y efectos propios (los destellos y partículas los dibuja el juego en el canvas) ---------- */
+  #paddle { overflow: hidden; }
+  #paddle::before, #paddle::after, .pvbar::before, .pvbar::after { content: ""; position: absolute; pointer-events: none; }
+  .pvbar { position: relative; overflow: hidden; }
+  @keyframes sheenBar { 0% { transform: translateX(-140%) skewX(-20deg); } 55%, 100% { transform: translateX(380%) skewX(-20deg); } }
+  @keyframes flowBar { to { background-position: 300% 0; } }
+  @keyframes starScroll { to { background-position: -120px 0; } }
+  @keyframes fireGlow { from { box-shadow: 0 0 12px #ff8a1f, 0 0 28px rgba(255,80,10,.7), 0 0 52px rgba(255,40,0,.3), 0 6px 12px rgba(120,10,0,.5); } to { box-shadow: 0 0 18px #ffb347, 0 0 40px rgba(255,100,10,.85), 0 0 70px rgba(255,50,0,.45), 0 6px 12px rgba(120,10,0,.5); } }
+  @keyframes neonPulse { from { box-shadow: 0 0 8px #00f0ff, 0 0 22px rgba(0,240,255,.85), 0 0 46px rgba(122,92,255,.5); } to { box-shadow: 0 0 8px #ff2bd6, 0 0 22px rgba(255,43,214,.85), 0 0 46px rgba(122,92,255,.5); } }
+  @keyframes embers { to { background-position: 0 -40px, 0 -40px; } }
+
+  .pvbar.p-clasica { background: #111; box-shadow: 0 4px 8px rgba(0,0,0,.35); }
+  .pvbar.p-clasica::after { inset: 1px 8% auto; height: 28%; border-radius: 999px; background: linear-gradient(rgba(255,255,255,.28), transparent); }
+
+  /* Oro líquido: metal pulido con un destello que lo recorre */
+  #paddle.p-dorada, .pvbar.p-dorada { background: linear-gradient(180deg, #fff6c2 0%, #ffd95a 26%, #e3a51d 62%, #8a5a08 100%);
+    box-shadow: 0 0 14px rgba(255,205,70,.85), 0 0 34px rgba(255,170,30,.4), 0 6px 12px rgba(110,70,0,.4), inset 0 1px 0 rgba(255,255,255,.95); }
+  #paddle.p-dorada::after, .pvbar.p-dorada::after { top: 0; bottom: 0; left: 0; width: 34%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.95), transparent); animation: sheenBar 2.3s ease-in-out infinite; }
+  #paddle.p-dorada::before, .pvbar.p-dorada::before { inset: 0 0 55% 0; background: linear-gradient(rgba(255,255,255,.55), transparent); }
+
+  /* Llamarada: brasas que suben y brillo que parpadea como fuego */
+  #paddle.p-fuego, .pvbar.p-fuego { background: linear-gradient(180deg, #fff3a0 0%, #ffb020 30%, #ff5a12 68%, #b80f06 100%); animation: fireGlow .45s ease-in-out infinite alternate; }
+  #paddle.p-fuego::before, .pvbar.p-fuego::before { inset: 0; background: radial-gradient(circle at 20% 100%, rgba(255,255,200,.9) 0 2px, transparent 3px), radial-gradient(circle at 55% 100%, rgba(255,240,170,.9) 0 2px, transparent 3px), radial-gradient(circle at 85% 100%, rgba(255,255,200,.9) 0 2px, transparent 3px); background-size: 40px 14px, 56px 14px; animation: embers 1.1s linear infinite; }
+  #paddle.p-fuego::after, .pvbar.p-fuego::after { top: 0; bottom: 0; left: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,190,.8), transparent); animation: sheenBar 1.6s linear infinite; }
+
+  /* Cristal: vidrio con brillo y reflejos de prisma */
+  #paddle.p-cristal, .pvbar.p-cristal { background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(195,228,255,.58) 55%, rgba(150,200,255,.78)); border: 1px solid rgba(255,255,255,.95);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    box-shadow: inset 0 1px 0 #fff, inset 0 -3px 6px rgba(120,170,255,.5), 0 0 18px rgba(140,200,255,.85), 0 0 40px rgba(170,150,255,.35), 0 6px 14px rgba(70,130,220,.4); }
+  #paddle.p-cristal::after, .pvbar.p-cristal::after { top: 0; bottom: 0; left: 0; width: 55%; mix-blend-mode: screen; background: linear-gradient(100deg, transparent 5%, rgba(255,120,200,.55) 28%, rgba(120,220,255,.7) 50%, rgba(255,240,140,.55) 72%, transparent 95%); animation: sheenBar 3.4s linear infinite; }
+
+  /* Neón: tubo de luz que fluye entre cian, violeta y magenta */
+  #paddle.p-neon, .pvbar.p-neon { background: linear-gradient(90deg, #00f0ff, #7a5cff, #ff2bd6, #00f0ff, #7a5cff); background-size: 300% 100%; animation: flowBar 3.2s linear infinite, neonPulse 1.5s ease-in-out infinite alternate; }
+  #paddle.p-neon::after, .pvbar.p-neon::after { left: 5%; right: 5%; top: 30%; height: 34%; border-radius: 999px; background: rgba(255,255,255,.9); filter: blur(.6px); box-shadow: 0 0 6px #fff; }
+
+  /* Galaxia: nebulosa con estrellas que se desplazan */
+  #paddle.p-galaxia, .pvbar.p-galaxia { background: radial-gradient(60% 150% at 15% 50%, rgba(255,90,200,.85), transparent 62%), radial-gradient(60% 150% at 85% 50%, rgba(70,130,255,.95), transparent 62%), linear-gradient(90deg, #1d0b4d, #46158f 50%, #1d0b4d);
+    box-shadow: 0 0 14px rgba(150,100,255,.85), 0 0 34px rgba(90,60,220,.5), 0 6px 12px rgba(10,0,40,.5), inset 0 0 0 1px rgba(200,170,255,.35); }
+  #paddle.p-galaxia::before, .pvbar.p-galaxia::before { inset: 0; background-image: radial-gradient(1.3px 1.3px at 10% 30%, #fff, transparent), radial-gradient(1px 1px at 30% 72%, #cfe4ff, transparent), radial-gradient(1.5px 1.5px at 52% 26%, #fff, transparent), radial-gradient(1px 1px at 72% 66%, #ffd9ff, transparent), radial-gradient(1.3px 1.3px at 90% 36%, #fff, transparent); background-size: 120px 100%; animation: starScroll 4s linear infinite; }
+  #paddle.p-galaxia::after, .pvbar.p-galaxia::after { top: 0; bottom: 0; left: 0; width: 30%; background: linear-gradient(100deg, transparent, rgba(220,200,255,.5), transparent); animation: sheenBar 3.8s ease-in-out infinite; }
+
+  /* Arcoíris: bandas de color que corren con brillo de gelatina */
+  #paddle.p-arcoiris, .pvbar.p-arcoiris { background: linear-gradient(90deg, #ff3b3b, #ff9a1f, #ffe83b, #3be86a, #2bc4ff, #6a5cff, #d84bff, #ff3b3b); background-size: 300% 100%; animation: flowBar 2.2s linear infinite;
+    box-shadow: 0 0 14px rgba(255,255,255,.6), 0 0 32px rgba(180,120,255,.55), 0 6px 12px rgba(0,0,0,.25); }
+  #paddle.p-arcoiris::after, .pvbar.p-arcoiris::after { inset: 0 0 48% 0; background: linear-gradient(rgba(255,255,255,.75), rgba(255,255,255,0)); }
+
+  /* Holográfica: reflejos iridiscentes con destellos */
+  #paddle.p-holo, .pvbar.p-holo { background: linear-gradient(110deg, #ff9ad5, #ffe39a, #9affc1, #9ad5ff, #c29aff, #ff9ad5); background-size: 300% 100%; animation: flowBar 3s linear infinite;
+    box-shadow: 0 0 16px rgba(190,150,255,.85), 0 0 36px rgba(150,200,255,.45), 0 5px 10px rgba(80,40,140,.3), inset 0 1px 0 rgba(255,255,255,.8); }
+  #paddle.p-holo::after, .pvbar.p-holo::after { top: 0; bottom: 0; left: 0; width: 30%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.9), transparent); animation: sheenBar 2.6s ease-in-out infinite; }
+
+  body.dark #paddle.p-clasica { background: #f4f4ff; box-shadow: 0 0 14px rgba(255,255,255,.6), 0 5px 12px rgba(0,0,0,.35); }
+  body.hell #paddle.p-clasica { background: #1a0505; box-shadow: 0 0 14px rgba(255, 90, 30, .85), 0 5px 12px rgba(0,0,0,.35); }
+
+  /* ---------- pelotas: monedas que giran y billetes que revolotean ---------- */
+  .ball { position: absolute; inset: 0; display: grid; place-items: center; }
+  .ball img { width: calc(100% * var(--bw, 1)); max-width: none; height: auto; display: block; -webkit-user-drag: none; will-change: transform; }
+  .ball.spin img { animation: coinSpin 1.6s linear infinite; filter: drop-shadow(0 3px 3px rgba(0,0,0,.28)); }
+  /* destellos: dos estrellitas que aparecen un instante sobre la moneda (la moneda en sí no cambia de brillo) */
+  .ball.spin::before, .ball.spin::after { content: ""; position: absolute; width: 42%; aspect-ratio: 1; pointer-events: none; opacity: 0; z-index: 1;
+    background: radial-gradient(circle, #fff 0 14%, rgba(255,255,255,0) 46%), linear-gradient(90deg, transparent 4%, #fff 50%, transparent 96%) center / 100% 13% no-repeat, linear-gradient(0deg, transparent 4%, #fff 50%, transparent 96%) center / 13% 100% no-repeat;
+    filter: drop-shadow(0 0 2px rgba(255, 184, 40, .95)); animation: destello 2.8s ease-in-out infinite; }
+  .ball.spin::before { top: 6%; right: 8%; }
+  .ball.spin::after { bottom: 12%; left: 6%; animation-delay: 1.4s; }
+  @keyframes destello { 0%, 60%, 100% { opacity: 0; transform: scale(.15) rotate(0deg); } 70%, 78% { opacity: 1; transform: scale(1) rotate(20deg); } 90% { opacity: 0; transform: scale(.4) rotate(45deg); } }
+  .ball.flutter img { animation: flutter .9s ease-in-out infinite; }
+  .ball.emoji { font-size: calc(56px * var(--k, 1)); line-height: 1; animation: spin .75s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes coinSpin { to { transform: rotate(360deg); } }       /* la moneda gira como una rueda, en el sentido del reloj */
+  @keyframes flutter { 0%, 100% { transform: rotate(-11deg) scale(1, 1); } 25% { transform: rotate(3deg) scale(1.05, .8); } 50% { transform: rotate(12deg) scale(1, 1); } 75% { transform: rotate(-4deg) scale(1.05, .8); } }
+
+  /* ---------- aviso «Monedas dobles» ---------- */
+  #mult { position: absolute; left: 50%; top: 36%; z-index: 4; transform: translate(-50%, -50%) scale(.3); opacity: 0; pointer-events: none; text-align: center; font-weight: 900; line-height: 1; white-space: nowrap; }
+  #mult.show { animation: multIn 2.6s cubic-bezier(.2, 1.15, .3, 1) forwards; }
+  #mult b { display: block; font-size: min(30vw, 130px); letter-spacing: -.02em; background: linear-gradient(180deg, #fff7a8, #ffc928 48%, #ff7a18); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 0 rgba(120,50,0,.65)) drop-shadow(0 0 22px rgba(255,190,40,.9)); }
+  #mult span { display: block; margin-top: 4px; font-size: clamp(15px, 4.6vw, 22px); letter-spacing: .14em; text-transform: uppercase; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.55), 0 0 14px rgba(255,170,30,.8); }
+  #mult small { display: block; margin-top: 6px; font-size: clamp(12px, 3.6vw, 15px); font-weight: 800; color: #fff; opacity: .95; text-shadow: 0 1px 8px rgba(0,0,0,.6); letter-spacing: .02em; }
+  @keyframes multIn { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(-8deg); } 13% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(3deg); } 22% { transform: translate(-50%, -50%) scale(1) rotate(0); } 76% { opacity: 1; transform: translate(-50%, -53%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -75%) scale(1.12); } }
+  .meWrap { position: relative; }
+  .mbadge { position: absolute; left: 50%; top: calc(100% - 2px); transform: translateX(-50%); font-size: 11px; font-weight: 900; letter-spacing: .04em; color: #5a3200; padding: 1px 7px; border-radius: 999px; background: linear-gradient(180deg, #fff3a0, #ffc928); box-shadow: 0 1px 4px rgba(0,0,0,.25); pointer-events: none; white-space: nowrap; }
+  .mbadge[hidden] { display: none; }
+  .mbadge.pulse { animation: badgePulse .5s ease-out; }
+  @keyframes badgePulse { 40% { transform: translateX(-50%) scale(1.5); } }
+  .pop.gold { color: #b87400; text-shadow: 0 1px 0 #fff6b0; }
+  body.hell .pop.gold, body.dark .pop.gold { color: #ffd54a; text-shadow: none; }
+
+  /* ---------- billetera y tienda ---------- */
+  .coins { display: inline-flex; align-items: center; gap: 7px; font-weight: 800; font-size: 17px; background: #fff; border: 1px solid var(--line); padding: 5px 14px 5px 7px; border-radius: 999px; font-variant-numeric: tabular-nums; box-shadow: 0 2px 8px rgba(80,70,20,.1); }
+  .coins .ci { height: 26px; width: auto; max-width: 46px; object-fit: contain; display: block; }      /* es la pelota que llevas puesta: moneda o billete */
+  .coins[hidden] { display: none; }
+  .coinsline { font-size: 24px; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,.3); }
+  #shop { justify-content: flex-start; gap: 8px; overflow: hidden; }
+  #shop::before, #shop::after { display: none; }
+  .shophead { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: min(100%, 460px); }
+  .shophead h1 { font-size: 26px; margin: 0; }
+  #shop .seg { width: min(100%, 460px); }
+  #shop .seg button { font-size: 13px; padding: 9px 2px; }
+  #shopGrid { width: min(100%, 460px); flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; padding: 4px 3px 10px; }
+  .item { background: #fffdf0; border: 1px solid var(--line); border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+  .item.on { border-color: #111; box-shadow: 0 0 0 2px #111; }
+  .item .pv { position: relative; height: 96px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; }
+  .item .pv:not(.bgx) { background: #f3efc8; }
+  .item .pv.bgx { position: relative; inset: auto; }
+  .item .pv.padpv { background: linear-gradient(135deg, #2b2646, #120e22); }
+  .item .pvbar { width: 74%; height: 16px; border-radius: 999px; }
+  .item .pv .ball { position: relative; inset: auto; width: 62px; height: 62px; }
+  .item .pv.chpv { background: radial-gradient(circle at 50% 40%, #fffbe0, #f3e9a8); }
+  .item .pv.chpv img { position: absolute; left: 50%; top: 50%; height: 84px; width: auto; transform: translate(-50%, -50%); animation: 5s ease-in-out infinite; }
+  .item .pv.chpv img:first-child { animation-name: chSwapA; }
+  .item .pv.chpv img:last-child { animation-name: chSwapB; }
+  .item .pv.chpv.one img { animation: none; opacity: 1; }
+  @keyframes chSwapA { 0%, 38% { opacity: 1; } 50%, 88% { opacity: 0; } 100% { opacity: 1; } }
+  @keyframes chSwapB { 0%, 38% { opacity: 0; } 50%, 88% { opacity: 1; } 100% { opacity: 0; } }
+  .item .nm { font-weight: 800; font-size: 15px; line-height: 1.15; }
+  .item .nt { font-size: 12px; color: #8a8658; min-height: 2.3em; line-height: 1.2; }
+  .item button { border: 0; border-radius: 999px; font: inherit; font-weight: 800; font-size: 14px; padding: 9px 10px; cursor: pointer; background: #111; color: #fff; }
+  .item button.eq { background: transparent; color: #111; border: 2px solid #111; padding: 7px 10px; }
+  .item button.cur { background: #e8e4b8; color: #6b6840; cursor: default; }
+  .item button.lock { background: #ffd84a; color: #111; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .item button.lock img { width: 18px; height: 18px; object-fit: contain; }
+  .item button.lock.no { background: #eee9c3; color: #8a8658; }
+  #shopMsg { min-height: 1.3em; max-width: 36ch; }
+  #shopMsg.ok { color: var(--win, #2f8f4e); }
+  #shopBack { margin-top: 2px; }
+
+  /* ---------- menú: ordenado y limpio ---------- */
+  #menu { justify-content: flex-start; gap: 0; background: radial-gradient(120% 70% at 50% 0%, rgba(255,236,150,.95), rgba(255,247,194,.98) 60%); }
+  #menu::before, #menu::after { display: none; }
+  #menu .topbar { width: min(100%, 380px); min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #menu .topbar[hidden] { display: none; }
+  #menu .topbar .coins { margin-left: auto; }
+  #menu .mid { width: min(100%, 360px); display: flex; flex-direction: column; align-items: center; gap: 12px; margin: auto 0; padding: 8px 0; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; max-width: 58%; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px 4px 4px; font-weight: 800; font-size: 15px; box-shadow: 0 2px 8px rgba(80,70,20,.1); }
+  .chip[hidden] { display: none; }
+  .chip .uav { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #4a4a4a, #151515); color: #fff; display: grid; place-items: center; font-size: 15px; font-weight: 800; flex: none; }
+  .chip #hello { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #menu .stage { --st: clamp(150px, 25vh, 205px); position: relative; display: grid; place-items: center; flex: none; width: var(--st); height: var(--st); border-radius: 50%; background: radial-gradient(circle at 50% 40%, #fffef0 0%, #fff1a8 55%, rgba(255,224,110,.55) 100%); box-shadow: 0 0 0 1px rgba(150,130,40,.14), 0 14px 34px rgba(150,120,20,.22), inset 0 -10px 24px rgba(255,190,60,.25); }
+  #menu .stage .hero { height: calc(var(--st) * .8); animation: float 2.4s ease-in-out infinite; filter: drop-shadow(0 8px 8px rgba(0,0,0,.16)); }
+  #menu .ttl { margin: 0; font-size: clamp(26px, 8vw, 32px); line-height: 1.08; font-weight: 900; letter-spacing: -.01em; }
+  #menu .ttl em { display: block; font-style: normal; background: linear-gradient(90deg, #111, #5b3b00 70%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+  #menu .tag { margin: 0; max-width: 28ch; font-size: 14.5px; line-height: 1.4; color: #6b6840; }
+  #menu .rec { min-height: 28px; display: flex; align-items: center; justify-content: center; font-size: 13.5px; font-weight: 800; color: #7a5a00; }
+  #menu .rec:not(:empty) { background: rgba(255,255,255,.7); border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; }
+  #menu .actions { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+  #menu .actions[hidden], #menu .duo[hidden] { display: none; }
+  #menu .btn.play { margin: 0; width: 100%; padding: 17px 20px; border-radius: 18px; font-size: 20px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(180deg, #2a2a2a, #0c0c0c); box-shadow: 0 8px 0 #000, 0 14px 22px rgba(0,0,0,.28); }
+  #menu .btn.play:active { transform: translateY(4px); box-shadow: 0 4px 0 #000, 0 8px 14px rgba(0,0,0,.28); }
+  #menu .btn.play[hidden] { display: none; }
+  #menu .duo { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; margin-top: 8px; }
+  #menu .tile { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 16px; padding: 13px 8px; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 3px 10px rgba(80,70,20,.1); transition: transform .1s; }
+  #menu .tile:active { transform: scale(.97); }
+  #menu .tile[hidden] { display: none; }
+  #menu .tile span { font-size: 19px; line-height: 1; }
+  #menu .foot { display: flex; gap: 14px; align-items: center; justify-content: center; min-height: 36px; margin-top: 6px; }
+  #menu .foot .link { font-size: 13.5px; }
+  #menu .authbox { margin-top: 2px; }
+  #menu #name { margin-top: 0; border-radius: 16px; }
+
+  @media (max-height: 700px) {
+    #menu .mid { gap: 8px; }
+    #menu .stage { --st: clamp(110px, 21vh, 150px); }
+    #menu .tag { display: none; }
+    #menu .btn.play { padding: 14px 18px; font-size: 18px; }
+    #menu .tile { padding: 11px 6px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bgx, .bgx i, .bgx::before, .bgx::after, #paddle, #paddle::before, #paddle::after, .pvbar, .pvbar::before, .pvbar::after { animation: none !important; }
+    #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .hero, .rain span, #rotate .ico, #mult.show, .item .pv.chpv img { animation: none; }
+    #arena.jolt { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div id="theme" class="bgx" data-bg="clasico" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="hellfx" aria-hidden="true"></div>
+<div id="app">
+  <header>
+    <button id="close" aria-label="Salir">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 4 20 20M20 4 4 20"/></svg>
+    </button>
+    <div class="meWrap"><div class="num" id="meNum">000</div><div class="mbadge" id="mbadge" hidden>×2</div></div>
+    <div class="avatars">
+      <div class="avatar me" id="meAv"><span class="crown">👑</span><span id="meInit">😎</span></div>
+      <div class="avatar bot" id="botAv"><span class="crown">👑</span><span id="botFace">🦆</span></div>
+    </div>
+    <div class="num" id="botNum">000</div>
+  </header>
+
+  <main id="arena">
+    <div id="big"></div>
+    <canvas id="fx"></canvas>
+    <div id="duck" aria-hidden="true" data-face="0"><div class="rig" id="rig"></div><div id="bubble"></div></div>
+    <div id="target"><div class="ball"></div></div>
+    <div id="mult" aria-hidden="true"><b></b><span></span><small></small></div>
+    <div id="paddle" aria-hidden="true"></div>
+
+    <!-- inicio -->
+    <section class="screen show" id="menu">
+      <div class="topbar" id="topbar">
+        <div class="chip" id="userBox" hidden><span class="uav" id="userAv">😎</span><span id="hello"></span></div>
+        <div class="coins" id="coinChip" hidden><img class="ci" src="skins/peso1.webp" alt=""><span id="coinNum">$0</span></div>
+      </div>
+      <div class="mid">
+        <div class="stage"><span class="hero" id="heroBox"><span style="font-size:84px">🦆</span></span></div>
+        <h1 class="ttl" id="ttl">Gánale al <em id="ttlName">Tío Pato</em></h1>
+        <p class="tag" id="tagline">Rebota la moneda con tu barra y junta pesos. El Tío Pato siempre te la devuelve.</p>
+        <div class="rec" id="bestMenu"></div>
+        <!-- con cuentas: inicia sesión o crea tu cuenta (nombre + contraseña) -->
+        <form class="authbox" id="authForm" hidden autocomplete="on" novalidate>
+          <div class="seg" role="tablist"><button type="button" id="tabIn" class="on" role="tab">Entrar</button><button type="button" id="tabUp" role="tab">Crear cuenta</button></div>
+          <input class="field" id="acct" name="username" type="text" maxlength="16" placeholder="Tu nombre" autocomplete="username" autocapitalize="words" spellcheck="false" aria-label="Tu nombre">
+          <div class="pw"><input class="field" id="pass" name="password" type="password" minlength="6" maxlength="64" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña"><button type="button" id="eye" aria-label="Mostrar contraseña">👁</button></div>
+          <div class="status err" id="authMsg" role="alert"></div>
+          <button class="btn" id="authGo" type="submit">Entrar</button>
+        </form>
+        <!-- sin cuentas (modo local): solo el nombre -->
+        <input id="name" type="text" maxlength="16" placeholder="Tu nombre" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Tu nombre">
+        <div class="actions">
+          <button class="btn play" id="play"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>Jugar</button>
+          <div class="duo"><button class="tile" id="openShop"><span>🛍️</span>Tienda</button><button class="tile" id="openBoard"><span>🏆</span>Marcadores</button></div>
+        </div>
+      </div>
+      <div class="foot"><button class="link" id="install" hidden>📲 Instalar app</button><button class="link" id="logout" hidden>Cerrar sesión</button></div>
+    </section>
+
+    <!-- final de partida -->
+    <section class="screen" id="result">
+      <div class="rain" id="rain"></div>
+      <span class="hero" id="heroEnd"></span>
+      <div class="verdict" id="verdict">Ganó el Tío Pato</div>
+      <div class="final"><span id="finalScore">0</span> <small id="finalLabel">rebotes</small></div>
+      <div class="sub" id="finalSub"></div>
+      <div class="coinsline" id="coinsLine"></div>
+      <div class="status" id="saveStatus"></div>
+      <button class="link" id="diagBtn" hidden>Ver detalle técnico</button>
+      <pre id="diagOut" hidden></pre>
+      <div class="best" id="bestResult"></div>
+      <button class="btn" id="again"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>Jugar de nuevo</button>
+      <button class="btn ghost" id="openShop2">🛍️ Gastar mis pesos</button>
+      <button class="btn ghost" id="openBoard2">🏆 Ver marcadores</button>
+      <button class="link" id="backResult">Volver</button>
+    </section>
+
+    <!-- tienda -->
+    <section class="screen" id="shop">
+      <div class="shophead"><h1>🛍️ Tienda</h1><div class="coins"><img class="ci" src="skins/peso1.webp" alt=""><span id="shopBal">$0</span></div></div>
+      <div class="seg" role="tablist"><button type="button" id="tabCh" class="on">Personajes</button><button type="button" id="tabBg">Fondos</button><button type="button" id="tabPad">Barras</button><button type="button" id="tabBall">Pelotas</button></div>
+      <div class="status" id="shopMsg" role="status"></div>
+      <div id="shopGrid"></div>
+      <button class="btn ghost" id="shopBack">Volver</button>
+    </section>
+
+    <!-- marcadores -->
+    <section class="screen" id="board">
+      <h1>🏆 Marcadores</h1>
+      <div class="board-note" id="boardNote"></div>
+      <ul id="list" aria-live="polite"></ul>
+      <button class="btn ghost" id="moreBoard" hidden>Ver más jugadores</button>
+      <button class="btn ghost" id="backBoard">Volver</button>
+    </section>
+  </main>
+</div>
+
+<div id="rotate" hidden><span class="ico">📱</span><span>Gira tu celular a vertical para jugar</span></div>
+<div class="sheet" id="sheet" hidden>
+  <div class="card" role="dialog" aria-labelledby="sheetTitle">
+    <h2 id="sheetTitle">Instala la app</h2>
+    <ol id="sheetSteps"></ol>
+    <button class="btn" id="sheetOk">Entendido</button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="tienda.js"></script>
+<script>
+(() => {
+  // Medidas de referencia (celular de 390×790 útiles). Todo se escala con K para que el juego se vea igual en cualquier celular.
+  let K = 1, VS = 1;              // K: escala de tamaños · VS: escala de velocidades (según el alto)
+  let SIZE = 56;                  // tamaño del emoji (px)
+  let R = 24;                     // radio de choque del billete
+  let PADDLE_H = 16, PADDLE_BOTTOM = 56;
+  let DUCK_TOP = 26;              // el Pato queda pegado a lo más alto de la pantalla
+  let DUCK_BOTTOM = 176;          // borde inferior del Tío Pato: ahí devuelve el billete, siempre
+  let DUCK_CY = 125;              // centro del cuerpo del Pato (para el fuego)
+  let SAFE_T = 0, SAFE_B = 0;     // márgenes seguros (notch / barra de gestos)
+  const ECO = (window.TIENDA && window.TIENDA.eco) || { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500 };
+  const TIER = ECO.tier, H_MAX = ECO.hMax;                  // cada TIER rebotes sube lo que vale cada rebote · tope de rebotes que cuentan por partida
+  // Del rebote 1 al 99 el juego es amable y ágil; desde el 100 sube de verdad: la pelota acelera más y la barra se achica más rápido.
+  const SPEED0 = 800, STEP_LO = 4, STEP_HI = 16, SPEED_MAX = 1800;           // px/s
+  const PADDLE_START = .42, SHRINK_LO = .003, SHRINK_HI = .0095, SHRINK_MIN = .28;   // la barra: 100% → 70% en el rebote 100 → 28%
+  const rateAt = n => Math.floor(n / TIER) + 1;             // pesos que vale el rebote número n ($1 hasta el 99, $2 del 100 al 199…)
+  const pesosFor = h => { const t = Math.floor(h / TIER); return h + TIER * t * (t - 1) / 2 + t * (h - TIER * t + 1); };   // pesos de una partida de h rebotes
+  let gameRate = 1;                                         // pesos por punto de la pelota con la que empezó la partida (ball[].rate)
+  const money = n => '$' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  // Fases del Tío Pato, según los rebotes: ángel amistoso → desafiante → se enoja y se vuelve diablo
+  // En cuanto el Pato se enoja (55) pierde la aureola y las alas de ángel y pasa a su piel de diablo.
+  const P_CHALLENGE = 30, P_ANGRY = 55, P_DEVIL = 60, P_HELL = 70;
+  const TOP_N = 100;              // cuántos jugadores muestra el marcador
+  const REFRESH_MS = 15000;       // el marcador se actualiza solo mientras está abierto
+  const STORE_KEY = 'gana-al-tio-pato-v2';
+  // El fondo cambia cada 10 rebotes (el primero a los 5): del cielo amarillo al infierno, que empieza justo cuando el Pato se enoja
+  const PALETTE = ['#fff6c0', '#ffec5c', '#ffb978', '#ffa64f', '#faa3fe', '#f478fd', '#c2312f', '#8a1620', '#5a0e14', '#3a070b', '#2a0508'];
+
+  const DB = String(window.DINERO_DB_URL || '').trim().replace(/\/+$/, '');
+  const ONLINE = DB !== '';
+  const API_KEY = String(window.FIREBASE_API_KEY || '').trim();     // clave web de Firebase (no es secreta): activa las cuentas
+  const AUTH = ONLINE && API_KEY !== '';                           // con cuentas: nombre + contraseña; si no, modo local
+  const ART = String(window.PATO_DIR || '').trim();                // carpeta con el arte del Tío Pato ('' = usa un emoji)
+  const HAS_ART = ART !== '';
+
+  const $ = id => document.getElementById(id);
+  const app = $('app'), arena = $('arena'), target = $('target'), big = $('big'), paddle = $('paddle'), duck = $('duck'), rig = $('rig');
+  const meNum = $('meNum'), botNum = $('botNum'), meAv = $('meAv'), botAv = $('botAv');
+  const nameInput = $('name');
+  const screens = { menu: $('menu'), result: $('result'), board: $('board'), shop: $('shop') };
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  let state = 'menu';            // menu | countdown | play | over
+  let hits = 0, elapsed = 0;     // rebotes (el puntaje) · segundos jugados
+  let leaderBest = 0;            // mayor cantidad de rebotes: la del #1 del marcador o la tuya
+  let W = 0, H = 0;
+  let x = 0, y = 0, vx = 0, vy = 0, last = 0;
+  let px = 0, pw = 140, basePw = 140, keyDir = 0, dragX = null;
+  let duckX = 0, duckShow = 0, prevShow = 0, bubbleTimer = null, bubbleW = 0, lastFace = -1, lastSay = '';
+  let cdTimer = null, audio = null;
+
+  /* ---------- fases del Tío Pato (todo depende de los rebotes) ---------- */
+  const devilK = () => (hits >= P_ANGRY ? 1 : 0);                              // al enojarse: fuera aureola y alas de ángel, entra la piel de diablo (el cambio se suaviza con CSS)
+  const angelK = () => 1 - devilK();
+  const angerK = () => clamp((hits - P_ANGRY) / 25, 0, 1);                     // se enoja de forma progresiva desde el rebote 55
+  const fireK = () => clamp((hits - 58) / 22, 0, 1);                           // el fuego crece desde el 58
+  const faceIdx = () => hits < P_CHALLENGE ? 0 : hits < P_ANGRY ? 1 : hits < P_HELL - 2 ? 2 : 3;
+  const phaseName = () => hits < P_CHALLENGE ? 'ángel 😇' : hits < P_ANGRY ? 'desafiante 😏' : hits < P_DEVIL ? 'enojado 😡' : 'diablo 😈';
+  const level = () => Math.floor(hits / 20);                                   // afina la puntería del Pato
+  const paddleTop = () => H - PADDLE_BOTTOM - PADDLE_H;
+  const shrink = () => hits <= TIER ? 1 - hits * SHRINK_LO : Math.max(SHRINK_MIN, 1 - TIER * SHRINK_LO - (hits - TIER) * SHRINK_HI);   // factor sobre el ancho inicial
+  const ballSpeed = () => Math.min(hits <= TIER ? SPEED0 + hits * STEP_LO : SPEED0 + TIER * STEP_LO + (hits - TIER) * STEP_HI, SPEED_MAX) * VS;
+
+  /* ---------- datos del jugador (solo en este dispositivo) ---------- */
+  function newId() {
+    const a = new Uint8Array(10);
+    (window.crypto || { getRandomValues: v => v.map(() => Math.random() * 256) }).getRandomValues(a);
+    return Array.from(a, b => (b % 36).toString(36)).join('') + Date.now().toString(36);
+  }
+  let player = { id: '', name: '', best: 0, dirty: false };       // best: mayor cantidad de rebotes
+  try { Object.assign(player, JSON.parse(localStorage.getItem(STORE_KEY) || '{}')); } catch (e) {}
+  function savePlayer() { try { localStorage.setItem(STORE_KEY, JSON.stringify(player)); } catch (e) {} }
+
+  /* ---------- cuenta (Firebase Authentication por REST): la sesión queda guardada en el teléfono ---------- */
+  const AUTH_KEY = 'gana-al-tio-pato-sesion';
+  const MAIL = '@tio-pato.invalid';                                // el nombre se convierte en un "correo" interno; nunca se envía nada
+  let session = null;                                              // { uid, name, key, id (token), refresh, exp }
+  if (AUTH) { try { session = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) {} if (!session || !session.uid || !session.refresh) session = null; }
+  const saveSession = () => { try { if (session) localStorage.setItem(AUTH_KEY, JSON.stringify(session)); else localStorage.removeItem(AUTH_KEY); } catch (e) {} };
+  if (AUTH) {
+    if (!session) player = { id: '', name: '', best: 0, dirty: false };
+    else if (player.id !== session.uid) player = { id: session.uid, name: session.name, best: 0, dirty: false };
+  } else if (!/^[a-z0-9]{12,32}$/.test(player.id)) player.id = newId();
+  savePlayer();
+  // "Matías Pérez" → "matias.perez": el mismo nombre (sin importar mayúsculas ni tildes) es siempre la misma cuenta
+  const acctKey = n => String(n).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 24);
+
+  const cleanName = s => String(s || '').replace(/\s+/g, ' ').trim().slice(0, 16);
+  const pad = n => String(n).padStart(3, '0');
+  const fmtClock = s => { s = Math.floor(s); return s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} min` : `${s} s`; };
+
+  // Sonda para leer los márgenes seguros del celular (notch, barra de gestos)
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+  document.body.appendChild(probe);
+  let paused = false;                                            // el juego es vertical: en horizontal se pausa
+  function measure() {
+    W = arena.clientWidth; H = arena.clientHeight;
+    const cs = getComputedStyle(probe);
+    SAFE_T = parseFloat(cs.paddingTop) || 0; SAFE_B = parseFloat(cs.paddingBottom) || 0;
+    const usable = Math.max(300, H - SAFE_T - SAFE_B);
+    K = clamp(Math.min(W / 390, usable / 790), .6, 1.3);
+    VS = clamp((usable - 280 * K) / 510, .5, 1.5);          // la pelota tarda lo mismo en cruzar la pantalla en cualquier celular
+    SIZE = 56 * K; R = 24 * K; PADDLE_H = 16 * K; PADDLE_BOTTOM = 40 * K + SAFE_B;
+    DUCK_TOP = SAFE_T + 26 * K; DUCK_BOTTOM = DUCK_TOP + 150 * K; DUCK_CY = DUCK_TOP + 99 * K;
+    app.style.setProperty('--k', K.toFixed(3)); duck.style.setProperty('--duck-top', DUCK_TOP.toFixed(1) + 'px');
+    paused = innerWidth > innerHeight && innerHeight < 520;
+    sizeFx();
+  }
+  const refit = () => { measure(); layout(); draw(); };
+  addEventListener('resize', refit);
+  addEventListener('orientationchange', () => setTimeout(refit, 250));
+  const setTheme = c => { try { $('themeColor').setAttribute('content', c); } catch (e) {} };   // color de la barra del navegador
+  let wake = null;                                               // mantiene la pantalla encendida mientras juegas
+  async function lockScreen() { try { if ('wakeLock' in navigator && !wake) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) {} }
+  function unlockScreen() { try { if (wake) wake.release(); } catch (e) {} wake = null; }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (state === 'play' || state === 'countdown')) lockScreen(); });
+
+  /* ---------- sonido (sintetizado, sin archivos) ---------- */
+  function tone(freq, dur = .07, type = 'triangle', vol = .12, to = null) {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === 'suspended') audio.resume();
+      const t = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+      o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+  const blip = (f, d) => tone(f, d);
+  function quack() {                                             // "cuac": agudo y amable de ángel → grave y ronco de diablo
+    const m = clamp(hits / P_HELL, 0, 1);
+    tone(520 - m * 300, .13, 'sawtooth', .09, 300 - m * 190);
+    setTimeout(() => tone(420 - m * 280, .09, 'square', .05, 240 - m * 160), 70);
+  }
+
+  /* ---------- efectos: estela, partículas y fuego ---------- */
+  const fx = $('fx'), cx = fx.getContext('2d');
+  let dpr = 1; const trail = [], parts = [], flames = []; let fireAcc = 0;
+  // Efectos propios de cada barra: partículas que salen de ella y un anillo de luz en cada rebote.
+  const pfx = [], rings = []; let pfxAcc = 0, fxT = 0;
+  const RAINBOW = ['#ff3b3b', '#ff9a1f', '#ffe83b', '#3be86a', '#2bc4ff', '#6a5cff', '#d84bff'];
+  const PAD_FX = {
+    dorada:   { cols: ['#fff6c2', '#ffd95a', '#ffb81c'], ring: '#ffd95a', rate: 16, m: 'star' },
+    fuego:    { cols: ['#fff3a0', '#ff9a1f', '#ff4a0e'], ring: '#ff7a1f', rate: 70, m: 'flame' },
+    cristal:  { cols: ['#8fc8ff', '#ffffff', '#c2a8ff'], ring: '#8fc8ff', rate: 12, m: 'star' },
+    neon:     { cols: ['#00f0ff', '#7a5cff', '#ff2bd6'], ring: '#00f0ff', rate: 22, m: 'glow' },
+    galaxia:  { cols: ['#8f6bff', '#ffffff', '#5d94ff', '#ff6fcf'], ring: '#8f6bff', rate: 26, m: 'mix' },
+    arcoiris: { cols: null, ring: '#ffe83b', rate: 34, m: 'glow' },
+    holo:     { cols: ['#ff7ac0', '#ffd070', '#6fe8a8', '#7ac4ff', '#b48aff'], ring: '#b48aff', rate: 18, m: 'star' }
+  };
+  const hue = h => { const f = n => { const k = (n + h / 30) % 12; return Math.round(255 * (.6 - .4 * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0'); }; return '#' + f(0) + f(8) + f(4); };   // color del arcoíris (hex)
+  function paddleFx(dt) {
+    const id = wallet.eq.pad, f = PAD_FX[id]; fxT += dt;
+    const top = paddleTop(), left = px - pw / 2;
+    if (f && pfx.length < 170) {
+      pfxAcc += f.rate * dt;
+      while (pfxAcc >= 1) {
+        pfxAcc--;
+        const ex = left + Math.random() * pw, ey = top + PADDLE_H * (.1 + Math.random() * .5);
+        const c = f.cols ? f.cols[Math.floor(Math.random() * f.cols.length)] : hue((fxT * 160 + Math.random() * 140) % 360);
+        const m = f.m === 'mix' ? (Math.random() < .5 ? 'star' : 'dot') : f.m;
+        if (m === 'flame') pfx.push({ x: ex, y: ey, vx: (Math.random() - .5) * 30, vy: -(70 + Math.random() * 110), life: 1, d: 1.3 + Math.random() * 1.1, s: 7 + Math.random() * 9, c, m: 'glow' });
+        else if (m === 'glow') pfx.push({ x: ex, y: top + PADDLE_H / 2, vx: (Math.random() - .5) * 44, vy: -(30 + Math.random() * 80), life: 1, d: 1.3 + Math.random(), s: 5 + Math.random() * 6, c, m });
+        else pfx.push({ x: ex, y: ey - 2, vx: (Math.random() - .5) * 20, vy: -(10 + Math.random() * 44), life: 1, d: 1 + Math.random() * 1.1, s: m === 'dot' ? 1.4 + Math.random() * 2.2 : 3 + Math.random() * 4, c, m });
+      }
+    }
+    const dark = document.body.classList.contains('hell') || document.body.classList.contains('dark');   // sobre fondos oscuros la luz se suma; sobre claros se pinta normal
+    cx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+    for (let i = pfx.length - 1; i >= 0; i--) {
+      const p = pfx[i]; p.life -= dt * p.d;
+      if (p.life <= 0) { pfx.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      const a = Math.min(1, p.life * 1.5);
+      if (p.m === 'glow') {
+        const r = p.s * (.6 + .8 * p.life), g = cx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+        g.addColorStop(0, p.c); g.addColorStop(1, p.c + '00');
+        cx.globalAlpha = a * .85; cx.fillStyle = g; cx.beginPath(); cx.arc(p.x, p.y, r, 0, 6.283); cx.fill();
+      } else if (p.m === 'star') {
+        const r = p.s * (.55 + .45 * Math.abs(Math.sin(p.life * 13 + i))) * 1.4;
+        cx.globalAlpha = a; cx.fillStyle = p.c; cx.beginPath();
+        cx.moveTo(p.x, p.y - r * 2); cx.quadraticCurveTo(p.x, p.y, p.x + r * 2, p.y); cx.quadraticCurveTo(p.x, p.y, p.x, p.y + r * 2);
+        cx.quadraticCurveTo(p.x, p.y, p.x - r * 2, p.y); cx.quadraticCurveTo(p.x, p.y, p.x, p.y - r * 2); cx.fill();
+      } else { cx.globalAlpha = a; cx.fillStyle = p.c; cx.beginPath(); cx.arc(p.x, p.y, p.s, 0, 6.283); cx.fill(); }
+    }
+    for (let i = rings.length - 1; i >= 0; i--) {               // anillo de luz del rebote
+      const g = rings[i]; g.life -= dt * 2.4;
+      if (g.life <= 0) { rings.splice(i, 1); continue; }
+      const r = 10 + (1 - g.life) * 90;
+      cx.globalAlpha = g.life * .8; cx.strokeStyle = g.c; cx.lineWidth = 1.5 + g.life * 4;
+      cx.beginPath(); cx.ellipse(g.x, g.y, r * 1.5, r * .45, 0, 0, 6.283); cx.stroke();
+    }
+    cx.globalCompositeOperation = 'source-over'; cx.globalAlpha = 1;
+  }
+  function padBurst(bx, by) {                                    // chispas del rebote con los colores de la barra
+    const f = PAD_FX[wallet.eq.pad];
+    if (f) { burst(bx, by, 12, f.cols || RAINBOW, 290, true); rings.push({ x: bx, y: by + PADDLE_H / 2, life: 1, c: f.ring }); }
+    else burst(bx, by, 8, devilK() > .5 ? ['#ff9a2e', '#ff3b1f', '#ffe08a'] : ['#ffd54a', '#fff', '#ffb300'], 260, true);
+  }
+
+  function sizeFx() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    fx.width = Math.round(W * dpr); fx.height = Math.round(H * dpr);
+    fx.style.width = W + 'px'; fx.style.height = H + 'px';
+  }
+  function burst(bx, by, n, colors, speed, up = false) {
+    for (let i = 0; i < n; i++) {
+      const a = up ? -Math.PI * (.15 + Math.random() * .7) : Math.random() * Math.PI * 2, v = speed * (.4 + Math.random() * .8);
+      parts.push({ x: bx, y: by, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, r: 2 + Math.random() * 3, c: colors[i % colors.length] });
+    }
+  }
+  // Aura de fuego del diablo: brillo rojo + llamas que suben alrededor del cuerpo (se mezclan con luz aditiva).
+  function fireDraw(dt) {
+    const k = fireK(), cxp = duckShow, follow = cxp - prevShow; prevShow = cxp;
+    if (k > 0) {
+      const g = cx.createRadialGradient(cxp, DUCK_CY, 8, cxp, DUCK_CY, 130);
+      g.addColorStop(0, `rgba(255,120,30,${.55 * k})`); g.addColorStop(.5, `rgba(255,40,10,${.24 * k})`); g.addColorStop(1, 'rgba(255,0,0,0)');
+      cx.globalAlpha = 1; cx.fillStyle = g; cx.fillRect(cxp - 140, DUCK_CY - 140, 280, 280);
+      fireAcc += (50 + 120 * k) * dt;
+      while (fireAcc >= 1) {
+        fireAcc--;
+        flames.push({ x: cxp + (Math.random() - .5) * 64, y: DUCK_CY + (Math.random() - .05) * 58, vx: (Math.random() - .5) * 46, vy: -(60 + Math.random() * 120) * (.7 + .5 * k), life: 1, d: 1 + Math.random() * 1.2, s: 7 + Math.random() * 10 * (.5 + k) });
+      }
+    }
+    cx.globalCompositeOperation = 'lighter';
+    for (let i = flames.length - 1; i >= 0; i--) {
+      const f = flames[i]; f.life -= dt * f.d;
+      if (f.life <= 0) { flames.splice(i, 1); continue; }
+      f.x += (f.vx + Math.sin(f.y * .08 + i) * 24) * dt + follow * .85; f.y += f.vy * dt; f.vy -= 40 * dt;
+      const r = f.s * (.55 + .9 * f.life), a = Math.min(1, f.life * 1.4);
+      const g = cx.createRadialGradient(f.x, f.y, 0, f.x, f.y, r);
+      g.addColorStop(0, `rgba(255,236,160,${.9 * a})`); g.addColorStop(.35, `rgba(255,140,30,${.6 * a})`); g.addColorStop(1, 'rgba(210,25,8,0)');
+      cx.fillStyle = g; cx.beginPath(); cx.arc(f.x, f.y, r, 0, 6.283); cx.fill();
+    }
+    cx.globalCompositeOperation = 'source-over';
+  }
+  function drawFx(dt) {
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, W, H);
+    fireDraw(dt);
+    for (let i = 0; i < trail.length; i++) {                     // estela del billete
+      const t = trail[i], k = (i + 1) / trail.length;
+      cx.globalAlpha = .26 * k; cx.fillStyle = trailColor;
+      cx.beginPath(); cx.arc(t[0], t[1], R * (.35 + .55 * k), 0, 6.283); cx.fill();
+    }
+    for (let i = parts.length - 1; i >= 0; i--) {                // partículas
+      const p = parts[i]; p.life -= dt * 2.2;
+      if (p.life <= 0) { parts.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 600 * dt;
+      cx.globalAlpha = Math.max(0, p.life); cx.fillStyle = p.c;
+      cx.beginPath(); cx.arc(p.x, p.y, p.r * p.life + .5, 0, 6.283); cx.fill();
+    }
+    cx.globalAlpha = 1;
+    paddleFx(dt);
+  }
+  function clearFx() { trail.length = 0; parts.length = 0; flames.length = 0; pfx.length = 0; rings.length = 0; fireAcc = 0; pfxAcc = 0; cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, fx.width, fx.height); }
+
+  /* ---------- marcadores: servidor (Firebase Realtime Database por REST) ---------- */
+  async function http(url, opts) {
+    const ctl = new AbortController();
+    const to = setTimeout(() => ctl.abort(), 8000);
+    try { return await fetch(url, { ...opts, signal: ctl.signal }); }
+    finally { clearTimeout(to); }
+  }
+
+  const authErr = m => ({
+    EMAIL_EXISTS: 'Ese nombre ya está en uso. Elige otro, o entra con tu contraseña.',
+    INVALID_LOGIN_CREDENTIALS: 'Nombre o contraseña incorrectos.', INVALID_PASSWORD: 'Nombre o contraseña incorrectos.', EMAIL_NOT_FOUND: 'Nombre o contraseña incorrectos.',
+    WEAK_PASSWORD: 'La contraseña debe tener al menos 6 caracteres.',
+    TOO_MANY_ATTEMPTS_TRY_LATER: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
+    OPERATION_NOT_ALLOWED: 'El acceso con contraseña no está activado en Firebase (Authentication → Método de acceso → Correo electrónico/contraseña).',
+    API_KEY_INVALID: 'La clave de Firebase de config.js no es válida.', USER_DISABLED: 'Esta cuenta está deshabilitada.'
+  })[String(m).split(' ')[0]] || (/Failed to fetch|abort|NetworkError/i.test(m) ? 'Sin conexión. Revisa tu internet e inténtalo de nuevo.' : 'No se pudo iniciar sesión (' + m + ').');
+  async function authCall(kind, email, password) {
+    const r = await http(`https://identitytoolkit.googleapis.com/v1/accounts:${kind}?key=${encodeURIComponent(API_KEY)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, returnSecureToken: true })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((j.error && j.error.message) || 'ERROR');
+    return j;
+  }
+  // Token vigente (se renueva solo con la sesión guardada: no tienes que volver a escribir la contraseña).
+  async function idToken(force = false) {
+    if (!session) throw new Error('SIN_SESION');
+    if (!force && Date.now() < session.exp - 60000) return session.id;
+    const r = await http(`https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(API_KEY)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(session.refresh)
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const m = (j.error && j.error.message) || 'REFRESH';
+      if (/TOKEN_EXPIRED|USER_NOT_FOUND|USER_DISABLED|INVALID_REFRESH_TOKEN|CREDENTIAL_TOO_OLD/.test(m)) logout();   // la cuenta ya no es válida
+      throw new Error(m);
+    }
+    session.id = j.id_token; session.refresh = j.refresh_token || session.refresh; session.exp = Date.now() + (+j.expires_in || 3600) * 1000; saveSession();
+    return session.id;
+  }
+
+  // Con cuenta, el récord se sube junto con los pesos al cobrar cada partida verificada (ver claimRun). Aquí solo queda el modo local.
+  async function syncBest() { player.dirty = false; savePlayer(); return 'local'; }
+
+  // Lista de los mejores, ya ordenada de mayor a menor.
+  async function fetchTop(limit = TOP_N) {
+    if (!ONLINE) {
+      return player.best > 0 ? [{ id: player.id, n: player.name || 'Tú', s: player.best, t: 0 }] : [];
+    }
+    const r = await http(`${DB}/scores.json?orderBy=%22s%22&limitToLast=${limit}`);
+    if (!r.ok) throw new Error('http ' + r.status);
+    const data = (await r.json()) || {};
+    return Object.entries(data)
+      .filter(([, v]) => v && typeof v.s === 'number' && typeof v.n === 'string')
+      .map(([id, v]) => ({ id, n: v.n, s: v.s, t: +v.t || 0 }))
+      .sort((a, b) => b.s - a.s || a.t - b.t);
+  }
+  async function fetchLeader() {                                 // el mayor puntaje del marcador (para el encabezado)
+    let top = player.best;
+    if (ONLINE) {
+      try {
+        const r = await http(`${DB}/scores.json?orderBy=%22s%22&limitToLast=1`);
+        if (r.ok) top = Math.max(top, ...Object.values((await r.json()) || {}).map(v => (v && +v.s) || 0));
+      } catch (e) {}
+    }
+    leaderBest = top; renderScores();
+  }
+
+  /* ---------- pantalla de marcadores ---------- */
+  let boardFrom = 'menu', boardTimer = null;
+
+  function renderBoard(rows) {
+    const ul = $('list'); ul.textContent = '';
+    if (!rows.length) {
+      const li = document.createElement('li'); li.className = 'empty';
+      li.textContent = 'Todavía nadie le gana al Tío Pato. ¡Sé el primero!';
+      ul.appendChild(li); return;
+    }
+    const medals = ['🥇', '🥈', '🥉'];
+    const frag = document.createDocumentFragment();
+    rows.forEach((row, i) => {
+      const li = document.createElement('li');
+      if (i < 3) li.classList.add('top');
+      if (row.id === player.id) li.classList.add('mine');
+      const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = medals[i] || (i + 1);
+      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = row.n;   // textContent: nunca HTML
+      const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = row.s;
+      li.append(rk, nm, sc); frag.appendChild(li);
+    });
+    ul.appendChild(frag);
+    const mine = ul.querySelector('.mine');
+    if (mine && !ul.dataset.scrolled) { mine.scrollIntoView({ block: 'center' }); ul.dataset.scrolled = '1'; }
+  }
+
+  // Tu puesto entre TODOS los jugadores (aunque estés fuera del Top): cuenta cuántos tienen más rebotes que tú.
+  async function myRank(rows) {
+    if (!ONLINE || player.best <= 0) return null;
+    let rank; const pos = rows ? rows.findIndex(r => r.id === player.id) : -1;
+    if (pos >= 0) rank = rows.filter(r => r.s > player.best).length + 1;
+    else {
+      const r = await http(`${DB}/scores.json?orderBy=%22s%22&startAt=${player.best + 1}`);
+      if (!r.ok) return null;
+      rank = Object.keys((await r.json()) || {}).length + 1;
+    }
+    let total = null;
+    try { const t = await http(`${DB}/scores.json?shallow=true`); if (t.ok) total = Object.keys((await t.json()) || {}).length; } catch (e) {}
+    return { rank, total };
+  }
+  let boardLimit = TOP_N;
+  async function refreshBoard() {
+    const note = $('boardNote'), more = $('moreBoard');
+    note.textContent = ONLINE ? 'Actualizando…' : 'Modo local: aquí solo aparece tu mejor puntaje en este dispositivo.';
+    try {
+      if (player.dirty) await syncBest();
+      const rows = await fetchTop(boardLimit);
+      renderBoard(rows);
+      more.hidden = !(ONLINE && rows.length >= boardLimit && boardLimit < 1000);
+      if (ONLINE) {
+        const me = await myRank(rows);
+        const total = me && me.total ? ` de ${me.total.toLocaleString('es')} jugadores` : '';
+        note.textContent = me ? `Tu puesto: ${me.rank.toLocaleString('es')}${total} · gana quien más rebotes aguante`
+          : `Top ${rows.length} · gana quien más rebotes aguante`;
+      }
+    } catch (e) {
+      note.textContent = 'No se pudo cargar. Reintentando…';
+    }
+  }
+
+  function openBoard(from) {
+    boardFrom = from; delete $('list').dataset.scrolled;
+    setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
+    boardLimit = 100; show('board'); refreshBoard();
+    clearInterval(boardTimer); boardTimer = setInterval(refreshBoard, REFRESH_MS);
+  }
+  function closeBoard() {
+    clearInterval(boardTimer); boardTimer = null;
+    if (boardFrom === 'result') { setEnd(true); show('result'); } else show('menu');
+  }
+
+  /* ---------- encabezado: tus rebotes · el mejor puntaje ---------- */
+  // La corona es del Tío Pato mientras no superes el mejor puntaje.
+  function renderScores() {
+    const d = state === 'play' || state === 'over' ? hits : 0;
+    meNum.textContent = pad(d);
+    botNum.textContent = pad(leaderBest);
+    const beating = d > leaderBest && d > 0;
+    meAv.classList.toggle('lead', beating);
+    botAv.classList.toggle('lead', !beating);
+    const mb = $('mbadge'), mult = (state === 'play' || state === 'countdown') && hits >= TIER;
+    mb.hidden = !mult; if (mult) mb.textContent = '×' + rateAt(hits);
+  }
+  function setBg() {
+    const hell = hits >= P_ANGRY;
+    document.body.classList.toggle('hell', hell);
+    if (themeActive && themePremium) {                             // fondo premium: lo pinta #theme; el infierno lo tiñe de rojo
+      const base = hell ? '#2a0508' : ((itemOf('bg', wallet.eq.bg) || {}).base || PALETTE[0]);
+      document.body.style.backgroundColor = base; setTheme(base); return;
+    }
+    const c = PALETTE[Math.min(Math.floor((hits + 5) / 10), PALETTE.length - 1)];
+    document.body.style.backgroundColor = c; setTheme(c);
+  }
+  function setEnd(on) { document.body.classList.toggle('end', on); if (on) setTheme('#8e2bea'); }
+  function bump(el) { el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 140); }
+  function setInitial() { $('meInit').textContent = player.name ? [...player.name][0].toUpperCase() : '😎'; }
+
+  /* ---------- el Tío Pato: capas del personaje ---------- */
+  const chDir = () => HAS_ART ? (curCh().dir || '') : '';
+  const picOf = f => { const im = new Image(); im.src = f; im.alt = ''; im.draggable = false; return im; };      // imagen suelta (skins de una sola imagen)
+  const IMG = (f, cls) => { const im = document.createElement('img'); im.src = chDir() + f; im.alt = ''; im.draggable = false; im.className = cls; return im; };
+  const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
+  let builtCh = '';
+  function buildDuck() {
+    builtCh = wallet.eq.ch; lastFace = -1;
+    rig.textContent = '';
+    if (!HAS_ART) { rig.innerHTML = '<span id="duckFace">🦆</span><span id="steam">💢</span>'; return; }
+    const one = curCh().stat;
+    if (one) {                                                    // skin de una sola imagen: el mismo dibujo en todas las fases
+      const im = picOf(one); im.className = 'ly stat' + (curCh().stat2 ? ' angel' : ''); rig.appendChild(im);
+      if (curCh().stat2) { const im2 = picOf(curCh().stat2); im2.className = 'ly stat devil'; rig.appendChild(im2); }      // el dibujo enojado aparece con el enojo (--devil)
+      const sm = document.createElement('span'); sm.id = 'steam'; sm.textContent = '💢'; rig.appendChild(sm);
+      const av = $('botFace'); av.textContent = ''; const ai = picOf(one); ai.className = 'ava'; av.appendChild(ai); botAv.classList.add('pic');
+      $('heroBox').textContent = ''; $('heroBox').appendChild(picOf(one));
+      duckLook(); return;
+    }
+    // de atrás hacia adelante: cola, alas de diablo, alas de ángel, tridente, cuerpo (4 caras), aureola, cuernos
+    [['tail.png', 'ly devil tail'], ['wingL_devil.png', 'ly devil wl'], ['wingR_devil.png', 'ly devil wr'],
+     ['wingL_angel.png', 'ly angel wl'], ['wingR_angel.png', 'ly angel wr'], ['trident.png', 'ly devil trident'],
+     ['face0.png', 'ly face f0'], ['face1.png', 'ly face f1'], ['face2.png', 'ly face f2'], ['face3.png', 'ly face f3'],
+     ['halo.png', 'ly angel halo'], ['horns.png', 'ly devil horns']].forEach(([f, c]) => rig.appendChild(IMG(f, c)));
+    const st = document.createElement('span'); st.id = 'steam'; st.textContent = '💢'; rig.appendChild(st);
+    const av = $('botFace'); av.textContent = '';
+    av.appendChild(IMG('face0.png', 'ava face')); av.appendChild(IMG('horns.png', 'ava horns'));
+    botAv.classList.add('pic');
+    $('heroBox').textContent = ''; $('heroBox').appendChild(IMG('hero_angel.png', ''));
+    ['wingL_angel', 'wingR_angel', 'wingL_devil', 'wingR_devil', 'halo', 'horns', 'trident', 'tail', 'face1', 'face2', 'face3', 'hero_mid', 'hero_devil']
+      .forEach(f => { new Image().src = chDir() + f + '.png'; });        // precarga para que no haya parpadeos
+    duckLook();
+  }
+  // Ajusta el rig (centros de giro, vapor, avatar) y los textos al personaje elegido; reconstruye las capas si cambió.
+  function applyChar() {
+    const ch = curCh(), c = ch.css || {}, set = (el, k, v) => { if (v != null) el.style.setProperty(k, v); };
+    const [sx, sy] = String(c.steam || '58% 22%').split(' ');
+    set(duck, '--wl', c.wl); set(duck, '--wr', c.wr); set(duck, '--tr', c.tr); set(duck, '--tail', c.tail); set(duck, '--sx', sx); set(duck, '--sy', sy);
+    set(botAv, '--avW', c.avW); set(botAv, '--avL', c.avL); set(botAv, '--avT', c.avT);
+    if (ch.stat && ch.av) { set(botAv, '--avW', ch.av.w + 'px'); set(botAv, '--avL', (22 - ch.av.fx * ch.av.w).toFixed(1) + 'px'); set(botAv, '--avT', (22 - ch.av.fy * ch.av.w * ch.asp).toFixed(1) + 'px'); }   // centra la cara en el círculo de 44 px
+    const pl = ch.g === 'p';
+    set(duck, '--dw', ch.dw || 1);
+    $('ttl').firstChild.textContent = 'Gánale ' + (pl ? 'a los ' : ch.g === 'f' ? 'a la ' : 'al '); $('ttlName').textContent = ch.n.replace(/^Los /, '');
+    $('tagline').textContent = `Rebota la moneda con tu barra y junta pesos. ${cap(ch.name)} siempre te la ${pl ? 'devuelven' : 'devuelve'}.`;
+    $('verdict').textContent = (pl ? 'Ganaron ' : 'Ganó ') + ch.name;
+    if (builtCh !== wallet.eq.ch) buildDuck();
+  }
+  function setHero() {                                           // el personaje de la pantalla final, según hasta dónde llegaste
+    const el = $('heroEnd'); el.textContent = '';
+    if (!HAS_ART) { el.innerHTML = '<span style="font-size:84px">🦆</span>'; return; }
+    if (curCh().stat) { el.appendChild(picOf(hits >= P_ANGRY && curCh().stat2 ? curCh().stat2 : curCh().stat)); return; }
+    el.appendChild(IMG(hits >= P_ANGRY ? 'hero_devil.png' : hits >= P_CHALLENGE ? 'hero_mid.png' : 'hero_angel.png', ''));
+  }
+  function duckLook() {
+    const f = faceIdx();
+    duck.style.setProperty('--angel', angelK().toFixed(2));
+    duck.style.setProperty('--devil', devilK().toFixed(2));
+    duck.style.setProperty('--anger', angerK().toFixed(2));
+    duck.style.setProperty('--shake', (angerK() * 3.2 + devilK() * 1.2).toFixed(1) + 'px');
+    duck.style.setProperty('--flap', (1.5 - angerK() * .9 - devilK() * .2).toFixed(2) + 's');
+    duck.classList.toggle('mad', angerK() > .15);
+    duck.dataset.face = f;
+    const ch = curCh();
+    if (HAS_ART && ch.stat2) {                                  // skin con dibujo enojado: el avatar cambia de imagen y de recorte
+      const ai = botAv.querySelector('.ava:not(.face):not(.horns)'), mad = devilK() > 0, av = mad ? ch.av2 : ch.av, src = mad ? ch.stat2 : ch.stat, asp = mad ? ch.asp2 : ch.asp;
+      if (ai && ai.getAttribute('src') !== src) {
+        ai.src = src; botAv.style.setProperty('--avW', av.w + 'px'); botAv.style.setProperty('--avL', (22 - av.fx * av.w).toFixed(1) + 'px'); botAv.style.setProperty('--avT', (22 - av.fy * av.w * asp).toFixed(1) + 'px');
+      }
+    }
+    if (HAS_ART) {
+      const a = botAv.querySelector('.ava.face'), h = botAv.querySelector('.ava.horns');
+      if (a && f !== lastFace) a.src = chDir() + 'face' + f + '.png';
+      if (h) h.style.opacity = devilK().toFixed(2);
+    }
+    lastFace = f;
+  }
+  const tpl = t => t.replace('%n', curCh().name).replace('%D', ({ f: 'LA DIABLA', p: 'LOS DIABLOS' })[curCh().g] || 'EL DIABLO');
+  function say(text, ms = 2400) {
+    const b = $('bubble'); b.textContent = tpl(text); b.classList.add('on'); lastSay = text; bubbleW = b.offsetWidth;
+    clearTimeout(bubbleTimer); bubbleTimer = setTimeout(() => b.classList.remove('on'), ms);
+  }
+  // Frases según la fase: amistosas al comienzo, desafiantes desde el 30, enojadas desde el 55 y de diablo desde el 80.
+  const SAY_FRIEND = ['¡Qué bien lo haces, amigo!', '¡Muy bien, campeón!', '¡Me encanta jugar contigo!', '¡Tú puedes, amigo!', '¡Wow, qué buenos reflejos!', '¡Sigue así, crack!', '¡Eres genial!', '¡Qué divertido, cuac!'];
+  const SAY_CHALLENGE = ['¿Seguro que puedes con esto?', 'Veamos cuánto aguantas…', '¿Eso es todo lo que tienes?', 'No te confíes tanto, amigo', 'Ahora sí empieza lo bueno', 'Se acabó lo amable…', '¿Crees que puedes ganarme?'];
+  const SAY_ANGRY = ['¡CUAC! ¡Ya me estás molestando!', '¡Nadie me gana, nadie!', '¡Te voy a destrozar la barra!', '¡Estoy perdiendo la paciencia!', '¡DEJA DE REBOTAR ESO!', '¡Me sacas de quicio!'];
+  const SAY_DEVIL = ['¡MUAJAJAJA! ¡Eres mío!', '¡Arde, mortal!', '¡Bienvenido al infierno, cuac!', '¡NO ESCAPARÁS!', '¡Soy %n del infierno!', '¡Quémate!'];
+  const SPECIAL = { 1: '¡Muy bien, amigo!', 30: 'Mmm… ya me cansé de ser amable', 55: '¡Se me acabó la paciencia! ¡AAARGH! 😡', 60: '¡AHORA SOY %D! 😈', 100: '¡Monedas dobles! Pero ahora va en serio… 😏', 200: '¡Monedas triples! ¿Hasta dónde llegas? 😈' };
+  // La pareja habla en plural.
+  const SAY_PL = {
+    friend: ['¡Qué bien lo haces, amigo!', '¡Muy bien, campeón!', '¡Nos encanta jugar contigo!', '¡Tú puedes, amigo!', '¡Wow, qué buenos reflejos!', '¡Sigue así, crack!', '¡Eres genial!', '¡Qué divertido, cuac cuac!'],
+    challenge: ['¿Seguro que puedes con esto?', 'Veamos cuánto aguantas…', '¿Eso es todo lo que tienes?', 'No te confíes tanto, amigo', 'Ahora sí empieza lo bueno', 'Se acabó lo amable…', '¿Crees que puedes ganarnos?'],
+    angry: ['¡CUAC! ¡Ya nos estás molestando!', '¡Nadie nos gana, nadie!', '¡Te vamos a destrozar la barra!', '¡Estamos perdiendo la paciencia!', '¡DEJA DE REBOTAR ESO!', '¡Nos sacas de quicio!'],
+    devil: ['¡MUAJAJAJA! ¡Eres nuestro!', '¡Arde, mortal!', '¡Bienvenido al infierno, cuac!', '¡NO ESCAPARÁS!', '¡Somos %n del infierno!', '¡Quémate!'],
+    special: { 30: 'Mmm… ya nos cansamos de ser amables', 55: '¡Se nos acabó la paciencia! ¡AAARGH! 😡', 60: '¡AHORA SOMOS %D! 😈' }
+  };
+  const pick = list => { let t; do { t = list[Math.floor(Math.random() * list.length)]; } while (t === lastSay && list.length > 1); return t; };
+  function talk() {
+    const pl = curCh().g === 'p', L = pl ? SAY_PL : { friend: SAY_FRIEND, challenge: SAY_CHALLENGE, angry: SAY_ANGRY, devil: SAY_DEVIL }, sp = (pl && SAY_PL.special[hits]) || SPECIAL[hits];
+    if (sp) { say(sp, 2800); if (hits >= 30) tone(hits >= P_ANGRY ? 110 : 660, .3, hits >= P_ANGRY ? 'sawtooth' : 'triangle', .1, hits >= P_ANGRY ? 55 : 880); return; }
+    const every = hits < P_ANGRY ? 4 : 3;
+    if (hits % every !== 0) return;
+    say(pick(hits < P_CHALLENGE ? L.friend : hits < P_ANGRY ? L.challenge : hits < P_HELL ? L.angry : L.devil));
+  }
+
+  // Dónde llegará el billete a la altura del Tío Pato (con rebotes en las paredes), para que salga a recibirlo.
+  function predictX() {
+    const t = Math.max(0, (y - DUCK_BOTTOM - R) / Math.max(1, -vy));
+    const span = W - 2 * R;
+    const u = ((x - R + vx * t) % (2 * span) + 2 * span) % (2 * span);
+    return R + (u > span ? 2 * span - u : u);
+  }
+  function duckTrack(dt) {
+    const want = vy < 0 ? predictX() : W / 2 + (x - W / 2) * .5;
+    const maxMove = (520 + Math.min(level(), 10) * 140) * dt;
+    duckX = clamp(duckX + clamp(want - duckX, -maxMove, maxMove), 40 * K, W - 40 * K);
+    duckShow += (duckX - duckShow) * Math.min(1, dt * 28);
+  }
+  // El personaje le pega a la pelota SIEMPRE (nada pasa por arriba de él) y cada golpe sale en una dirección al azar:
+  // desde casi vertical hasta muy abierto, hacia la izquierda o la derecha.
+  function duckReturn() {
+    y = DUCK_BOTTOM + R; duckX = clamp(x, 40 * K, W - 40 * K);
+    const a = (Math.random() * 2 - 1) * 1.2;
+    setVel(Math.sin(a), Math.cos(a), .1);
+    rig.classList.remove('swing'); void rig.offsetWidth; rig.classList.add('swing');
+    quack();
+    const mad = angerK() > .2;
+    burst(x, y - R, 5 + Math.round(angerK() * 8), devilK() > .5 ? ['#ff3b1f', '#ff9a2e', '#ffe08a'] : mad ? ['#ff6a3a', '#fff'] : ['#fff', '#ffe9a8'], 200 + angerK() * 170);
+    if (angerK() > .35) { arena.classList.remove('jolt'); void arena.offsetWidth; arena.classList.add('jolt'); }
+  }
+
+  /* ---------- física ---------- */
+  // Dirección (dx, dy) con la rapidez actual. Nunca casi horizontal (se quedaría rebotando de lado a lado) y,
+  // salvo los golpes del personaje (minX bajo), tampoco casi vertical.
+  const sgn = v => (v < 0 ? -1 : v > 0 ? 1 : (Math.random() < .5 ? -1 : 1));
+  function setVel(dx, dy, minX = .3) {
+    const len = Math.hypot(dx, dy) || 1;
+    dx /= len; dy /= len;
+    const minY = .34;
+    if (Math.abs(dx) < minX) { dy = sgn(dy) * Math.sqrt(1 - minX * minX); dx = sgn(dx) * minX; }
+    if (Math.abs(dy) < minY) { dx = sgn(dx) * Math.sqrt(1 - minY * minY); dy = sgn(dy) * minY; }
+    const sp = ballSpeed();
+    vx = dx * sp; vy = dy * sp;
+  }
+  function launch() {                  // el Tío Pato lanza el billete en diagonal desde donde está
+    x = clamp(duckX, R, W - R); y = DUCK_BOTTOM + R + 4;
+    const a = (Math.random() * 2 - 1) * 1.1;
+    setVel(Math.sin(a), Math.cos(a), .1);
+  }
+  function layout() {
+    basePw = clamp(W * PADDLE_START, 100, 200); pw = basePw * shrink();
+    paddle.style.width = pw + 'px';
+    paddle.style.top = paddleTop() + 'px';
+    px = clamp(px || W / 2, pw / 2, W - pw / 2);
+  }
+  function draw() {
+    target.style.transform = `translate(${x - SIZE / 2}px, ${y - SIZE / 2}px)`;
+    paddle.style.transform = `translateX(${px - pw / 2}px)`;
+    duck.style.transform = `translateX(${duckShow - duck.offsetWidth / 2}px)`;
+    if (bubbleW) { const left = duckShow - bubbleW / 2; $('bubble').style.setProperty('--bx', (clamp(left, 8, W - 8 - bubbleW) - left).toFixed(1) + 'px'); }
+  }
+
+  function wallBounce() { setVel(vx + (Math.random() - .5) * ballSpeed() * .08, vy); tone(260, .04); }
+
+  // Un paso corto de física (el billete nunca avanza más de ~10 px, así no atraviesa nada).
+  function step(h) {
+    const prevY = y;
+    x += vx * h; y += vy * h;
+    if (x < R) { x = R; vx = Math.abs(vx); wallBounce(); }
+    else if (x > W - R) { x = W - R; vx = -Math.abs(vx); wallBounce(); }
+
+    if (vy < 0 && y - R <= DUCK_BOTTOM) duckReturn();           // el Tío Pato nunca falla
+
+    const top = paddleTop();
+    if (vy > 0 && prevY + R <= top + 2 && y + R >= top && Math.abs(x - px) <= pw / 2 + R * .7) {
+      y = top - R;
+      hits++;                                                    // ¡un rebote más: aquí se cuenta el puntaje!
+      const rt = rateAt(hits), val = gameRate * rt;             // lo que vale este rebote en pesos: lo que paga tu pelota × «monedas dobles»
+      const off = clamp((x - px) / (pw / 2 + R * .7) + (Math.random() - .5) * .3, -1, 1);
+      setVel(Math.sin(off * 1.05), -Math.cos(off * 1.05));       // el ángulo depende de dónde pega en la barra
+      renderScores(); bump(meNum); setBig(hits); setBg(); duckLook(); talk();
+      spawn(val > 1 ? 'pop gold' : 'pop', x, top - 28, '+' + money(val));
+      padBurst(x, top);
+      if (hits % TIER === 0) bonusBanner(rt, val);
+      paddle.classList.add('hit'); setTimeout(() => paddle.classList.remove('hit'), 90);
+      tone(480 + Math.min(hits, 60) * 10, .07);
+      if (navigator.vibrate) navigator.vibrate(8);
+    }
+    if (y - R > H) endGame();                                    // se cayó por abajo: fin
+  }
+
+  // «¡Monedas dobles!» (×2 en el rebote 100, ×3 en el 200…): cartel animado, lluvia de chispas, fanfarria y vibración.
+  const multEl = $('mult');
+  function bonusBanner(rt, val) {
+    multEl.querySelector('b').textContent = '×' + rt;
+    multEl.querySelector('span').textContent = rt === 2 ? '¡Monedas dobles!' : rt === 3 ? '¡Monedas triples!' : `¡Monedas ×${rt}!`;
+    multEl.querySelector('small').textContent = `Cada rebote ahora vale ${money(val)}`;
+    multEl.classList.remove('show'); void multEl.offsetWidth; multEl.classList.add('show');
+    for (let i = 0; i < 5; i++) burst(W * (.1 + i * .2), H * .5, 14, ['#ffd54a', '#fff2a0', '#ffb300', '#ff8a1f'], 380 + Math.random() * 160, true);
+    [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, .16, 'triangle', .13), i * 80));
+    if (navigator.vibrate) navigator.vibrate([30, 40, 30, 40, 60]);
+    const b = $('mbadge'); b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse');
+  }
+  function spawn(cls, sx, sy, text) {
+    const el = document.createElement('div');
+    el.className = cls; el.style.left = sx + 'px'; el.style.top = sy + 'px';
+    if (text) el.textContent = text;
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 650);
+  }
+
+  /* ---------- control: arrastrar (en el celular, relativo: el dedo no tapa la barra) · mouse · flechas ---------- */
+  function movePaddle(e) {
+    if (state !== 'play' && state !== 'countdown') return;
+    const r = arena.getBoundingClientRect();
+    if (e.pointerType === 'mouse') px = e.clientX - r.left;
+    else if (dragX !== null) px += (e.clientX - dragX) * 1.25;
+    dragX = e.clientX;
+    px = clamp(px, pw / 2, W - pw / 2);
+    if (state === 'countdown') draw();
+  }
+  arena.addEventListener('pointerdown', e => {
+    if (state !== 'play' && state !== 'countdown') return;       // en los menús los botones reciben el toque con normalidad
+    dragX = e.clientX; try { arena.setPointerCapture(e.pointerId); } catch (_) {}
+    movePaddle(e);
+  });
+  arena.addEventListener('pointermove', movePaddle);
+  arena.addEventListener('touchmove', e => { if (state === 'play' || state === 'countdown') e.preventDefault(); }, { passive: false });
+  const endDrag = () => { dragX = null; };
+  arena.addEventListener('pointerup', endDrag); arena.addEventListener('pointercancel', endDrag);
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') keyDir = -1;
+    else if (e.key === 'ArrowRight' || e.key === 'd') keyDir = 1;
+  });
+  addEventListener('keyup', e => {
+    if ((e.key === 'ArrowLeft' || e.key === 'a') && keyDir < 0) keyDir = 0;
+    if ((e.key === 'ArrowRight' || e.key === 'd') && keyDir > 0) keyDir = 0;
+  });
+
+  /* ---------- flujo de juego ---------- */
+  function show(name) {
+    for (const k in screens) screens[k].classList.toggle('show', k === name);
+  }
+  function setBig(t) {
+    big.textContent = t;
+    big.classList.remove('tick'); void big.offsetWidth; big.classList.add('tick');
+  }
+
+  /* ---------- pesos, tienda y cosméticos (cada rebote vale $1; desde el 100 vale $2, desde el 200 vale $3…) ---------- */
+  const CAT = window.TIENDA || {
+    ch: [{ id: 'tio', n: 'Tío Pato', price: 0, dir: 'pato/', name: 'el Tío Pato', g: 'm', css: {} }],
+    bg: [{ id: 'clasico', n: 'Clásico', price: 0 }], pad: [{ id: 'clasica', n: 'Clásica', price: 0 }],
+    ball: [{ id: 'peso1', n: 'Moneda $1', price: 0, img: 'skins/peso1.webp', fx: 'spin', w: 1, trail: '#d5dbe8' }]
+  };
+  const DEF = { ch: CAT.ch[0].id, bg: CAT.bg[0].id, pad: CAT.pad[0].id, ball: CAT.ball[0].id };
+  const themeEl = $('theme');
+  // wallet: c = pesos ganados · sp = gastados · lr = última partida cobrada · own = compras · eq = lo que llevas puesto (todo en la nube con cuenta)
+  let wallet = { c: 0, sp: 0, lr: 0, own: {}, eq: { ...DEF } };
+  let pending = null;                                              // partida terminada que aún no se cobra en la nube: { s: hora de inicio del servidor, h: rebotes }
+  const WKEY = () => 'gana-al-tio-pato-monedas-' + (AUTH && session ? session.uid : 'local');
+  const PKEY = () => 'gana-al-tio-pato-partida-' + (session ? session.uid : 'local');
+  const itemOf = (cat, id) => CAT[cat].find(i => i.id === id);
+  const owns = (cat, id) => { const it = itemOf(cat, id); return !!it && (it.price === 0 || wallet.own[cat + '_' + id] === true); };
+  const pendingP = () => (pending ? pending.r * pesosFor(pending.h) : 0);
+  const balance = () => Math.max(0, wallet.c + pendingP() - wallet.sp);
+  const curCh = () => itemOf('ch', wallet.eq.ch) || CAT.ch[0];
+  const savePending = () => { try { if (pending) localStorage.setItem(PKEY(), JSON.stringify(pending)); else localStorage.removeItem(PKEY()); } catch (e) {} };
+  function loadWallet() {
+    wallet = { c: 0, sp: 0, lr: 0, own: {}, eq: { ...DEF } }; pending = null;
+    try {
+      const w = JSON.parse(localStorage.getItem(WKEY()) || 'null');
+      if (w) { wallet.c = +w.c || 0; wallet.sp = +w.sp || 0; wallet.lr = +w.lr || 0; wallet.own = w.own || {}; wallet.eq = { ...DEF, ...(w.eq || {}) }; }
+      const p = AUTH && session ? JSON.parse(localStorage.getItem(PKEY()) || 'null') : null;
+      if (p && +p.s > 0 && +p.h > 0) pending = { s: +p.s, h: +p.h, r: +p.r || 1 };
+    } catch (e) {}
+    for (const k in DEF) if (!itemOf(k, wallet.eq[k])) wallet.eq[k] = DEF[k];
+  }
+  const saveWallet = () => { try { localStorage.setItem(WKEY(), JSON.stringify(wallet)); } catch (e) {} };
+  const wurl = async () => `${DB}/wallets/${session.uid}.json?auth=${encodeURIComponent(await idToken())}`;
+  const JSONH = { 'Content-Type': 'application/json' };
+  const SV = { '.sv': 'timestamp' };
+  async function pullWallet() {                                    // trae tus pesos y compras de la nube
+    if (!AUTH || !session) return false;
+    try {
+      const r = await http(await wurl());
+      if (!r.ok) return false;
+      const v = await r.json();
+      if (v) { wallet.c = +v.c || 0; wallet.sp = +v.sp || 0; wallet.lr = +v.lr || 0; wallet.own = v.own || {}; if (v.eq) wallet.eq = { ...DEF, ...v.eq }; }
+      for (const k in DEF) if (!itemOf(k, wallet.eq[k]) || !owns(k, wallet.eq[k])) wallet.eq[k] = DEF[k];
+      saveWallet(); return true;
+    } catch (e) { return false; }
+  }
+
+  /* Partidas verificadas por el servidor (anti-trampas): al empezar se anota la hora del servidor y, al terminar, el servidor comprueba que
+     los rebotes caben en el tiempo transcurrido y fija los pesos. Pesos y marcador se cobran de una sola vez, una vez por partida. */
+  let run = null, runP = Promise.resolve(null), runFail = '';          // runFail: 'net' (sin internet) o 'rules' (Firebase no tiene las reglas nuevas)
+  async function beginRun() {
+    run = null; runFail = '';
+    if (!AUTH || !session) return null;
+    try {
+      if (pending) await claimRun();                               // primero cobra la partida anterior si quedó pendiente
+      const tok = encodeURIComponent(await idToken()), uid = session.uid;
+      const ball = itemOf('ball', wallet.eq.ball) || CAT.ball[0], rate = ball.rate || 1;                       // la pelota y lo que paga quedan anotados al empezar (las reglas los comprueban)
+      const put = t => http(`${DB}/runs/${uid}.json?auth=${t}`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: ball.id, r: rate }) });
+      let r = await put(tok);
+      if (r.status === 401 && /token/i.test(await r.clone().text().catch(() => '')) && !/permission/i.test(await r.clone().text().catch(() => ''))) r = await put(encodeURIComponent(await idToken(true)));   // token vencido: se renueva y se reintenta una vez
+      if (!r.ok) { runFail = r.status === 401 || r.status === 403 ? 'rules' : 'net'; return null; }
+      const g = await http(`${DB}/runs/${uid}/s.json?auth=${tok}`);
+      const s = g.ok ? await g.json() : null;
+      if (typeof s !== 'number') return null;
+      run = { s, r: rate }; return run;
+    } catch (e) { runFail = 'net'; return null; }
+  }
+  let claiming = null;
+  const claimRun = () => claiming || (claiming = doClaim().finally(() => { claiming = null; }));
+  async function doClaim() {                                       // 'ok' | 'denied' | 'error'
+    if (!pending) return 'ok';
+    if (!AUTH || !session) return 'error';
+    const pr = pending, uid = session.uid;
+    try {
+      const tok = encodeURIComponent(await idToken());
+      const [wr, sr] = await Promise.all([http(`${DB}/wallets/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}/s.json`)]);
+      if (!wr.ok) return wr.status === 401 || wr.status === 403 ? 'denied' : 'error';
+      const w = (await wr.json()) || {}, best = sr.ok ? (+(await sr.json()) || 0) : 0;
+      if (+w.lr === pr.s) { pending = null; savePending(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
+      const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h), body = {};
+      body[`runs/${uid}/e`] = SV; body[`runs/${uid}/h`] = pr.h; body[`runs/${uid}/p`] = p;
+      body[`wallets/${uid}/c`] = c0 + p; body[`wallets/${uid}/sp`] = sp0; body[`wallets/${uid}/lr`] = pr.s;
+      if (pr.h > best) body[`scores/${uid}`] = { n: player.name || session.name, k: session.key, s: pr.h, t: SV };
+      const r = await http(`${DB}/.json?auth=${tok}`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+      if (r.ok) {
+        wallet.c = c0 + p; wallet.sp = sp0; wallet.lr = pr.s; saveWallet();
+        if (pr.h > player.best) { player.best = pr.h; savePlayer(); }
+        pending = null; savePending(); return 'ok';
+      }
+      if (r.status === 401 || r.status === 403) {
+        const g = await http(`${DB}/wallets/${uid}/lr.json?auth=${tok}`); const lr = g.ok ? await g.json() : null;
+        pending = null; savePending();
+        if (lr === pr.s) { await pullWallet(); return 'ok'; }
+        return 'denied';
+      }
+      return 'error';
+    } catch (e) { return 'error'; }
+  }
+  function renderCoins() {
+    const b = money(balance());
+    $('coinNum').textContent = b; $('shopBal').textContent = b;
+  }
+
+  /* aplica lo que llevas puesto: personaje, fondo, barra y pelota */
+  let themeActive = false, themePremium = false, themeDark = false, trailColor = '#ffc928';
+  function syncTheme() {
+    document.body.classList.toggle('themed', themeActive && themePremium);
+    document.body.classList.toggle('dark', themeActive && themePremium && themeDark);
+  }
+  function setThemeActive(on) { themeActive = on; syncTheme(); }      // el fondo premium solo se ve mientras juegas
+  function applyBall() {
+    const b = itemOf('ball', wallet.eq.ball) || CAT.ball[0], el = target.firstElementChild;
+    el.textContent = ''; el.className = 'ball ' + (b.fx || ''); el.style.setProperty('--bw', b.w || 1);
+    trailColor = b.trail || '#ffc928';
+    if (b.img) document.querySelectorAll('.coins .ci').forEach(i => { i.src = b.img; });      // el recuadro de pesos muestra la pelota que llevas puesta
+    if (b.img) {
+      const im = new Image(); im.alt = ''; im.draggable = false;
+      im.onerror = () => { el.className = 'ball emoji'; el.textContent = '💸'; };
+      im.src = b.img; el.appendChild(im);
+    } else { el.className = 'ball emoji'; el.textContent = b.e || '💸'; }
+  }
+  function applyCosmetics() {
+    const bg = itemOf('bg', wallet.eq.bg) || CAT.bg[0];
+    themePremium = bg.id !== DEF.bg; themeDark = !!bg.dark; themeEl.dataset.bg = bg.id;
+    paddle.className = (paddle.className.replace(/\bp-\S+/g, '') + ' p-' + wallet.eq.pad).trim();
+    applyBall(); applyChar(); syncTheme(); renderCoins();
+  }
+
+  /* tienda */
+  let shopTab = 'ch', shopFrom = 'menu', shopBusy = false;
+  const TABS = [['tabCh', 'ch'], ['tabBg', 'bg'], ['tabPad', 'pad'], ['tabBall', 'ball']];
+  function shopMsg(t, ok) { const m = $('shopMsg'); m.textContent = t || ''; m.className = 'status' + (ok ? ' ok' : t ? ' err' : ''); }
+  function previewFor(it) {
+    const pv = document.createElement('div');
+    if (shopTab === 'ch') {
+      pv.className = 'pv chpv';
+      if (HAS_ART && it.stat) { if (!it.stat2) pv.classList.add('one'); pv.appendChild(picOf(it.stat)); if (it.stat2) pv.appendChild(picOf(it.stat2)); }      // con dibujo enojado: se alternan los dos
+      else if (HAS_ART) for (const f of ['hero_angel.png', 'hero_devil.png']) { const im = new Image(); im.src = it.dir + f; im.alt = ''; im.draggable = false; pv.appendChild(im); }
+      else pv.textContent = '🦆';
+    } else if (shopTab === 'bg') {
+      pv.className = 'pv bgx'; pv.dataset.bg = it.id; pv.innerHTML = '<i></i><i></i><i></i>';
+      if (it.id === DEF.bg) pv.style.background = 'linear-gradient(135deg, #fff6c0 0%, #ffb978 35%, #f478fd 65%, #c2312f 100%)';
+    } else if (shopTab === 'pad') {
+      pv.className = 'pv padpv'; const b = document.createElement('div'); b.className = 'pvbar p-' + it.id; pv.appendChild(b);
+    } else {
+      pv.className = 'pv'; const b = document.createElement('div'); b.className = 'ball ' + (it.fx || ''); b.style.setProperty('--bw', it.w || 1);
+      const im = new Image(); im.src = it.img; im.alt = ''; im.draggable = false; b.appendChild(im); pv.appendChild(b);
+    }
+    return pv;
+  }
+  function renderShop() {
+    renderCoins();
+    for (const [id, k] of TABS) $(id).classList.toggle('on', shopTab === k);
+    const grid = $('shopGrid'); grid.textContent = '';
+    for (const it of CAT[shopTab]) {
+      const card = document.createElement('div'); card.className = 'item' + (wallet.eq[shopTab] === it.id ? ' on' : '');
+      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = it.n;
+      const nt = document.createElement('div'); nt.className = 'nt';
+      nt.textContent = shopTab === 'ball' ? `Paga ${money(it.rate)} por punto${it.note ? ' · ' + it.note : ''}` : (it.note || (it.price ? '' : 'Incluido'));
+      const btn = document.createElement('button'); btn.type = 'button';
+      if (wallet.eq[shopTab] === it.id) { btn.className = 'cur'; btn.textContent = 'Equipado ✓'; btn.disabled = true; }
+      else if (owns(shopTab, it.id)) { btn.className = 'eq'; btn.textContent = 'Equipar'; btn.onclick = () => equip(shopTab, it.id); }
+      else {
+        btn.className = 'lock' + (balance() < it.price ? ' no' : ''); btn.onclick = () => buyItem(shopTab, it);
+        const ic = new Image(); ic.src = 'skins/peso1.webp'; ic.alt = ''; btn.append(ic, money(it.price));
+      }
+      card.append(previewFor(it), nm, nt, btn); grid.appendChild(card);
+    }
+  }
+  async function equip(cat, id) {
+    if (!owns(cat, id)) return;
+    wallet.eq[cat] = id; saveWallet(); applyCosmetics(); renderShop();
+    if (AUTH && session) { try { await http(await wurl(), { method: 'PATCH', headers: JSONH, body: JSON.stringify({ eq: wallet.eq }) }); } catch (e) {} }
+  }
+  async function buyItem(cat, it) {
+    if (shopBusy) return; shopBusy = true; shopMsg('');
+    try {
+      if (AUTH) {
+        if (!session) return;
+        const p = await claimRun();                                // primero cobra tu última partida
+        if (p !== 'ok') { shopMsg(p === 'denied' ? 'Firebase no permitió cobrar tu partida (revisa que las reglas nuevas estén publicadas).' : 'No se pudo sincronizar tus pesos. Revisa tu conexión.'); return; }
+        if (!(await pullWallet())) { shopMsg('No se pudo leer tu billetera. Revisa tu conexión.'); return; }
+      }
+      if (balance() < it.price) { shopMsg(`Te faltan ${money(it.price - balance())} para «${it.n}». ¡Sigue jugando!`); return; }
+      if (AUTH) {
+        const body = { sp: wallet.sp + it.price }; body['own/' + cat + '_' + it.id] = true;     // la compra es atómica: gasta y entrega a la vez
+        const r = await http(await wurl(), { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+        if (!r.ok) { shopMsg(r.status === 401 || r.status === 403 ? 'Firebase no permitió la compra (revisa que las reglas estén publicadas).' : 'No se pudo comprar. Inténtalo de nuevo.'); return; }
+        await pullWallet();
+      } else { wallet.sp += it.price; wallet.own[cat + '_' + it.id] = true; saveWallet(); }
+      await equip(cat, it.id);
+      shopMsg(`¡Compraste «${it.n}»! Ya lo llevas puesto ✨`, true);
+    } catch (e) { shopMsg('No se pudo comprar. Revisa tu conexión.'); }
+    finally { shopBusy = false; renderShop(); }
+  }
+  function openShop(from) {
+    shopFrom = from; clearInterval(boardTimer); boardTimer = null; shopMsg('');
+    setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
+    show('shop'); renderShop();
+    if (AUTH && session) pullWallet().then(() => { applyCosmetics(); renderShop(); });
+  }
+  function closeShop() { if (shopFrom === 'result') { setEnd(true); show('result'); } else { setTheme('#fff7c2'); document.body.style.backgroundColor = ''; show('menu'); renderMenu(); } }
+  function countUp(el, n, fmt) {
+    const t0 = performance.now(), dur = Math.min(1100, 300 + n * 8);
+    (function tick(now) { const k = clamp((now - t0) / dur, 0, 1); el.textContent = fmt(Math.round(n * (1 - Math.pow(1 - k, 3)))); if (k < 1 && state === 'over') requestAnimationFrame(tick); })(t0);
+  }
+
+  /* ---------- inicio de sesión ---------- */
+  let authMode = 'in';                                             // 'in' = entrar · 'up' = crear cuenta
+  function renderMenu() {
+    const logged = AUTH && !!session;
+    $('authForm').hidden = !AUTH || logged;
+    $('userBox').hidden = !logged; $('logout').hidden = !logged;
+    nameInput.hidden = AUTH; $('play').hidden = AUTH && !logged;
+    $('coinChip').hidden = AUTH && !logged; $('openShop').hidden = AUTH && !logged; $('topbar').hidden = !logged && AUTH;
+    if (logged) { const n = player.name || session.name; $('hello').textContent = n; $('userAv').textContent = [...n][0].toUpperCase(); }
+    renderCoins();
+    $('bestMenu').textContent = player.best ? `🏆 Tu récord: ${player.best}` : '';
+  }
+  function setAuthMode(m) {
+    authMode = m; $('tabIn').classList.toggle('on', m === 'in'); $('tabUp').classList.toggle('on', m === 'up');
+    $('authGo').textContent = m === 'in' ? 'Entrar' : 'Crear cuenta'; $('authMsg').textContent = '';
+    $('pass').autocomplete = m === 'in' ? 'current-password' : 'new-password';
+  }
+  async function loadMine() {                                      // tu mejor puntaje guardado en la nube (para cuando entras desde otro celular)
+    try {
+      const r = await http(`${DB}/scores/${player.id}.json`);
+      const v = r.ok ? await r.json() : null;
+      if (v && typeof v.s === 'number' && v.s > player.best) { player.best = v.s; savePlayer(); }
+      if (v && typeof v.n === 'string' && v.n) { player.name = v.n; savePlayer(); }
+    } catch (e) {}
+    leaderBest = Math.max(leaderBest, player.best); renderMenu(); renderScores(); setInitial();
+  }
+  function logout() {
+    session = null; saveSession(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
+    leaderBest = 0; loadWallet(); applyCosmetics(); setInitial(); renderScores(); renderMenu(); fetchLeader();
+  }
+  async function submitAuth(e) {
+    e.preventDefault();
+    const name = cleanName($('acct').value), pass = $('pass').value, msg = $('authMsg'), key = acctKey(name);
+    msg.textContent = '';
+    if (name.length < 3 || key.length < 3) { msg.textContent = 'El nombre debe tener al menos 3 letras o números.'; $('acct').focus(); return; }
+    if (pass.length < 6) { msg.textContent = 'La contraseña debe tener al menos 6 caracteres.'; $('pass').focus(); return; }
+    const go = $('authGo'); go.disabled = true; const label = go.textContent; go.textContent = 'Un momento…';
+    try {
+      const j = await authCall(authMode === 'up' ? 'signUp' : 'signInWithPassword', key + MAIL, pass);
+      session = { uid: j.localId, name, key, id: j.idToken, refresh: j.refreshToken, exp: Date.now() + (+j.expiresIn || 3600) * 1000 };
+      saveSession();
+      player = { id: j.localId, name, best: 0, dirty: false }; savePlayer();
+      $('pass').value = ''; $('acct').value = '';
+      loadWallet(); applyCosmetics(); await pullWallet(); applyCosmetics();
+      if (pending) claimRun().then(renderCoins);                   // cobra una partida que quedó pendiente
+      setInitial(); renderMenu(); await loadMine(); fetchLeader();
+    } catch (err) { msg.textContent = authErr(err.message); }
+    finally { go.disabled = false; go.textContent = authMode === 'in' ? 'Entrar' : 'Crear cuenta'; }
+  }
+
+  function startCountdown() {
+    if (AUTH && !session) { renderMenu(); return; }
+    const name = AUTH ? (player.name || session.name) : cleanName(nameInput.value);
+    if (!name) {
+      nameInput.classList.remove('shake'); void nameInput.offsetWidth; nameInput.classList.add('shake');
+      nameInput.focus(); return;
+    }
+    if (name !== player.name) { player.name = name; if (player.best > 0) player.dirty = true; savePlayer(); }
+    nameInput.value = name; nameInput.blur(); setInitial();
+
+    measure();
+    hits = 0; elapsed = 0; keyDir = 0; dragX = null; lastFace = -1;
+    gameRate = (itemOf('ball', wallet.eq.ball) || CAT.ball[0]).rate || 1;
+    clearFx(); $('rain').textContent = ''; setEnd(false); setThemeActive(true); applyCosmetics(); setBg();
+    document.body.classList.add('ingame'); runP = beginRun();    // el servidor anota la hora de inicio de la partida
+    layout(); duckX = duckShow = W / 2; px = W / 2;
+    state = 'countdown'; renderScores(); show(null); lockScreen();
+    target.style.visibility = 'hidden';
+    paddle.style.visibility = 'visible'; duck.style.visibility = 'visible';
+    duckLook(); draw(); say('¡Hola, amigo! ¡Vamos a jugar!', 2800);
+    last = performance.now(); requestAnimationFrame(cdLoop);
+    let n = 3; setBig(n); blip(440, .1);
+    clearInterval(cdTimer);
+    cdTimer = setInterval(() => {
+      n--;
+      if (n > 0) { setBig(n); blip(440, .1); }
+      else { clearInterval(cdTimer); cdTimer = null; beginPlay(); }
+    }, 1000);
+  }
+
+  function cdLoop(now) {                                         // durante la cuenta regresiva también se ven los efectos de la barra
+    if (state !== 'countdown') return;
+    const dt = Math.min((now - last) / 1000, .05); last = now;
+    drawFx(dt); requestAnimationFrame(cdLoop);
+  }
+
+  function beginPlay() {
+    state = 'play';
+    launch(); draw();
+    target.style.visibility = 'visible';
+    setBig(0);
+    last = performance.now();
+    tone(880, .2);
+    requestAnimationFrame(loop);
+  }
+
+  function loop(now) {
+    if (state !== 'play') return;
+    if (paused) { last = now; requestAnimationFrame(loop); return; }   // celular en horizontal: pausa
+    const dt = Math.min((now - last) / 1000, .034); last = now;   // si la pestaña se oculta, el juego se pausa solo
+    elapsed += dt;
+    if (keyDir) px = clamp(px + keyDir * 760 * dt, pw / 2, W - pw / 2);
+    const wantPw = basePw * shrink();                              // la barra se achica suavemente con cada rebote
+    if (Math.abs(pw - wantPw) > .3) { pw += (wantPw - pw) * Math.min(1, dt * 5); paddle.style.width = pw + 'px'; px = clamp(px, pw / 2, W - pw / 2); }
+    duckTrack(dt);
+    const n = Math.max(1, Math.ceil(Math.hypot(vx, vy) * dt / 10));
+    for (let i = 0; i < n && state === 'play'; i++) step(dt / n);
+    if (state !== 'play') return;
+    trail.push([x, y]); if (trail.length > 9) trail.shift();
+    drawFx(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function makeRain(devil) {                                     // lluvia de la pelota que llevas puesta
+    const rain = $('rain'); rain.textContent = '';
+    const b = itemOf('ball', wallet.eq.ball) || CAT.ball[0];
+    for (let i = 0; i < 34; i++) {
+      const sp = document.createElement('span');
+      if (devil && i % 4 === 0) { sp.textContent = '🔥'; sp.style.fontSize = (22 + Math.random() * 28) + 'px'; }
+      else if (b.img) { const im = new Image(); im.src = b.img; im.alt = ''; im.draggable = false; im.style.cssText = `display:block;width:${((24 + Math.random() * 26) * (b.w || 1)).toFixed(0)}px;height:auto`; sp.appendChild(im); }
+      else { sp.textContent = '💸'; sp.style.fontSize = (22 + Math.random() * 28) + 'px'; }
+      sp.style.left = (Math.random() * 92) + '%';
+      sp.style.animationDuration = (3.5 + Math.random() * 3.5) + 's';
+      sp.style.animationDelay = (-Math.random() * 6) + 's';
+      rain.appendChild(sp);
+    }
+  }
+
+  // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
+  const BUILD = 'v8';
+  async function diagnose() {
+    const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
+    out.hidden = false; const show = () => { out.textContent = lines.join('\n'); };
+    const add = async (t, r, extra) => { let d = ''; if (!r.ok) { try { d = ' ' + (await r.text()).slice(0, 110); } catch (e) {} } lines.push(`${r.ok ? '✅' : '❌'} ${t} · ${r.status}${d}${extra || ''}`); show(); };
+    lines.push('Probando…'); show();
+    try {
+      lines.pop();
+      await add('Leer marcadores', await http(`${DB}/scores.json?shallow=true`));
+      if (!session) { lines.push('❌ No has iniciado sesión'); show(); return; }
+      const tok = encodeURIComponent(await idToken()), uid = session.uid;
+      await add('Leer tu billetera', await http(`${DB}/wallets/${uid}.json?auth=${tok}`));
+      const w = await http(`${DB}/runs/${uid}.json?auth=${tok}`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: CAT.ball[0].id, r: CAT.ball[0].rate || 1 }) });
+      await add('Empezar una partida (reglas nuevas)', w);
+      if (w.ok) { const g = await http(`${DB}/runs/${uid}/s.json?auth=${tok}`); await add('Leer la hora del servidor', g, g.ok ? ' ' + (await g.clone().text()) : ''); lines.push('Las reglas nuevas están activas. Juega otra partida.'); }
+      else lines.push(w.status === 401 || w.status === 403 ? '→ Firebase rechazó la escritura: en la base de arriba todavía no están las reglas nuevas. En Firebase → Realtime Database → Reglas debe haber un bloque "runs"; pega firebase-rules.json completo y publica.' : '→ No se pudo hablar con Firebase. Revisa tu conexión.');
+    } catch (e) { lines.push('❌ Sin conexión (' + e.message + ')'); }
+    show();
+  }
+
+  async function endGame() {
+    state = 'over';
+    target.style.visibility = 'hidden'; paddle.style.visibility = 'hidden'; duck.style.visibility = 'hidden'; unlockScreen();
+    document.body.classList.remove('ingame');
+    $('bubble').classList.remove('on'); big.textContent = ''; clearFx(); multEl.classList.remove('show');
+
+    const hp = Math.min(hits, H_MAX), p = gameRate * pesosFor(hp), record = hp > player.best;
+    $('finalScore').textContent = hits;
+    $('finalLabel').textContent = hits === 1 ? 'rebote' : 'rebotes';
+    $('finalSub').textContent = `Aguantaste ${fmtClock(elapsed)} · ${curCh().name} llegó a ${phaseName()}\n${(itemOf('ball', wallet.eq.ball) || CAT.ball[0]).n} · ${money(gameRate)} por punto`;
+    $('bestResult').textContent = record ? '🎉 ¡Nuevo récord personal!' : `Tu mejor puntaje: ${player.best}`;
+    renderScores(); setHero(); makeRain(hits >= P_DEVIL); setEnd(true); setThemeActive(false); document.body.classList.remove('hell', 'dark');
+    const cl = $('coinsLine'), st = $('saveStatus'); st.className = 'status'; st.textContent = ''; cl.textContent = '';
+    $('diagBtn').hidden = true; $('diagOut').hidden = true;
+    tone(300, .35, 'sawtooth', .1, 120);
+    show('result');
+    if (hp === 0) { cl.textContent = 'Sin pesos esta vez. ¡Rebota más!'; fetchLeader(); return; }
+
+    if (!AUTH) {                                                 // modo local: todo queda en este dispositivo
+      wallet.c += p; saveWallet(); renderCoins();
+      if (record) { player.best = hp; savePlayer(); }
+      countUp(cl, p, n => `+${money(n)}`);
+      st.textContent = 'Guardado en este dispositivo.'; fetchLeader(); return;
+    }
+    // Con cuenta: el servidor verifica la partida (hora de inicio y de fin) y recién entonces se cobran los pesos y el marcador.
+    const rn = await runP;
+    if (state !== 'over') return;
+    if (!rn) {
+      const rules = runFail === 'rules';
+      cl.textContent = rules ? 'Esta partida no se pudo guardar.' : 'Sin conexión: esta partida no sumó pesos.'; st.className = 'status err';
+      st.textContent = rules ? 'Firebase no permitió registrar la partida: hay que publicar las reglas nuevas (firebase-rules.json).' : 'Hace falta internet al empezar la partida para sumar pesos y puntaje.';
+      $('bestResult').textContent = `Tu mejor puntaje: ${player.best}`; $('diagBtn').hidden = false; return;
+    }
+    pending = { s: rn.s, h: hp, r: rn.r }; savePending(); renderCoins();
+    countUp(cl, p, n => `+${money(n)}`);
+    st.textContent = 'Guardando tu partida…';
+    for (let i = 0; i < 4; i++) {
+      const res = await claimRun();
+      renderCoins();
+      if (state !== 'over') return;
+      if (res === 'ok') {
+        cl.textContent = `+${money(p)} · ahora tienes ${money(balance())}`;
+        st.className = 'status'; st.textContent = '✅ Partida guardada'; fetchLeader();
+        try { const me = await myRank(await fetchTop()); if (state === 'over' && me) st.textContent = `✅ Guardado · puesto ${me.rank.toLocaleString('es')}${me.total ? ' de ' + me.total.toLocaleString('es') : ''}`; } catch (e) {}
+        return;
+      }
+      if (res === 'denied') {
+        cl.textContent = 'Esta partida no se pudo cobrar.'; st.className = 'status err'; $('bestResult').textContent = `Tu mejor puntaje: ${player.best}`;
+        st.textContent = 'Firebase no permitió guardar la partida (revisa que las reglas nuevas estén publicadas).'; $('diagBtn').hidden = false; return;
+      }
+      st.className = 'status err'; st.textContent = 'No se pudo guardar. Reintentando…';
+      await new Promise(r => setTimeout(r, 4000));
+      if (state !== 'over') return;
+    }
+    st.textContent = 'Sin conexión: tus pesos se cobrarán solos cuando vuelva internet.'; $('diagBtn').hidden = false;
+  }
+
+  function backToMenu() {
+    clearInterval(cdTimer); cdTimer = null;
+    clearInterval(boardTimer); boardTimer = null;
+    state = 'menu';
+    target.style.visibility = 'hidden'; paddle.style.visibility = 'hidden'; duck.style.visibility = 'hidden';
+    document.body.classList.remove('ingame'); multEl.classList.remove('show');
+    $('bubble').classList.remove('on'); big.textContent = ''; clearFx();
+    setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = ''; setTheme('#fff7c2'); unlockScreen();
+    hits = 0; elapsed = 0; duckLook(); renderScores(); fetchLeader(); renderMenu();
+    show('menu');
+  }
+
+  $('authForm').addEventListener('submit', submitAuth);
+  $('tabIn').addEventListener('click', () => setAuthMode('in'));
+  $('tabUp').addEventListener('click', () => setAuthMode('up'));
+  $('eye').addEventListener('click', () => { const p = $('pass'); const show = p.type === 'password'; p.type = show ? 'text' : 'password'; $('eye').textContent = show ? '🙈' : '👁'; });
+  $('logout').addEventListener('click', logout);
+  $('diagBtn').addEventListener('click', diagnose);
+  $('openShop').addEventListener('click', () => openShop('menu'));
+  $('openShop2').addEventListener('click', () => openShop('result'));
+  $('shopBack').addEventListener('click', closeShop);
+  $('tabCh').addEventListener('click', () => { shopTab = 'ch'; renderShop(); });
+  $('tabBg').addEventListener('click', () => { shopTab = 'bg'; renderShop(); });
+  $('tabPad').addEventListener('click', () => { shopTab = 'pad'; renderShop(); });
+  $('tabBall').addEventListener('click', () => { shopTab = 'ball'; renderShop(); });
+  $('play').addEventListener('click', startCountdown);
+  $('again').addEventListener('click', startCountdown);
+  $('close').addEventListener('click', backToMenu);
+  $('backResult').addEventListener('click', backToMenu);
+  $('openBoard').addEventListener('click', () => openBoard('menu'));
+  $('openBoard2').addEventListener('click', () => openBoard('result'));
+  $('backBoard').addEventListener('click', closeBoard);
+  $('moreBoard').addEventListener('click', () => { boardLimit = Math.min(1000, boardLimit + 100); refreshBoard(); });
+  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') startCountdown(); });
+
+  /* ---------- app instalable (PWA) ---------- */
+  const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  let installEvt = null; const installBtn = $('install');
+  const refreshInstall = () => { installBtn.hidden = standalone() || !(installEvt || isIOS); };
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; refreshInstall(); });   // Android / Chrome / Edge
+  addEventListener('appinstalled', () => { installEvt = null; refreshInstall(); });
+  installBtn.addEventListener('click', async () => {
+    if (installEvt) { installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; refreshInstall(); return; }
+    $('sheetSteps').innerHTML = '<li>Abre esta página en <b>Safari</b>.</li><li>Toca el botón <b>Compartir</b> (el cuadrado con la flecha ↑).</li><li>Elige <b>Añadir a pantalla de inicio</b> y toca <b>Añadir</b>.</li>';
+    $('sheet').hidden = false;
+  });
+  $('sheetOk').addEventListener('click', () => { $('sheet').hidden = true; });
+  refreshInstall();
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol))                      // funciona sin conexión
+    addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+
+  nameInput.value = player.name;
+  loadWallet(); applyCosmetics();                                // (aplica también el personaje elegido)
+  measure(); layout(); setInitial(); duckLook(); renderMenu();
+  leaderBest = player.best; renderScores();
+  target.style.visibility = 'hidden';
+  if (AUTH && session) { loadMine(); pullWallet().then(() => { applyCosmetics(); renderMenu(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
+  fetchLeader();
+})();
+</script>
+</body>
+</html>
