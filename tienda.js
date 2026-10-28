@@ -11,41 +11,48 @@ window.TIENDA = {
   ch: [
     { id: 'tio', n: 'Tío Pato',   price: 0,   dir: 'pato/',    name: 'el Tío Pato', g: 'm',
       css: { wl: '43.5% 64.5%', wr: '59% 63.7%', tr: '60.3% 35.5%', tail: '40% 76%', steam: '58% 22%', avW: '142px', avL: '-47px', avT: '-56px' }, note: 'El de siempre' },
-    { id: 'tia', n: 'Tía Patita', price: 50,  dir: 'patita/',  name: 'la Tía Patita', g: 'f',
+    { id: 'tia', n: 'Tía Patita', price: 150,  dir: 'patita/',  name: 'la Tía Patita', g: 'f',
       css: { wl: '42% 64.2%', wr: '60.3% 62.8%', tr: '65.6% 39.2%', tail: '39.5% 78.4%', steam: '58% 26%', avW: '166px', avL: '-50px', avT: '-67px' }, note: 'Ángel que se vuelve demonio' },
-    { id: 'conejo',   n: 'Tío Pato Conejo',     price: 200, stat: 'trajes/conejo.webp',   stat2: 'trajes/conejo-enojado.webp',   asp: 1.92, asp2: 1.65, name: 'el Tío Pato Conejo',     g: 'm',
+    { id: 'conejo',   n: 'Tío Pato Conejo',     price: 300, stat: 'trajes/conejo.webp',   stat2: 'trajes/conejo-enojado.webp',   asp: 1.92, asp2: 1.65, name: 'el Tío Pato Conejo',     g: 'm',
       av: { w: 78, fx: .53, fy: .40 }, av2: { w: 78, fx: .55, fy: .39 }, css: { steam: '66% 12%' }, note: 'Se enoja cuando avanzas' },
-    { id: 'conejita', n: 'Tía Patita Conejita', price: 200, stat: 'trajes/conejita.webp', stat2: 'trajes/conejita-enojada.webp', asp: 1.63, asp2: 1.45, name: 'la Tía Patita Conejita', g: 'f',
+    { id: 'conejita', n: 'Tía Patita Conejita', price: 300, stat: 'trajes/conejita.webp', stat2: 'trajes/conejita-enojada.webp', asp: 1.63, asp2: 1.45, name: 'la Tía Patita Conejita', g: 'f',
       av: { w: 84, fx: .58, fy: .36 }, av2: { w: 84, fx: .60, fy: .40 }, css: { steam: '70% 16%' }, note: 'Se enoja cuando avanzas' },
-    { id: 'bigotes',  n: 'Tío Pato Simi',       price: 500, stat: 'trajes/bigotes.webp',  stat2: 'trajes/bigotes-enojado.webp',  asp: 1.92, asp2: 1.61, name: 'el Tío Pato Simi',       g: 'm',
+    { id: 'bigotes',  n: 'Tío Pato Simi',       price: 600, stat: 'trajes/bigotes.webp',  stat2: 'trajes/bigotes-enojado.webp',  asp: 1.92, asp2: 1.61, name: 'el Tío Pato Simi',       g: 'm',
       av: { w: 76, fx: .47, fy: .375 }, av2: { w: 80, fx: .62, fy: .41 }, css: { steam: '64% 12%' }, note: 'Bigote, sombrero de copa y bata' },
-    { id: 'tios',     n: 'Tíos Patitos',        price: 500, stat: 'trajes/tios.webp',     stat2: 'trajes/tios-enojados.webp',    asp: .83,  asp2: .86,  name: 'los Tíos Patitos',       g: 'p', dw: 1.5,
+    { id: 'tios',     n: 'Tíos Patitos',        price: 600, stat: 'trajes/tios.webp',     stat2: 'trajes/tios-enojados.webp',    asp: .83,  asp2: .86,  name: 'los Tíos Patitos',       g: 'p', dw: 1.5,
       av: { w: 70, fx: .49, fy: .31 }, av2: { w: 70, fx: .50, fy: .31 }, css: { steam: '48% 6%' }, note: 'La pareja: te devuelven la pelota de la mano' },
     // Personaje secreto: aparece como una carta misteriosa hasta que lo compras. Usa el mismo rig del Tío Pato, pintado de oro (carpeta oro/).
     { id: 'millonario', n: 'Tío Pato Millonario', price: 100000000, dir: 'oro/', name: 'el Tío Pato Millonario', g: 'm', secret: true, glow: true,
       css: { wl: '43.5% 64.5%', wr: '59% 63.7%', tr: '60.3% 35.5%', tail: '40% 76%', steam: '58% 22%', avW: '142px', avL: '-47px', avT: '-56px' }, note: 'De oro macizo: el sueño de todo millonario' }
   ],
 
+  // vip: true = artículo para millonarios (la tienda los separa y los marca con 💎; el precio ya los deja fuera del alcance de quien recién empieza).
   bg: [
     { id: 'clasico',   n: 'Clásico',          price: 0,   base: '#fff6c0', note: 'Cambia de color con tus puntos' },
-    { id: 'atardecer', n: 'Atardecer',        price: 100, base: '#ffb199', note: 'Tonos difuminados' },
-    { id: 'cristal',   n: 'Cristal helado',   price: 120, base: '#dcecff', note: 'Azules translúcidos' },
-    { id: 'aurora',    n: 'Aurora boreal',    price: 200, base: '#0b1b34', dark: true, note: 'Luces que flotan' },
-    { id: 'galaxia',   n: 'Galaxia',          price: 300, base: '#0a0a1f', dark: true, note: 'Nebulosa y estrellas' },
-    { id: 'holo',      n: 'Holográfico',      price: 350, base: '#e9c8ff', note: 'Reflejos iridiscentes' },
-    { id: 'synth',     n: 'Synthwave',        price: 450, base: '#3d0a6b', dark: true, note: 'Sol neón y cuadrícula' }
+    { id: 'atardecer', n: 'Atardecer',        price: 200, base: '#ffb199', note: 'Sol sobre el mar y nubes que pasan' },
+    { id: 'cristal',   n: 'Cristal helado',   price: 220, base: '#dcecff', note: 'Témpanos, escarcha y destellos' },
+    { id: 'aurora',    n: 'Aurora boreal',    price: 300, base: '#0b1b34', dark: true, note: 'Cortinas de luz sobre las montañas' },
+    { id: 'galaxia',   n: 'Galaxia',          price: 400, base: '#0a0a1f', dark: true, note: 'Espiral girando y estrellas fugaces' },
+    { id: 'holo',      n: 'Holográfico',      price: 450, base: '#e9c8ff', note: 'Reflejos iridiscentes y burbujas' },
+    { id: 'synth',     n: 'Synthwave',        price: 550, base: '#3d0a6b', dark: true, note: 'Sol neón, montañas y cuadrícula' },
+    { id: 'boveda',    n: 'Bóveda de oro',    price: 2000000,  base: '#1c1204', dark: true, vip: true, note: 'Una montaña de lingotes y polvo de oro' },
+    { id: 'prisma',    n: 'Palacio de diamante', price: 5000000, base: '#0b1747', dark: true, vip: true, note: 'Un brillante gigante y rayos de arcoíris' },
+    { id: 'agujero',   n: 'Agujero negro',    price: 10000000, base: '#02020a', dark: true, vip: true, note: 'Disco de fuego que gira sin parar' }
   ],
 
   // Barras: cada una con sus propios efectos (brillos, chispas, anillos al rebotar).
   pad: [
     { id: 'clasica',  n: 'Clásica',      price: 0,   note: 'Negra y sencilla' },
-    { id: 'dorada',   n: 'Oro líquido',  price: 120, note: 'Metal con destellos' },
-    { id: 'fuego',    n: 'Llamarada',    price: 180, note: 'Fuego vivo y chispas' },
-    { id: 'cristal',  n: 'Cristal',      price: 200, note: 'Vidrio con prisma' },
-    { id: 'neon',     n: 'Neón',         price: 250, note: 'Brilla y cambia de color' },
-    { id: 'galaxia',  n: 'Galaxia',      price: 300, note: 'Estrellas en movimiento' },
-    { id: 'arcoiris', n: 'Arcoíris',     price: 350, note: 'Colores que fluyen' },
-    { id: 'holo',     n: 'Holográfica',  price: 400, note: 'Iridiscente con destellos' }
+    { id: 'dorada',   n: 'Oro líquido',  price: 220, note: 'Metal con destellos' },
+    { id: 'fuego',    n: 'Llamarada',    price: 280, note: 'Fuego de verdad, con brasas' },
+    { id: 'cristal',  n: 'Cristal',      price: 300, note: 'Vidrio con prisma' },
+    { id: 'neon',     n: 'Neón',         price: 350, note: 'Brilla y cambia de color' },
+    { id: 'galaxia',  n: 'Galaxia',      price: 400, note: 'Estrellas en movimiento' },
+    { id: 'arcoiris', n: 'Arcoíris',     price: 450, note: 'Colores que fluyen' },
+    { id: 'holo',     n: 'Holográfica',  price: 500, note: 'Iridiscente con destellos' },
+    { id: 'midas',    n: 'Rey Midas',    price: 3000000,  vip: true, note: 'Todo lo que toca se vuelve monedas' },
+    { id: 'diamante', n: 'Diamante',     price: 6000000,  vip: true, note: 'Facetas que lanzan arcoíris' },
+    { id: 'plasma',   n: 'Tormenta eléctrica', price: 12000000, vip: true, note: 'Rayos que saltan en cada rebote' }
   ],
 
   // Pelotas: monedas y billetes chilenos. rate = pesos que paga cada punto (se multiplica por «Monedas dobles» desde el rebote 100).

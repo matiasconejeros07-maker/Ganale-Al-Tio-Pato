@@ -71,61 +71,79 @@
         },
         "own": {
           "ch_tia": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 50)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 150)"
           },
           "ch_conejo": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 200)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 300)"
           },
           "ch_conejita": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 200)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 300)"
           },
           "ch_bigotes": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 500)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 600)"
           },
           "ch_tios": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 500)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 600)"
           },
           "ch_millonario": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 100000000)"
           },
           "bg_atardecer": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 100)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 200)"
           },
           "bg_cristal": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 120)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 220)"
           },
           "bg_aurora": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 200)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 300)"
           },
           "bg_galaxia": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 300)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 400)"
           },
           "bg_holo": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 350)"
-          },
-          "bg_synth": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 450)"
           },
+          "bg_synth": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 550)"
+          },
+          "bg_boveda": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 2000000)"
+          },
+          "bg_prisma": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 5000000)"
+          },
+          "bg_agujero": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 10000000)"
+          },
           "pad_dorada": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 120)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 220)"
           },
           "pad_fuego": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 180)"
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 280)"
           },
           "pad_cristal": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 200)"
-          },
-          "pad_neon": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 250)"
-          },
-          "pad_galaxia": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 300)"
           },
-          "pad_arcoiris": {
+          "pad_neon": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 350)"
           },
-          "pad_holo": {
+          "pad_galaxia": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 400)"
+          },
+          "pad_arcoiris": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 450)"
+          },
+          "pad_holo": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 500)"
+          },
+          "pad_midas": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 3000000)"
+          },
+          "pad_diamante": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 6000000)"
+          },
+          "pad_plasma": {
+            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 12000000)"
           },
           "ball_peso5": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 5)"
