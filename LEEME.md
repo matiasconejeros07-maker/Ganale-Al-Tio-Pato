@@ -30,8 +30,8 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
 
 - **Eslogan: «¡Rebota, gana y hazte millonario! 💰»** (aparece en el menú).
 - **Cada pelota paga distinto por punto:** moneda $1 → $1 · $5 → $2 · $10 → $3 · $50 → $4 · $100 → $5 · $500 → $6 · billete $1.000 → $7 · $2.000 → $8 · $5.000 → $9 · $10.000 → $10 · $20.000 → $20 ·
-  **lingote de plata ($50.000) → $100 · lingote de oro ($500.000) → $200 · diamante ($1.000.000) → $500**.
-  Ese valor se multiplica por **«Monedas dobles»**: ×1 del rebote 1 al 99, ×2 del 100 al 199, ×3 del 200 al 299, y así. Ejemplo: con el diamante, una partida de 120 rebotes da 500 × 141 = $70.500 (y una de 500 rebotes, $752.500).
+  **lingote de plata ($50.000) → $100 · lingote de oro ($500.000) → $500 · diamante ($1.000.000) → $5.000**.
+  Ese valor se multiplica por **«Monedas dobles»**: ×1 del rebote 1 al 99, ×2 del 100 al 199, ×3 del 200 al 299, y así. Ejemplo: con el diamante, una partida de 120 rebotes da 5.000 × 141 = $705.000 (y una de 500 rebotes, $7.525.000).
   Al llegar al rebote 100 aparece el aviso animado **«¡Monedas dobles! ×2»** (×3 en el 200…) y una insignia ×N junto al marcador. La pelota con la que empiezas la partida es la que paga toda la partida.
 - **Personaje secreto:** el **Tío Pato Dorado** cuesta **$100.000.000** (un pato dorado con corona que al enojarse se enciende al rojo vivo: `trajes/dorado.webp` y `trajes/dorado-oscuro.webp`). En la tienda aparece como una carta misteriosa («Personaje secreto») hasta que se compra. Por dentro su id sigue siendo `millonario` (así quien ya lo tenía no lo pierde y las reglas siguen igual). El rig dorado de antes (`oro/`) ya no se usa.
 - **Dificultad:** hasta el rebote 99 el juego es ágil pero amable (la pelota acelera poco y la barra se achica poco). Desde el 100 sube de verdad:

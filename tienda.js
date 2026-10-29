@@ -76,7 +76,7 @@ window.TIENDA = {
     { id: 'b10000',  n: 'Billete $10.000', price: 10000, rate: 10, img: 'skins/b10000.webp',  fx: 'flutter', w: 1.6, asp: 0.476,  trail: '#7cc4f0', nom: 'billete', gen: 'm' },
     { id: 'b20000',  n: 'Billete $20.000', price: 20000, rate: 20, img: 'skins/b20000.webp',  fx: 'flutter', w: 1.6, asp: 0.486,  trail: '#f0a070', nom: 'billete', gen: 'm' },
     { id: 'plata',   n: 'Lingote de plata', price: 50000,   rate: 100,   img: 'skins/plata.webp',    fx: 'jump', w: 1.7, asp: 0.594, trail: '#cfd6e2', nom: 'lingote de plata', gen: 'm', note: 'Un lingote de verdad' },
-    { id: 'oro',     n: 'Lingote de oro',   price: 500000,  rate: 200,   img: 'skins/oro.webp',     fx: 'jump', w: 1.7, asp: 0.594, trail: '#ffd54a', nom: 'lingote de oro', gen: 'm' },
-    { id: 'diamante', n: 'Diamante',        price: 1000000, rate: 500,   img: 'skins/diamante.webp', fx: 'jump', w: 1.15, asp: 1.04, trail: '#8fd3ff', nom: 'diamante', gen: 'm', note: 'La joya de la corona' }
+    { id: 'oro',     n: 'Lingote de oro',   price: 500000,  rate: 500,   img: 'skins/oro.webp',     fx: 'jump', w: 1.7, asp: 0.594, trail: '#ffd54a', nom: 'lingote de oro', gen: 'm' },
+    { id: 'diamante', n: 'Diamante',        price: 1000000, rate: 5000,  img: 'skins/diamante.webp', fx: 'jump', w: 1.15, asp: 1.04, trail: '#8fd3ff', nom: 'diamante', gen: 'm', note: 'La joya de la corona' }
   ]
 };
