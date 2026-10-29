@@ -7,6 +7,17 @@ window.TIENDA = {
     // Racha diaria: entrar cada día da premios. dias = pesos del día 1 al 7 (el 7 no da pesos: da «pesos dobles» durante dobleMs) · el día cambia a medianoche de Chile en horario de verano (huso -3)
     racha: { dias: [100, 200, 300, 400, 500, 1000, 0], dobleMs: 600000, huso: -3 } },
 
+  // Foto de perfil = un emblema que cada jugador arma en el editor: forma, colores de fondo y borde, diseño y hasta 3 símbolos puestos donde quiera.
+  // Se guarda en 17 caracteres como máximo («e» + forma + fondo + borde + diseño + 4 por símbolo), así pesa casi nada en la base de datos y se dibuja con CSS (sin imágenes).
+  // emojis = los símbolos que se pueden elegir (el 0 es la inicial del nombre; hasta 63) · paleta = [color claro, color oscuro, color de la letra]; hasta 64 colores.
+  avatar: {
+    emojis: ['🦆', '😎', '👑', '💰', '🪙', '💎', '🔥', '⚡', '🚀', '🏆', '🎮', '🎩', '🌈', '🍀', '🦁', '🐸', '🐼', '🦊', '👻', '🌙', '⭐', '❤️', '💀', '👽',
+      '🤖', '🐱', '🐶', '🦄', '🐉', '🦅', '🐯', '🐵', '🦈', '🐧', '🌵', '🌸', '🍕', '🍔', '🎧', '🎸', '⚽', '🏀', '🥇', '🎯', '🧠', '💣', '⚔️', '❄️'],
+    paleta: [['#4a4a4a', '#151515', '#fff'], ['#ff7b7b', '#d6282c', '#fff'], ['#ffb752', '#ee6a00', '#fff'], ['#ffe978', '#f0b400', '#3a2f00'], ['#86e486', '#25a038', '#fff'], ['#66e6d3', '#0f9f8f', '#fff'],
+      ['#78d4ff', '#1f8fe0', '#fff'], ['#7b94ff', '#2c46d6', '#fff'], ['#bb94ff', '#6a35e0', '#fff'], ['#ff94d4', '#e0149f', '#fff'], ['#ffe9a0', '#cf9b10', '#3a2f00'], ['#ffffff', '#cfcfdc', '#222'],
+      ['#c98a5b', '#7a4a22', '#fff'], ['#5a6fb5', '#1c2760', '#fff'], ['#d4f26a', '#8cb800', '#2a3300'], ['#b8bcc6', '#6b7080', '#fff']]
+  },
+
   // Personajes: el rival que te devuelve la pelota. Todos son imágenes sueltas (el Tío Pato y la Tía Patita se transforman de ángel a diablo/diabla; el resto solo se enoja)
   // con temblor, brillo rojo y vapor. stat = dibujo calmado · stat2 = dibujo enojado, al que cambian cuando el personaje se enoja.
   // av = recorte de la cara para el avatar · dw = ancho de la caja del personaje (la pareja es más ancha) · g = género/número del nombre (m, f o p = plural).

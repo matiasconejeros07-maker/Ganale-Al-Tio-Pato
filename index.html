@@ -241,6 +241,7 @@
   .tog i { position: absolute; top: 3px; right: 3px; width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fffaf0, #eadfc8); box-shadow: 0 3px 7px rgba(0, 0, 0, .4); transition: transform .2s cubic-bezier(.3, 1.4, .5, 1); }
   .tog.off { background: linear-gradient(#bdb9a2, #a29e86); padding: 0 16px 0 0; text-align: right; }
   .tog.off i { transform: translateX(-54px); }
+  .btn.mini { margin: 0; padding: 10px 20px; font-size: 16px; }
   .btn.out { width: 100%; margin-top: 20px; background: transparent; color: #c0392b; border: 3px solid #c0392b; font-size: 17px; padding: 13px 20px; }
   .btn.out[hidden] { display: none; }
   .setver { margin-top: 14px; font-size: 13px; font-weight: 800; color: #9b977a; }
@@ -258,6 +259,47 @@
   #dailyMsg { min-height: 0; margin-top: 12px; }
   #dailyMsg.ok:not(:empty) { display: inline-block; background: #eaf7e6; color: #1f7a2b; padding: 6px 14px; border-radius: 999px; font-weight: 800; }
   #dailyMsg.err:not(:empty) { display: block; }
+
+  /* ---------- emblema (foto de perfil) y su editor ---------- */
+  .embw { display: inline-block; flex: none; line-height: 0; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .35)); }
+  .emb { position: relative; display: block; overflow: hidden; }
+  .emb .embi { position: absolute; inset: 7%; overflow: hidden; }
+  .emb .embs { position: absolute; transform: translate(-50%, -50%); line-height: 1; white-space: nowrap; pointer-events: none; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif; }
+  .emb .embs.let { font-weight: 900; font-family: inherit; }
+  .avatar.emb { border: 0; background: none; box-shadow: none; }
+  .avatar.me.emb, .avatar.bot.emb { overflow: visible; }
+  .avatar.bot.emb #botFace { display: none; }
+  .avatar.bot #botEmb { display: none; }
+  .avatar.bot.emb #botEmb { display: block; }
+  .chip .uemb { display: inline-flex; flex: none; }
+  .pav { display: inline-flex; flex: none; }
+  #list li .nm, #myRow li .nm { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: visible; text-overflow: clip; }
+  #list li .nm .t, #myRow li .nm .t { overflow: hidden; min-width: 0; text-overflow: ellipsis; white-space: nowrap; }
+  .mcard.ed { max-height: calc(100% - 8px); overflow-y: auto; overscroll-behavior: contain; }
+  .mcard.ed .setx { top: 8px; right: 8px; }
+  .mcard.ed .sethead { padding: 16px; position: sticky; top: 0; z-index: 3; }
+  .mcard.ed .sethead h2 { font-size: 24px; }
+  .edprev { display: flex; justify-content: center; margin: 12px 0 2px; }
+  .edstage { position: relative; touch-action: none; cursor: grab; border-radius: 20px; padding: 10px; background: repeating-conic-gradient(#f3efd3 0 25%, #fffdf0 0 50%) 0 0 / 22px 22px; }
+  .edsel { position: absolute; border: 2px dashed #111; border-radius: 8px; pointer-events: none; transform: translate(-50%, -50%); }
+  .edhint { margin: 4px 0 8px; font-size: 13px; font-weight: 700; color: #6b6840; }
+  .edrow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 6px 0; }
+  .edchip { min-width: 44px; height: 44px; border-radius: 14px; border: 2px solid var(--line); background: #fff; font: inherit; font-weight: 900; font-size: 17px; cursor: pointer; padding: 0 10px; color: var(--ink); }
+  .edchip.on { border-color: #111; box-shadow: 0 0 0 2px #ffc928; }
+  .edchip:disabled { opacity: .35; cursor: default; }
+  .edlbl { margin: 14px 0 6px; text-align: left; font-size: 13px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: #6b6840; }
+  .symgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .symgrid button, .shgrid button, .patgrid button { height: 44px; border-radius: 12px; border: 2px solid var(--line); background: #fff; cursor: pointer; font-size: 22px; line-height: 1; padding: 0; color: var(--ink); font-family: inherit; }
+  .symgrid button.on, .shgrid button.on, .patgrid button.on { border-color: #111; box-shadow: 0 0 0 2px #ffc928; }
+  .shgrid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+  .shgrid button span { display: block; width: 28px; height: 28px; margin: auto; background: #3a3a3a; }
+  .patgrid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .patgrid button { font-size: 11px; font-weight: 800; }
+  .cgrid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+  .cgrid button { height: 34px; border-radius: 50%; border: 3px solid #fff; cursor: pointer; box-shadow: 0 0 0 1px var(--line); padding: 0; }
+  .cgrid button.on { box-shadow: 0 0 0 3px #111; }
+  .edact { position: sticky; bottom: -24px; display: flex; gap: 10px; margin: 18px -16px -24px; padding: 14px 16px 22px; background: linear-gradient(rgba(255, 253, 240, 0), #fffdf0 28%); }
+  .edact .btn { flex: 1; margin-top: 0; padding: 13px 8px; font-size: 15px; white-space: nowrap; }
 
   /* ---------- pantallas (inicio / final / marcadores) ---------- */
   .screen {
@@ -752,7 +794,7 @@
   #menu .mid { width: min(100%, 360px); display: flex; flex-direction: column; align-items: center; gap: 12px; margin: auto 0; padding: 8px 0; }
   .chip { display: inline-flex; align-items: center; gap: 8px; max-width: 58%; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px 4px 4px; font-weight: 800; font-size: 15px; box-shadow: 0 2px 8px rgba(80,70,20,.1); }
   .chip[hidden] { display: none; }
-  .chip .uav { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #4a4a4a, #151515); color: #fff; display: grid; place-items: center; font-size: 15px; font-weight: 800; flex: none; }
+  #userBox { cursor: pointer; font: inherit; color: var(--ink); }
   .chip #hello { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #menu .stage { --st: clamp(150px, 25vh, 205px); position: relative; display: grid; place-items: center; flex: none; width: var(--st); height: var(--st); border-radius: 50%; background: radial-gradient(circle at 50% 40%, #fffef0 0%, #fff1a8 55%, rgba(255,224,110,.55) 100%); box-shadow: 0 0 0 1px rgba(150,130,40,.14), 0 14px 34px rgba(150,120,20,.22), inset 0 -10px 24px rgba(255,190,60,.25); }
   #menu .stage .hero { height: calc(var(--st) * .8); animation: float 2.4s ease-in-out infinite; filter: drop-shadow(0 8px 8px rgba(0,0,0,.16)); }
@@ -807,8 +849,8 @@
     </button>
     <div class="meWrap"><div class="num" id="meNum">000</div><div class="mbadge" id="mbadge" hidden>×2</div></div>
     <div class="avatars">
-      <div class="avatar me" id="meAv"><span class="crown">👑</span><span id="meInit">😎</span></div>
-      <div class="avatar bot" id="botAv"><span class="crown">👑</span><span id="botFace">🦆</span></div>
+      <div class="avatar me emb" id="meAv"><span class="crown">👑</span><span id="meEmb"></span></div>
+      <div class="avatar bot" id="botAv"><span class="crown">👑</span><span id="botFace">🦆</span><span id="botEmb"></span></div>
     </div>
     <div class="num" id="botNum">000</div>
   </header>
@@ -827,7 +869,7 @@
     <!-- inicio -->
     <section class="screen show" id="menu">
       <div class="topbar" id="topbar">
-        <div class="chip" id="userBox" hidden><span class="uav" id="userAv">😎</span><span id="hello"></span></div>
+        <button class="chip" id="userBox" type="button" hidden aria-label="Editar mi emblema"><span class="uemb" id="userEmb"></span><span id="hello"></span></button>
         <button class="chip streak" id="streakChip" type="button" hidden aria-label="Racha diaria">🔥 <span id="streakNum">0</span></button>
         <div class="coins" id="coinChip" hidden><img class="ci" src="skins/peso1.webp" alt=""><span id="coinNum">$0</span></div>
       </div>
@@ -901,10 +943,32 @@
     <div class="sethead"><h2 id="setTitle">Ajustes</h2></div>
     <button class="setx" id="setClose" type="button" aria-label="Cerrar">✕</button>
     <div class="setbody">
+      <div class="setrow"><span class="uemb" id="setEmb"></span><span class="setl">Mi emblema</span><button class="btn mini" id="openEmblem" type="button">Editar</button></div>
       <div class="setrow"><span class="seti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.2 5.8a8.6 8.6 0 0 1 0 12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="setl" id="lblSound">Sonido</span><button class="tog" id="togSound" type="button" role="switch" aria-checked="true" aria-labelledby="lblSound"><span class="tt">SÍ</span><i></i></button></div>
       <div class="setrow"><span class="seti"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="18" rx="2.2"/><path d="M4.5 8v8M2 10.5v3M19.5 8v8M22 10.5v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="setl" id="lblVib">Vibración</span><button class="tog" id="togVib" type="button" role="switch" aria-checked="true" aria-labelledby="lblVib"><span class="tt">SÍ</span><i></i></button></div>
       <button class="btn out" id="logout" type="button" hidden>Cerrar sesión</button>
       <div class="setver" id="setVer">Versión</div>
+    </div>
+  </div>
+</div>
+<div class="modal" id="emblem" role="dialog" aria-modal="true" aria-labelledby="embTitle">
+  <div class="mcard set ed">
+    <div class="sethead"><h2 id="embTitle">Tu emblema</h2></div>
+    <button class="setx" id="embClose" type="button" aria-label="Cerrar">✕</button>
+    <div class="setbody">
+      <div class="edprev"><div class="edstage" id="edStage"></div></div>
+      <p class="edhint">Toca o arrastra para poner el símbolo donde quieras</p>
+      <div class="edrow" id="edLayers"></div>
+      <div class="edrow">
+        <button class="edchip" id="edSmaller" type="button" aria-label="Más chico">−</button><button class="edchip" id="edBigger" type="button" aria-label="Más grande">+</button>
+        <button class="edchip" id="edRotate" type="button" aria-label="Girar">↻</button><button class="edchip" id="edDel" type="button" aria-label="Quitar este símbolo">🗑️</button>
+      </div>
+      <div class="edlbl">Símbolo</div><div class="symgrid" id="edSyms"></div>
+      <div class="edlbl">Forma</div><div class="shgrid" id="edShapes"></div>
+      <div class="edlbl">Fondo</div><div class="cgrid" id="edC1"></div>
+      <div class="edlbl">Borde</div><div class="cgrid" id="edC2"></div>
+      <div class="edlbl">Diseño</div><div class="patgrid" id="edPats"></div>
+      <div class="edact"><button class="btn ghost" id="edRandom" type="button">🎲 Sorpréndeme</button><button class="btn" id="edSave" type="button">Guardar</button></div>
     </div>
   </div>
 </div>
@@ -1022,7 +1086,7 @@
   const clip = (s, max) => { const t = s.slice(0, max); return /[\ud800-\udbff]$/.test(t) ? t.slice(0, -1) : t; };           // sin partir un emoji por la mitad
   const cleanName = (s, max = NAME_MAX) => clip(stripBad(s).replace(/\s+/g, ' ').trim(), max).trim();
   let player = { id: '', name: '', best: 0, dirty: false };       // best: mayor cantidad de rebotes
-  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); player.id = String(o.id || ''); player.name = cleanName(o.name); player.best = Math.max(0, +o.best || 0); player.dirty = !!o.dirty; } catch (e) {}
+  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); player.id = String(o.id || ''); player.name = cleanName(o.name); player.best = Math.max(0, +o.best || 0); player.dirty = !!o.dirty; player.av = typeof o.av === 'string' ? o.av : ''; } catch (e) {}
   function savePlayer() { try { localStorage.setItem(STORE_KEY, JSON.stringify(player)); } catch (e) {} }
 
   /* ---------- cuenta (Firebase Authentication por REST): la sesión queda guardada en el teléfono ---------- */
@@ -1448,7 +1512,7 @@
     const data = (await r.json()) || {};
     return Object.entries(data)
       .filter(([, v]) => v && typeof v.s === 'number' && typeof v.n === 'string')
-      .map(([id, v]) => ({ id, n: cleanName(v.n) || '—', s: v.s, t: +v.t || 0 }))
+      .map(([id, v]) => ({ id, n: cleanName(v.n) || '—', a: typeof v.a === 'string' ? v.a : '', s: v.s, t: +v.t || 0 }))
       .sort((a, b) => b.s - a.s || a.t - b.t);
   }
   async function fetchLeader() {                                 // el mayor puntaje del marcador (para el encabezado)
@@ -1456,10 +1520,13 @@
     if (ONLINE) {
       try {
         const r = await http(`${DB}/scores.json?orderBy=%22s%22&limitToLast=1`);
-        if (r.ok) top = Math.max(top, ...Object.values((await r.json()) || {}).map(v => (v && +v.s) || 0));
+        if (r.ok) {
+          const rows = Object.values((await r.json()) || {}).filter(v => v && typeof v.s === 'number' && typeof v.n === 'string').sort((a, b) => b.s - a.s);
+          if (rows[0]) { leaderTop = { n: cleanName(rows[0].n) || '—', a: typeof rows[0].a === 'string' ? rows[0].a : '', s: rows[0].s }; top = Math.max(top, rows[0].s); }
+        }
       } catch (e) {}
     }
-    leaderBest = top; renderScores();
+    leaderBest = top; renderScores(); paintBotAvatar();
   }
 
   /* ---------- pantalla de marcadores ---------- */
@@ -1479,7 +1546,9 @@
       if (i < 3) li.classList.add('top');
       if (row.id === player.id) li.classList.add('mine');
       const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = medals[i] || (i + 1);
-      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = row.n;   // textContent: nunca HTML
+      const nm = document.createElement('span'); nm.className = 'nm';
+      const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(row.id === player.id ? player.av : row.a), avLetter(row.n), 30));
+      const tx = document.createElement('span'); tx.className = 't'; tx.textContent = row.n; nm.append(pv, tx);   // textContent: nunca HTML
       const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = row.s;
       li.append(rk, nm, sc); frag.appendChild(li);
     });
@@ -1491,8 +1560,10 @@
       const dots = document.createElement('div'); dots.className = 'dots'; dots.setAttribute('aria-hidden', 'true'); dots.innerHTML = '<i></i><i></i><i></i>';
       const list = document.createElement('ul'), li = document.createElement('li');
       const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = '#' + me.rank.toLocaleString('es-CL');
-      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = cleanName(player.name || (session && session.name)) || 'Tú';
-      const you = document.createElement('small'); you.textContent = '(tú)'; nm.appendChild(you);
+      const nm = document.createElement('span'); nm.className = 'nm';
+      const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(player.av), avLetter(player.name || (session && session.name)), 30));
+      const tx = document.createElement('span'); tx.className = 't'; tx.textContent = cleanName(player.name || (session && session.name)) || 'Tú';
+      const you = document.createElement('small'); you.textContent = '(tú)'; nm.append(pv, tx, you);
       const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = player.best;
       li.append(rk, nm, sc); list.appendChild(li); box.append(dots, list);
     }
@@ -1622,7 +1693,147 @@
   }
   function setEnd(on) { document.body.classList.toggle('end', on); if (on) setTheme('#8e2bea'); }
   function bump(el) { el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 140); }
-  function setInitial() { $('meInit').textContent = player.name ? [...player.name][0].toUpperCase() : '😎'; }
+  /* ---------- foto de perfil: emblema 100% personalizable ----------
+     Un emblema = forma + color de fondo + color de borde + diseño + hasta 3 símbolos (emoji o la inicial) puestos, girados y agrandados como quiera el jugador.
+     Se guarda como texto de 9 a 17 caracteres («e» + 4 + 4 por símbolo), se dibuja con CSS (sin imágenes) y se guarda en caché: casi no gasta batería, datos ni base de datos. */
+  const AVT = (window.TIENDA && window.TIENDA.avatar) || { emojis: ['🦆'], paleta: [['#4a4a4a', '#151515', '#fff']] };
+  const B64 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
+  const SHAPES = [['Círculo', 'circle(50% at 50% 50%)'], ['Cuadrado', 'inset(0 round 30%)'], ['Hexágono', 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)'],
+    ['Octógono', 'polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%)'], ['Escudo', 'polygon(0 6%, 50% 0, 100% 6%, 100% 55%, 50% 100%, 0 55%)'],
+    ['Rombo', 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)'], ['Estrella', 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'], ['Arco', 'inset(0 round 50% 50% 14% 14%)']];
+  const PATTERNS = [['Liso', 'none'], ['Rayas', 'repeating-linear-gradient(45deg, rgba(255,255,255,.28) 0 7%, transparent 7% 16%)'], ['Puntos', 'radial-gradient(rgba(255,255,255,.4) 18%, transparent 20%) 0 0 / 22% 22%'],
+    ['Rayos', 'repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.24) 0 15deg, transparent 15deg 30deg)'], ['Mitad', 'linear-gradient(135deg, transparent 50%, rgba(0,0,0,.28) 50%)'],
+    ['Cuadros', 'conic-gradient(rgba(0,0,0,.2) 25%, transparent 0 50%, rgba(0,0,0,.2) 0 75%, transparent 0) 0 0 / 30% 30%']];
+  const ROT = [0, 15, 30, 45, -45, -30, -15, 90], SZ = [.24, .38, .54, .72];
+  const DEF_AV = { shape: 0, c1: 0, c2: 0, pat: 0, layers: [{ sym: 0, x: 16, y: 16, size: 2, rot: 0 }] };
+  const avCache = new Map();
+  function avParse(code) {                                                       // texto → emblema (o null si no es válido)
+    if (typeof code !== 'string') return null;
+    if (avCache.has(code)) return avCache.get(code);
+    let out = null;
+    if (/^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,3}$/.test(code)) {
+      const v = [...code.slice(1)].map(ch => B64.indexOf(ch)), a = { shape: v[0], c1: v[1], c2: v[2], pat: v[3], layers: [] };
+      for (let k = 4; k + 3 < v.length; k += 4) a.layers.push({ sym: v[k], x: v[k + 1], y: v[k + 2], size: v[k + 3] >> 3, rot: v[k + 3] & 7 });
+      if (a.shape < SHAPES.length && a.c1 < AVT.paleta.length && a.c2 < AVT.paleta.length && a.pat < PATTERNS.length && a.layers.every(l => l.sym <= AVT.emojis.length && l.x < 32 && l.y < 32)) out = a;
+    }
+    if (avCache.size > 300) avCache.clear();
+    avCache.set(code, out); return out;
+  }
+  const avEncode = a => 'e' + B64[a.shape] + B64[a.c1] + B64[a.c2] + B64[a.pat] + a.layers.map(l => B64[l.sym] + B64[l.x] + B64[l.y] + B64[l.size * 8 + l.rot]).join('');
+  const avLetter = name => ([...(cleanName(name) || '😎')][0] || '😎').toUpperCase();
+  function emblem(a, letter, px) {                                               // dibuja un emblema de px píxeles
+    a = a || DEF_AV;
+    const w = document.createElement('span'); w.className = 'embw';
+    const o = document.createElement('span'), inn = document.createElement('span'), p1 = AVT.paleta[a.c1], p2 = AVT.paleta[a.c2], clip = SHAPES[a.shape][1];
+    o.className = 'emb'; o.style.width = o.style.height = px + 'px'; o.style.clipPath = clip; o.style.background = p2[1];
+    inn.className = 'embi'; inn.style.clipPath = clip;
+    const pat = PATTERNS[a.pat][1]; inn.style.background = (pat === 'none' ? '' : pat + ', ') + `radial-gradient(circle at 35% 30%, ${p1[0]}, ${p1[1]})`;
+    o.appendChild(inn);
+    for (const l of a.layers) {
+      const e = document.createElement('span'); e.className = 'embs' + (l.sym === 0 ? ' let' : '');
+      e.textContent = l.sym === 0 ? letter : AVT.emojis[l.sym - 1];
+      e.style.left = (l.x + .5) / 32 * 100 + '%'; e.style.top = (l.y + .5) / 32 * 100 + '%';
+      e.style.fontSize = (SZ[l.size] * px * (l.sym === 0 ? .9 : 1)).toFixed(1) + 'px'; e.style.transform = `translate(-50%, -50%) rotate(${ROT[l.rot]}deg)`;
+      if (l.sym === 0) e.style.color = p1[2] || '#fff';
+      o.appendChild(e);
+    }
+    w.appendChild(o); return w;
+  }
+  const mount = (el, node) => { el.textContent = ''; el.appendChild(node); };
+  let leaderTop = null;                                                          // el jugador del primer lugar: { n, a, s }
+  function paintBotAvatar() {                                                    // el rival del encabezado es el emblema de quien va primero
+    const b = $('botAv'), t = leaderTop && ONLINE ? leaderTop : null;
+    b.classList.toggle('emb', !!t);
+    if (t) { mount($('botEmb'), emblem(avParse(t.a), avLetter(t.n), 44)); b.title = t.n; } else { $('botEmb').textContent = ''; b.removeAttribute('title'); }
+  }
+  function paintAvatars() {                                                      // tu emblema en el encabezado, el inicio y los ajustes
+    const a = avParse(player.av), letter = avLetter(player.name || (session && session.name));
+    mount($('meEmb'), emblem(a, letter, 44)); mount($('userEmb'), emblem(a, letter, 30)); mount($('setEmb'), emblem(a, letter, 40));
+    paintBotAvatar();
+  }
+  // se guarda en tu cuenta (para tus otros dispositivos) y, si ya tienes puntaje, en el marcador (para que te vean los demás)
+  let avT = null;
+  function saveAvatarCloud() {
+    clearTimeout(avT);
+    if (!AUTH || !session) return;
+    avT = setTimeout(async () => {
+      try {
+        const code = player.av, uid = session.uid, tok = encodeURIComponent(await idToken()), url = `${DB}/.json?auth=${tok}&print=silent`;
+        if (!avParse(code)) return;
+        const put = body => http(url, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+        const r = await put(walletExists ? { [`wallets/${uid}/av`]: code } : { [`wallets/${uid}/av`]: code, [`wallets/${uid}/c`]: 0, [`wallets/${uid}/sp`]: 0 });       // una cartera nueva necesita c y sp
+        if (r.ok) walletExists = true;
+        if (r.ok && player.best > 0) await put({ [`scores/${uid}/a`]: code });
+      } catch (e) {}
+    }, 700);
+  }
+  // ----- editor -----
+  let ed = null, edSel = 0, edFrom = null;
+  const clone = a => JSON.parse(JSON.stringify(a));
+  const rnd2 = n => Math.floor(Math.random() * n);
+  function randomEmblem() {
+    const n = 1 + rnd2(3), layers = [];
+    for (let i = 0; i < n; i++) layers.push({ sym: 1 + rnd2(AVT.emojis.length), x: n === 1 ? 16 : 6 + rnd2(20), y: n === 1 ? 16 : 6 + rnd2(20), size: n === 1 ? 2 + rnd2(2) : rnd2(3), rot: rnd2(8) });
+    const c1 = rnd2(AVT.paleta.length); let c2 = rnd2(AVT.paleta.length); if (c2 === c1) c2 = (c2 + 1) % AVT.paleta.length;
+    return { shape: rnd2(SHAPES.length), c1, c2, pat: rnd2(PATTERNS.length), layers };
+  }
+  function edRender(only) {
+    const letter = avLetter(player.name || (session && session.name)), L = ed.layers[edSel] || ed.layers[0];
+    const stage = $('edStage'); stage.textContent = ''; stage.appendChild(emblem(ed, letter, 150));
+    const sel = document.createElement('span'); sel.className = 'edsel';
+    const sz = Math.max(26, SZ[L.size] * 150 * 1.1); sel.style.width = sel.style.height = sz + 'px'; sel.style.left = 10 + (L.x + .5) / 32 * 150 + 'px'; sel.style.top = 10 + (L.y + .5) / 32 * 150 + 'px'; stage.appendChild(sel);
+    if (only === 'stage') return;
+    const lay = $('edLayers'); lay.textContent = '';
+    ed.layers.forEach((l, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'edchip' + (i === edSel ? ' on' : ''); b.textContent = l.sym === 0 ? letter : AVT.emojis[l.sym - 1]; b.setAttribute('aria-label', 'Símbolo ' + (i + 1)); b.onclick = () => { edSel = i; edRender(); }; lay.appendChild(b); });
+    if (ed.layers.length < 3) { const b = document.createElement('button'); b.type = 'button'; b.className = 'edchip'; b.textContent = '＋'; b.setAttribute('aria-label', 'Agregar un símbolo'); b.onclick = () => { ed.layers.push({ sym: 1 + rnd2(AVT.emojis.length), x: 16, y: 16, size: 1, rot: 0 }); edSel = ed.layers.length - 1; edRender(); }; lay.appendChild(b); }
+    $('edDel').disabled = ed.layers.length < 2; $('edSmaller').disabled = L.size <= 0; $('edBigger').disabled = L.size >= 3;
+    const mark = (box, i) => [...box.children].forEach((b, k) => b.classList.toggle('on', k === i));
+    mark($('edSyms'), L.sym); mark($('edShapes'), ed.shape); mark($('edC1'), ed.c1); mark($('edC2'), ed.c2); mark($('edPats'), ed.pat);
+  }
+  function edBuild() {                                                           // las cuadrículas de opciones (se arman una sola vez)
+    if ($('edSyms').children.length) return;
+    const mk = (box, n, fn) => { for (let i = 0; i < n; i++) { const b = document.createElement('button'); b.type = 'button'; fn(b, i); box.appendChild(b); } };
+    mk($('edSyms'), AVT.emojis.length + 1, (b, i) => { b.textContent = i === 0 ? 'Aa' : AVT.emojis[i - 1]; b.style.fontSize = i === 0 ? '15px' : ''; b.style.fontWeight = '900'; b.setAttribute('aria-label', i === 0 ? 'Mi inicial' : 'Símbolo ' + i); b.onclick = () => { ed.layers[edSel].sym = i; edRender(); }; });
+    mk($('edShapes'), SHAPES.length, (b, i) => { const sp = document.createElement('span'); sp.style.clipPath = SHAPES[i][1]; b.appendChild(sp); b.setAttribute('aria-label', SHAPES[i][0]); b.onclick = () => { ed.shape = i; edRender(); }; });
+    const swatch = key => (b, i) => { b.style.background = `radial-gradient(circle at 35% 30%, ${AVT.paleta[i][0]}, ${AVT.paleta[i][1]})`; b.setAttribute('aria-label', 'Color ' + (i + 1)); b.onclick = () => { ed[key] = i; edRender(); }; };
+    mk($('edC1'), AVT.paleta.length, swatch('c1')); mk($('edC2'), AVT.paleta.length, swatch('c2'));
+    mk($('edPats'), PATTERNS.length, (b, i) => { b.textContent = PATTERNS[i][0]; b.onclick = () => { ed.pat = i; edRender(); }; });
+  }
+  function openEmblem() {
+    edBuild(); edFrom = document.activeElement; ed = clone(avParse(player.av) || DEF_AV); edSel = 0; edRender();
+    $('settings').classList.remove('show'); $('emblem').classList.add('show'); $('embClose').focus();
+  }
+  function closeEmblem() { $('emblem').classList.remove('show'); if (edFrom && edFrom.focus) { try { edFrom.focus(); } catch (e) {} } edFrom = null; }
+  function saveEmblem() {
+    player.av = avEncode(ed); savePlayer(); paintAvatars(); saveAvatarCloud(); closeEmblem();
+  }
+  // mover el símbolo: tocar o arrastrar sobre la vista previa (libre, en una cuadrícula de 32 × 32)
+  (function () {
+    const st = $('edStage'); let drag = false, raf = 0;
+    const at = e => { const r = st.getBoundingClientRect(); const px = (e.clientX - r.left - 10) / (r.width - 20) * 32 - .5, py = (e.clientY - r.top - 10) / (r.height - 20) * 32 - .5; return [clamp(Math.round(px), 0, 31), clamp(Math.round(py), 0, 31)]; };
+    st.addEventListener('pointerdown', e => {
+      if (!ed) return; drag = true; try { st.setPointerCapture(e.pointerId); } catch (_) {}
+      const [x, y] = at(e); let best = edSel, bd = 1e9;                                    // si tocas otro símbolo, ese pasa a ser el elegido
+      ed.layers.forEach((l, i) => { const d = Math.hypot(l.x - x, l.y - y); if (d < bd && d < 7) { bd = d; best = i; } }); edSel = best;
+      const L = ed.layers[edSel]; L.x = x; L.y = y; edRender();
+    });
+    st.addEventListener('pointermove', e => { if (!drag || !ed) return; const [x, y] = at(e), L = ed.layers[edSel]; if (L.x === x && L.y === y) return; L.x = x; L.y = y; if (!raf) raf = requestAnimationFrame(() => { raf = 0; edRender('stage'); }); });
+    const end = () => { drag = false; };
+    st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
+  })();
+  $('edSmaller').addEventListener('click', () => { const L = ed.layers[edSel]; if (L.size > 0) { L.size--; edRender(); } });
+  $('edBigger').addEventListener('click', () => { const L = ed.layers[edSel]; if (L.size < 3) { L.size++; edRender(); } });
+  $('edRotate').addEventListener('click', () => { const L = ed.layers[edSel]; L.rot = (L.rot + 1) % 8; edRender(); });
+  $('edDel').addEventListener('click', () => { if (ed.layers.length > 1) { ed.layers.splice(edSel, 1); edSel = 0; edRender(); } });
+  $('edRandom').addEventListener('click', () => { ed = randomEmblem(); edSel = 0; edRender(); });
+  $('edSave').addEventListener('click', saveEmblem);
+  $('embClose').addEventListener('click', closeEmblem);
+  $('emblem').addEventListener('click', e => { if (e.target === $('emblem')) closeEmblem(); });
+  $('openEmblem').addEventListener('click', openEmblem);
+  $('userBox').addEventListener('click', openEmblem);
+  addEventListener('keydown', e => { if (e.key === 'Escape' && $('emblem').classList.contains('show')) closeEmblem(); });
+
+  function setInitial() { paintAvatars(); }
 
   /* ---------- el Tío Pato: capas del personaje ---------- */
   const chDir = () => HAS_ART ? (curCh().dir || '') : '';
@@ -1940,13 +2151,14 @@
   const wurlW = async () => (await wurl()) + '&print=silent';                // para escribir: Firebase contesta 204 sin devolver lo escrito (menos descarga)
   const JSONH = { 'Content-Type': 'application/json' };
   const SV = { '.sv': 'timestamp' };
+  let walletExists = true;                                        // ¿ya existe tu cartera en la nube? (una cuenta nueva todavía no la tiene)
   async function pullWallet() {                                    // trae tus pesos y compras de la nube
     if (!AUTH || !session) return false;
     try {
       const r = await http(await wurl());
       if (!r.ok) return false;
-      const v = await r.json();
-      if (v) { wallet.c = +v.c || 0; wallet.sp = +v.sp || 0; wallet.lr = +v.lr || 0; wallet.own = v.own || {}; if (v.eq) wallet.eq = { ...DEF, ...v.eq }; }
+      const v = await r.json(); walletExists = !!v;
+      if (v) { wallet.c = +v.c || 0; wallet.sp = +v.sp || 0; wallet.lr = +v.lr || 0; wallet.own = v.own || {}; if (v.eq) wallet.eq = { ...DEF, ...v.eq }; if (avParse(v.av) && v.av !== player.av) { player.av = v.av; savePlayer(); paintAvatars(); } }
       for (const k in DEF) if (!itemOf(k, wallet.eq[k]) || !owns(k, wallet.eq[k])) wallet.eq[k] = DEF[k];
       saveWallet(); return true;
     } catch (e) { return false; }
@@ -1990,7 +2202,7 @@
       const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h) * mult, body = {};
       body[`runs/${uid}/e`] = SV; body[`runs/${uid}/h`] = pr.h; body[`runs/${uid}/p`] = p;
       body[`wallets/${uid}/c`] = c0 + p; body[`wallets/${uid}/sp`] = sp0; body[`wallets/${uid}/lr`] = pr.s;
-      if (pr.h > best) { body[`scores/${uid}/n`] = cleanName(player.name || session.name) || 'Jugador'; body[`scores/${uid}/k`] = session.key; body[`scores/${uid}/s`] = pr.h; body[`scores/${uid}/t`] = SV; }   // por campos: así no se borra `c` (el contador de puestos)
+      if (pr.h > best) { body[`scores/${uid}/n`] = cleanName(player.name || session.name) || 'Jugador'; body[`scores/${uid}/k`] = session.key; body[`scores/${uid}/s`] = pr.h; body[`scores/${uid}/t`] = SV; if (avParse(player.av)) body[`scores/${uid}/a`] = player.av; }   // por campos: así no se borra `c` (el contador de puestos)
       const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
       if (r.ok) {
         wallet.c = c0 + p; wallet.sp = sp0; wallet.lr = pr.s; saveWallet();
@@ -2328,7 +2540,7 @@
     $('userBox').hidden = !logged; $('logout').hidden = !logged;
     nameInput.hidden = AUTH; $('play').hidden = AUTH && !logged;
     $('coinChip').hidden = AUTH && !logged; $('openShop').hidden = AUTH && !logged; $('topbar').hidden = !logged && AUTH;
-    if (logged) { const n = cleanName(player.name || session.name) || 'Tú'; $('hello').textContent = n; $('userAv').textContent = [...n][0].toUpperCase(); }
+    if (logged) { const n = cleanName(player.name || session.name) || 'Tú'; $('hello').textContent = n; paintAvatars(); }
     renderCoins(); renderStreak();
     $('bestMenu').textContent = player.best ? `🏆 Tu récord: ${player.best}` : '';
   }
@@ -2406,7 +2618,7 @@
     state = 'countdown'; renderScores(); show(null); lockScreen();
     target.style.visibility = 'hidden';
     paddle.style.visibility = 'visible'; duck.style.visibility = 'visible';
-    duckLook(); draw(); say('¡Hola, amigo! ¡Vamos a jugar!', 2800); showHint();
+    duckLook(); draw(); say(leaderTop && ONLINE && leaderTop.s > 0 ? `¡Hoy le ganas a ${leaderTop.n}! ¡Vamos!` : '¡Hola, amigo! ¡Vamos a jugar!', 2800); showHint();
     last = performance.now(); requestAnimationFrame(cdLoop);
     let n = 3; setBig(n); blip(440, .1);
     clearInterval(cdTimer);
@@ -2478,7 +2690,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v33';
+  const BUILD = 'v34';
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
     out.hidden = false; const show = () => { out.textContent = lines.join('\n'); };

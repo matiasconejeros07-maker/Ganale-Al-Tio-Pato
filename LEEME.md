@@ -98,7 +98,7 @@ Revisión hecha con las skills de seguridad y calidad de jeffallan (escaneo est�
   4. *App Check* (reCAPTCHA Enterprise/Play Integrity/App Attest) cuando lo subas a las tiendas: frena a quien llama a Firebase desde fuera del juego.
 - **Límite que no se puede cerrar sin un servidor:** un programa que juegue perfecto (bot) puede llegar a los 500 rebotes; las reglas solo garantizan que no se pueda llegar más rápido que 1 rebote cada 0,45 s y que los pesos coincidan con la partida.
 
-**Pruebas** (carpeta `pruebas/`): `cd pruebas && npm install && npx playwright install chromium && npm test`. `reglas.test.js` prueba las reglas de Firebase con el simulador oficial (242 casos, con la racha y los pesos dobles), `racha.test.js` prueba la racha de punta a punta (el juego real contra un Firebase de mentira con las reglas reales) y `humo.test.js` abre el juego en Chromium y comprueba que cargue sin errores, que la CSP no bloquee nada, que el campo se adapte a cada forma de celular, el aviso de ventana chica, el multitáctil, el teclado y que los 8 personajes carguen. `.github/workflows/pruebas.yml` las corre solas en cada cambio.
+**Pruebas** (carpeta `pruebas/`): `cd pruebas && npm install && npx playwright install chromium && npm test`. `reglas.test.js` prueba las reglas de Firebase con el simulador oficial (265 casos, con la racha, los pesos dobles y el emblema), `racha.test.js` y `perfil.test.js` prueban la racha y el emblema de punta a punta (el juego real contra un Firebase de mentira con las reglas reales) y `humo.test.js` abre el juego en Chromium y comprueba que cargue sin errores, que la CSP no bloquee nada, que el campo se adapte a cada forma de celular, el aviso de ventana chica, el multitáctil, el teclado y que los 8 personajes carguen. `.github/workflows/pruebas.yml` las corre solas en cada cambio.
 
 ## Qué hace el marcador
 
@@ -147,6 +147,16 @@ Con cuenta, al entrar cada día aparece la **Racha diaria** (también desde el c
 - **El día cambia a medianoche de Chile en horario de verano** (`huso: -3` en `eco.racha` de `tienda.js`; en invierno es una hora antes). Los premios y el tiempo de los pesos dobles también están en `eco.racha`; si los cambias, ejecuta `node herramientas/generar-reglas.js` y vuelve a pegar `firebase-rules.json`.
 - **Lo valida el servidor** (reglas de Firebase, nodo `streaks/<uid>`): el día y la hora los pone Firebase, la racha solo avanza al valor exacto que toca, el premio en pesos tiene que coincidir con la tabla, la racha no se puede borrar para cobrar de nuevo, y el pago doble de una partida solo vale si empezó dentro de los 10 minutos del último día 7. Cambiar el reloj del celular no sirve: si no coincide, Firebase lo rechaza.
 - **Hay que publicar las reglas nuevas** (`firebase-rules.json`). Mientras no estén publicadas, el juego funciona igual pero la racha no aparece.
+
+## Foto de perfil: el emblema (editor libre)
+
+Cada jugador arma su **emblema** (tocando su nombre en el inicio, o en Ajustes → «Mi emblema»): elige la **forma** (círculo, cuadrado, hexágono, octógono, escudo, rombo, estrella, arco), el **color de fondo** y el del **borde** (16 colores), un **diseño** (liso, rayas, puntos, rayos, mitad, cuadros) y hasta **3 símbolos** (48 emojis o su inicial) que **toca o arrastra donde quiera** en la vista previa, además de agrandarlos, girarlos o quitarlos. También hay «🎲 Sorpréndeme».
+
+- **Casi no gasta recursos:** el emblema es un texto de 9 a 17 caracteres (`e` + forma, fondo, borde, diseño + 4 caracteres por símbolo: símbolo, x, y, tamaño y giro). Se dibuja con CSS (sin imágenes), se guarda en caché y pesa lo mismo que un nombre cortito en la base de datos.
+- Se ve en el **encabezado de la partida**, en el inicio, en los Ajustes y **en el marcador** (cada fila). Se guarda en tu cuenta (`wallets/<uid>/av`, para tus otros dispositivos) y en tu fila del marcador (`scores/<uid>/a`, para que te vean los demás). Las reglas de Firebase solo aceptan ese formato exacto.
+- **Rival del encabezado:** el avatar del lado derecho (donde antes salía la cara del Tío Pato) ahora es el emblema del **jugador en el primer lugar**, con su récord al lado, y al empezar el Pato dice «¡Hoy le ganas a <nombre>!». Si no hay conexión o marcador, vuelve a salir el personaje.
+- Para agregar símbolos o colores edita `avatar.emojis` / `avatar.paleta` en `tienda.js` (hasta 63 símbolos y 64 colores) sin tocar las reglas.
+- **Hay que publicar las reglas nuevas** (`firebase-rules.json`): sin ellas el emblema se ve en tu celular pero no se guarda en la cuenta ni en el marcador.
 
 ## Interfaz y accesibilidad
 
