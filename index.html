@@ -801,7 +801,7 @@
 <script>
 (() => {
   // Medidas de referencia (celular de 390×790 útiles). Todo se escala con K para que el juego se vea igual en cualquier celular.
-  let K = 1, VS = 1;              // K: escala de tamaños · VS: escala de velocidades (según el alto)
+  let K = 1, VS = 1, VYF = 1;     // K: escala de tamaños · VS: escala de velocidades · VYF: cuánto se estira la velocidad vertical según lo alto que sea el campo
   let SIZE = 56;                  // tamaño del emoji (px)
   let R = 24;                     // radio de la estela de la pelota (solo se dibuja: los choques usan BX, BC y BY)
   // Medidas de choque de la pelota puesta (mitades, en px). Salen de lo que mide de verdad en pantalla (ancho w × SIZE, alto = ancho × asp) y de cómo se mueve (ver fitBall):
@@ -908,29 +908,38 @@
   probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
   document.body.appendChild(probe);
   let paused = false;                                            // el juego es vertical: en horizontal se pausa
-  // El campo de juego es SIEMPRE de FW × FH unidades (un celular de hoy, 390 × 844): lo único que cambia de una pantalla a otra es la escala K.
-  // Si la ventana no tiene esa proporción, el campo se centra y sobra un marco; así una ventana emergente, corta o ancha no da ventaja ni quita.
-  const FW = 390, FH = 844, S_MIN = .6;                       // por debajo de S_MIN la ventana es demasiado chica para jugar parejo
+  // El campo ocupa TODO el celular (cualquier forma de pantalla de celular). Por dentro mide siempre FW = 390 unidades de ancho y lo que
+  // sea de alto: K = ancho / 390 y la velocidad vertical se estira con el alto (VYF), así la pelota tarda lo mismo en cruzar y recorre lo mismo
+  // hacia los lados en cualquier celular. Solo si la ventana es muy ancha (computador, tablet) el campo se centra con un marco; y si es
+  // demasiado chica (pantalla duplicada y achicada, vista emergente) no se puede jugar: sale un aviso.
+  const FW = 390, FH_REF = 844, V_OFF = 232;                   // V_OFF = lo que no recorre la pelota: Pato arriba (176) + barra abajo (56)
+  const A_LO = .38, A_HI = .72;                                // proporción ancho/alto del campo: de un celular muy largo a uno corto con barras del navegador
+  const MIN_W = 320, MIN_H = 540;                              // ventana mínima (px) para jugar parejo
   let tiny = false, tinyTries = 0;
   function measure() {
     const AW = arena.clientWidth, AH = arena.clientHeight;
     const cs = getComputedStyle(probe);
     SAFE_T = parseFloat(cs.paddingTop) || 0; SAFE_B = parseFloat(cs.paddingBottom) || 0;
     const usable = Math.max(1, AH - SAFE_T - SAFE_B);
-    const S = Math.min(AW / FW, usable / FH), oldK = K;
-    tiny = S < S_MIN;
-    K = Math.max(S, .3);
-    W = FW * K; H = FH * K;
-    if ((state === 'play' || state === 'countdown') && oldK > 0 && Math.abs(K / oldK - 1) > 1e-6) {   // si cambian el tamaño de la ventana en plena partida, todo se reescala junto
-      const r = K / oldK; x *= r; y *= r; vx *= r; vy *= r; px *= r; duckX *= r; duckShow *= r;
-      for (const t of trail) { t[0] *= r; t[1] *= r; }
+    let fw = AW, fh = usable;
+    if (fw / fh > A_HI) fw = fh * A_HI; else if (fw / fh < A_LO) fh = fw / A_LO;
+    const oldK = K, oldVyf = VYF, oldDB = DUCK_BOTTOM, oldRange = H - PADDLE_BOTTOM - PADDLE_H - DUCK_BOTTOM;
+    tiny = AW < MIN_W || usable < MIN_H;
+    K = Math.max(fw / FW, .3);
+    W = fw; H = fh;
+    VYF = Math.max(.3, (H / K - V_OFF) / (FH_REF - V_OFF));
+    VS = K * (FH_REF - 280) / 510;                             // la pelota tarda lo mismo en cruzar el campo en cualquier pantalla
+    SIZE = 56 * K; R = 24 * K; PADDLE_H = 16 * K; PADDLE_BOTTOM = 40 * K;
+    DUCK_TOP = 26 * K; DUCK_BOTTOM = DUCK_TOP + 150 * K; DUCK_CY = DUCK_TOP + 99 * K;
+    if ((state === 'play' || state === 'countdown') && oldK > 0 && (Math.abs(K / oldK - 1) > 1e-6 || Math.abs(VYF / oldVyf - 1) > 1e-6)) {   // si cambian el tamaño de la ventana en plena partida, todo se reescala junto
+      const r = K / oldK, newRange = H - PADDLE_BOTTOM - PADDLE_H - DUCK_BOTTOM;
+      const ny = v => oldRange > 0 ? DUCK_BOTTOM + (v - oldDB) / oldRange * newRange : v * r;
+      y = ny(y); x *= r; vx *= r; vy *= r * VYF / oldVyf; px *= r; duckX *= r; duckShow *= r;
+      for (const t of trail) { t[0] *= r; t[1] = ny(t[1]); }
     }
     const fl = (AW - W) / 2, ft = SAFE_T + (usable - H) / 2;
     field.style.cssText = `left:${fl.toFixed(2)}px;top:${ft.toFixed(2)}px;width:${W.toFixed(2)}px;height:${H.toFixed(2)}px`;
     field.classList.toggle('boxed', fl > 1.5 || ft - SAFE_T > 1.5);
-    VS = K * (FH - 280) / 510;                                 // la pelota tarda lo mismo en cruzar el campo en cualquier pantalla
-    SIZE = 56 * K; R = 24 * K; PADDLE_H = 16 * K; PADDLE_BOTTOM = 40 * K;
-    DUCK_TOP = 26 * K; DUCK_BOTTOM = DUCK_TOP + 150 * K; DUCK_CY = DUCK_TOP + 99 * K;
     fitBall();
     field.style.setProperty('--k', K.toFixed(3)); duck.style.setProperty('--duck-top', DUCK_TOP.toFixed(1) + 'px');
     app.style.setProperty('--k', clamp(Math.min(AW / 390, Math.max(300, usable) / 790), .6, 1.3).toFixed(3));   // los menús usan su propia escala
@@ -1625,7 +1634,7 @@
     if (Math.abs(dx) < minX) { dy = sgn(dy) * Math.sqrt(1 - minX * minX); dx = sgn(dx) * minX; }
     if (Math.abs(dy) < minY) { dx = sgn(dx) * Math.sqrt(1 - minY * minY); dy = sgn(dy) * minY; }
     const sp = ballSpeed();
-    vx = dx * sp; vy = dy * sp;
+    vx = dx * sp; vy = dy * sp * VYF;                          // la dirección se elige como en un campo de referencia y la vertical se estira con el alto
   }
   function launch() {                  // el Tío Pato lanza el billete en diagonal desde donde está
     x = clamp(duckX, BX, W - BX); y = DUCK_BOTTOM + BY + 4;
@@ -1645,7 +1654,7 @@
     if (bubbleW) { const left = duckShow - bubbleW / 2; $('bubble').style.setProperty('--bx', (clamp(left, 8, W - 8 - bubbleW) - left).toFixed(1) + 'px'); }
   }
 
-  function wallBounce() { setVel(vx + (Math.random() - .5) * ballSpeed() * .08, vy); tone(260, .04); }
+  function wallBounce() { setVel(vx + (Math.random() - .5) * ballSpeed() * .08, vy / VYF); tone(260, .04); }
 
   // Un paso corto de física (el billete nunca avanza más de ~10 px, así no atraviesa nada).
   function step(h) {
@@ -1708,7 +1717,7 @@
     if (state !== 'play' && state !== 'countdown') return;
     const r = field.getBoundingClientRect();
     if (e.pointerType === 'mouse') px = e.clientX - r.left;
-    else if (dragX !== null) px += (e.clientX - dragX) * 1.25;
+    else if (dragX !== null) px += (e.clientX - dragX) * 1.25 * K;     // el mismo recorrido del dedo cruza el campo en cualquier ventana (una chica no exige menos que una grande)
     dragX = e.clientX;
     px = clamp(px, pw / 2, W - pw / 2);
     if (state === 'countdown') draw();
