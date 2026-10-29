@@ -16,6 +16,10 @@ const pesosFor = h => h;   // hasta 99 rebotes: $1 por rebote
   console.log('Día 1');
   ok('al entrar se abre sola la racha diaria', await vis('#daily'));
   ok('botón «Reclamar $100»', (await txt('#dailyGo')) === 'Reclamar $100', await txt('#dailyGo'));
+  const iconos = await p.evaluate(() => [...document.querySelectorAll('#dailyGrid .dcard:not(.d7)')].map(c => [...c.querySelectorAll('.ic img')].map(i => i.getAttribute('src').replace('skins/', '').replace('.webp', ''))));
+  ok('los dibujos coinciden con los pesos: $100 = 1 moneda de 100, $200 = 2, $300 = 3, $400 = 4, $500 = moneda de 500, $1.000 = billete de 1000',
+    JSON.stringify(iconos) === JSON.stringify([['peso100'], ['peso100', 'peso100'], ['peso100', 'peso100', 'peso100'], ['peso100', 'peso100', 'peso100', 'peso100'], ['peso500'], ['b1000']]), JSON.stringify(iconos));
+  await p.screenshot({ path: process.env.SHOT || '/tmp/racha_iconos.png' });
   await p.tap('#dailyGo'); await p.waitForTimeout(1200);
   ok('la cartera subió $100 en el servidor', st.db.wallets[uid].c === 100, JSON.stringify(st.db.wallets[uid]));
   ok('racha guardada n=1', st.db.streaks[uid].n === 1, JSON.stringify(st.db.streaks[uid]));
