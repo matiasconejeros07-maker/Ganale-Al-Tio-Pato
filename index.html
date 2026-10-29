@@ -809,8 +809,8 @@
   // En cuanto el Pato se enoja (55) pierde la aureola y las alas de ángel y pasa a su piel de diablo.
   const P_CHALLENGE = 30, P_ANGRY = 55, P_DEVIL = 60, P_HELL = 70;
   const TOP_N = 25;               // cuántos jugadores muestra el marcador; tu puesto aparece debajo aunque estés más abajo
-  const REFRESH_MS = 5000;        // el Top 25 se actualiza cada 5 s mientras el marcador está abierto y a la vista
-  const RANK_MS = 30000;          // tu puesto (lo más pesado: el contador de 500 casillas) se vuelve a leer cada 30 s
+  const REFRESH_MS = 5000;        // el Top 25 se actualiza cada 5 s el primer minuto con el marcador abierto y a la vista; luego cada 10 s (hasta los 3 min) y cada 30 s
+  const RANK_MS = 120000;         // tu puesto (lo más pesado: el contador de 500 casillas) se vuelve a leer cada 2 min, al abrir y cuando cambia tu récord
   const STORE_KEY = 'gana-al-tio-pato-v2';
   // El fondo cambia cada 10 rebotes (el primero a los 5): del cielo amarillo al infierno, que empieza justo cuando el Pato se enoja
   const PALETTE = ['#fff6c0', '#ffec5c', '#ffb978', '#ffa64f', '#faa3fe', '#f478fd', '#c2312f', '#8a1620', '#5a0e14', '#3a070b', '#2a0508'];
@@ -1308,7 +1308,7 @@
           const ro = await http(`${DB}/hist/${e.c}.json`), old = ro.ok ? (+(await ro.json()) || 0) : 0;
           if (old > 0) upd[`hist/${e.c}`] = old - 1;
         }
-        const w = await http(`${DB}/.json?auth=${encodeURIComponent(await idToken())}`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(upd) });
+        const w = await http(`${DB}/.json?auth=${encodeURIComponent(await idToken())}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(upd) });
         if (w.ok) { countedFor = uid + ':' + e.s; return; }
         if (w.status !== 401 && w.status !== 403) return;                                 // sin conexión u otro error: se reintenta en otra ocasión
         await new Promise(res => setTimeout(res, 150 + Math.random() * 350));            // otra cuenta movió la misma casilla a la vez: se lee de nuevo y se reintenta
@@ -1316,7 +1316,7 @@
       countFailAt = Date.now();                                                           // (también pasa si aún no se publicaron las reglas nuevas)
     } catch (e) {} finally { counting = false; }
   }
-  let lastMe = null, lastMeAt = 0, lastSig = '';
+  let lastMe = null, lastMeAt = 0, lastMeBest = -1, lastSig = '', boardOpenAt = 0;
   async function refreshBoard(first) {
     if (document.hidden && !first) return;                       // app o pestaña en segundo plano: no gasta datos
     const note = $('boardNote');
@@ -1324,9 +1324,9 @@
     try {
       if (player.dirty) await syncBest();
       if (countedFor !== (session ? session.uid : '') + ':' + player.best) syncCount();
-      const needRank = ONLINE && (first || Date.now() - lastMeAt >= RANK_MS);
+      const needRank = ONLINE && (first || Date.now() - lastMeAt >= RANK_MS || lastMeBest !== player.best);
       const [rows, me] = await Promise.all([fetchTop(TOP_N), needRank ? myRank().catch(() => null) : null]);
-      if (needRank) { lastMe = me; lastMeAt = Date.now(); }
+      if (needRank) { lastMe = me; lastMeAt = Date.now(); lastMeBest = player.best; }
       const sig = JSON.stringify([rows.map(r => [r.id, r.s, r.n]), lastMe && lastMe.rank, lastMe && lastMe.total, player.best]);
       if (sig !== lastSig) {                                      // solo se redibuja si algo cambió (así no se pierde el scroll ni parpadea)
         lastSig = sig; const ul = $('list'), top = ul.scrollTop;
@@ -1341,14 +1341,16 @@
     }
   }
 
+  const boardDelay = () => { const age = Date.now() - boardOpenAt; return age < 60000 ? REFRESH_MS : age < 180000 ? 2 * REFRESH_MS : 6 * REFRESH_MS; };   // 5 s → 10 s → 30 s
+  function boardTick() { boardTimer = setTimeout(async () => { await refreshBoard(); if (boardTimer) boardTick(); }, boardDelay()); }
   function openBoard(from) {
     boardFrom = from; delete $('list').dataset.scrolled;
     setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
-    lastSig = ''; lastMe = null; lastMeAt = 0; show('board'); refreshBoard(true);
-    clearInterval(boardTimer); boardTimer = setInterval(refreshBoard, REFRESH_MS);
+    lastSig = ''; lastMe = null; lastMeAt = 0; boardOpenAt = Date.now(); show('board'); refreshBoard(true);
+    clearTimeout(boardTimer); boardTick();
   }
   function closeBoard() {
-    clearInterval(boardTimer); boardTimer = null;
+    clearTimeout(boardTimer); boardTimer = null;
     if (boardFrom === 'result') { setEnd(true); show('result'); } else show('menu');
   }
 
@@ -1678,6 +1680,7 @@
   }
   const saveWallet = () => { try { localStorage.setItem(WKEY(), JSON.stringify(wallet)); } catch (e) {} };
   const wurl = async () => `${DB}/wallets/${session.uid}.json?auth=${encodeURIComponent(await idToken())}`;
+  const wurlW = async () => (await wurl()) + '&print=silent';                // para escribir: Firebase contesta 204 sin devolver lo escrito (menos descarga)
   const JSONH = { 'Content-Type': 'application/json' };
   const SV = { '.sv': 'timestamp' };
   async function pullWallet() {                                    // trae tus pesos y compras de la nube
@@ -1702,7 +1705,7 @@
       if (pending) await claimRun();                               // primero cobra la partida anterior si quedó pendiente
       const tok = encodeURIComponent(await idToken()), uid = session.uid;
       const ball = itemOf('ball', wallet.eq.ball) || CAT.ball[0], rate = ball.rate || 1;                       // la pelota y lo que paga quedan anotados al empezar (las reglas los comprueban)
-      const put = t => http(`${DB}/runs/${uid}.json?auth=${t}`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: ball.id, r: rate }) });
+      const put = t => http(`${DB}/runs/${uid}.json?auth=${t}&print=silent`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: ball.id, r: rate }) });
       let r = await put(tok);
       if (r.status === 401 && /token/i.test(await r.clone().text().catch(() => '')) && !/permission/i.test(await r.clone().text().catch(() => ''))) r = await put(encodeURIComponent(await idToken(true)));   // token vencido: se renueva y se reintenta una vez
       if (!r.ok) { runFail = r.status === 401 || r.status === 403 ? 'rules' : 'net'; return null; }
@@ -1728,7 +1731,7 @@
       body[`runs/${uid}/e`] = SV; body[`runs/${uid}/h`] = pr.h; body[`runs/${uid}/p`] = p;
       body[`wallets/${uid}/c`] = c0 + p; body[`wallets/${uid}/sp`] = sp0; body[`wallets/${uid}/lr`] = pr.s;
       if (pr.h > best) { body[`scores/${uid}/n`] = player.name || session.name; body[`scores/${uid}/k`] = session.key; body[`scores/${uid}/s`] = pr.h; body[`scores/${uid}/t`] = SV; }   // por campos: así no se borra `c` (el contador de puestos)
-      const r = await http(`${DB}/.json?auth=${tok}`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+      const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
       if (r.ok) {
         wallet.c = c0 + p; wallet.sp = sp0; wallet.lr = pr.s; saveWallet();
         if (pr.h > player.best) { player.best = pr.h; savePlayer(); }
@@ -1851,7 +1854,7 @@
   async function equip(cat, id) {
     if (!owns(cat, id)) return;
     wallet.eq[cat] = id; saveWallet(); applyCosmetics(); renderShop();
-    if (AUTH && session) { try { await http(await wurl(), { method: 'PATCH', headers: JSONH, body: JSON.stringify({ eq: wallet.eq }) }); } catch (e) {} }
+    if (AUTH && session) { try { await http(await wurlW(), { method: 'PATCH', headers: JSONH, body: JSON.stringify({ eq: wallet.eq }) }); } catch (e) {} }
   }
   async function buyItem(cat, it) {
     if (shopBusy) return; shopBusy = true; shopMsg('');
@@ -1865,7 +1868,7 @@
       if (balance() < it.price) { shopMsg(`Te faltan ${money(it.price - balance())} para «${it.n}». ¡Sigue jugando!`); return; }
       if (AUTH) {
         const body = { sp: wallet.sp + it.price }; body['own/' + cat + '_' + it.id] = true;     // la compra es atómica: gasta y entrega a la vez
-        const r = await http(await wurl(), { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+        const r = await http(await wurlW(), { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
         if (!r.ok) { shopMsg(r.status === 401 || r.status === 403 ? 'Firebase no permitió la compra (revisa que las reglas estén publicadas).' : 'No se pudo comprar. Inténtalo de nuevo.'); return; }
         await pullWallet();
       } else { wallet.sp += it.price; wallet.own[cat + '_' + it.id] = true; saveWallet(); }
@@ -1875,7 +1878,7 @@
     finally { shopBusy = false; renderShop(); }
   }
   function openShop(from) {
-    shopFrom = from; clearInterval(boardTimer); boardTimer = null; shopMsg('');
+    shopFrom = from; clearTimeout(boardTimer); boardTimer = null; shopMsg('');
     setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
     show('shop'); renderShop();
     if (AUTH && session) pullWallet().then(() => { applyCosmetics(); renderShop(); });
@@ -2107,7 +2110,7 @@
 
   function backToMenu() {
     clearInterval(cdTimer); cdTimer = null;
-    clearInterval(boardTimer); boardTimer = null;
+    clearTimeout(boardTimer); boardTimer = null;
     state = 'menu';
     target.style.visibility = 'hidden'; paddle.style.visibility = 'hidden'; duck.style.visibility = 'hidden';
     document.body.classList.remove('ingame'); multEl.classList.remove('show');
