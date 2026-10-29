@@ -82,6 +82,24 @@ si los rebotes los dio una persona. Lo máximo que logra es ganar a un ritmo aco
 Para un juego entre conocidos o un evento es más que suficiente. Si algún día necesitas más: (1) **Firebase App Check** con reCAPTCHA (gratis) bloquea la mayoría de los bots y las copias
 modificadas del juego; (2) **Cloud Functions** (plan Blaze) permiten registrar los movimientos de la partida y repetirla en el servidor para validarla.
 
+## Seguridad al publicar el juego (GitHub Pages) y pruebas
+
+Revisión hecha con las skills de seguridad y calidad de jeffallan (escaneo estático con ESLint + `eslint-plugin-security` y `no-unsanitized`, revisión manual y pruebas):
+
+- **No hay claves secretas en el código.** La «clave de API web» de `config.js` es pública por diseño (la protegen las reglas); no hay librerías ni scripts de terceros (nada de CDN), y todo texto que viene de otros jugadores se muestra con `textContent` (nunca como HTML).
+- **Política de contenido (CSP) dentro de `index.html`** (GitHub Pages no deja poner cabeceras propias): solo carga lo del mismo sitio y solo habla con Firebase (`*.firebaseio.com`, `identitytoolkit`, `securetoken`). Si cambias de dominio de base de datos, ajusta `connect-src`. Un pequeño script impide que otro sitio meta el juego en un marco (clickjacking). En Firebase Hosting `firebase.json` ya manda las cabeceras reales.
+- **Nombres del marcador:** se les quitan caracteres de control, invisibles y de dirección de texto (alguien podía disfrazar su nombre escribiendo directo en la base de datos).
+- **Contraseña:** al crear la cuenta se piden 8 caracteres o más (los nombres del marcador son públicos, y con ellos el nombre de usuario).
+- **Service worker:** nunca guarda respuestas con error, espera como máximo 4 s a internet antes de usar la copia guardada y al instalarse ignora el caché del navegador (GitHub Pages guarda los archivos 10 minutos).
+- **Lo que debes hacer tú en la consola de Google/Firebase** (yo no puedo entrar a tus cuentas):
+  1. *Google Cloud → APIs y servicios → Credenciales → tu clave de API*: restringe por **referentes HTTP** (`https://tu-usuario.github.io/*`) y por API a **Identity Toolkit** y **Token Service**. Así nadie más puede usar tu clave.
+  2. *Facturación → Presupuestos y alertas*: crea una alerta (por ejemplo a US$5) para enterarte si alguien abusa de las lecturas.
+  3. *Authentication → Configuración → Política de contraseñas*: sube el mínimo a 8 y activa la **protección contra enumeración de correos**.
+  4. *App Check* (reCAPTCHA Enterprise/Play Integrity/App Attest) cuando lo subas a las tiendas: frena a quien llama a Firebase desde fuera del juego.
+- **Límite que no se puede cerrar sin un servidor:** un programa que juegue perfecto (bot) puede llegar a los 500 rebotes; las reglas solo garantizan que no se pueda llegar más rápido que 1 rebote cada 0,45 s y que los pesos coincidan con la partida.
+
+**Pruebas** (carpeta `pruebas/`): `cd pruebas && npm install && npx playwright install chromium && npm test`. `reglas.test.js` prueba las reglas de Firebase con el simulador oficial (199 casos) y `humo.test.js` abre el juego en Chromium y comprueba que cargue sin errores, que la CSP no bloquee nada, que el campo se adapte a cada forma de celular, el aviso de ventana chica, el multitáctil, el teclado y que los 8 personajes carguen. `.github/workflows/pruebas.yml` las corre solas en cada cambio.
+
 ## Qué hace el marcador
 
 - Cada cuenta guarda **solo su mejor puntaje** (si rebota más veces, se actualiza; si rebota menos, no baja). El puntaje son los rebotes: cada vez que la barra toca la pelota suma uno.

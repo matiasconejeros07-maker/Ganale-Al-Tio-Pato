@@ -6,6 +6,7 @@
       "**/.*",
       "**/node_modules/**",
       "herramientas/**",
+      "pruebas/**",
       "LEEME.md",
       "README.md",
       "firebase-rules.json"
