@@ -197,13 +197,18 @@
   .dgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 14px; }
   .dcard { position: relative; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 8px 4px 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-weight: 800; }
   .dcard .dn { background: #111; color: #fff; border-radius: 999px; padding: 3px 10px; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
-  .dcard img { height: 38px; width: auto; max-width: 54px; object-fit: contain; display: block; }
+  .dcard .ic { display: flex; align-items: center; justify-content: center; height: 40px; }
+  .dcard .ic img { height: 34px; width: auto; object-fit: contain; display: block; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+  .dcard .ic img + img { margin-left: -13px; }                       /* varias monedas se apilan una sobre otra */
+  .dcard .ic img:nth-child(even) { transform: translateY(2px) rotate(7deg); }
+  .dcard .ic img:nth-child(odd):not(:first-child) { transform: translateY(-1px) rotate(-5deg); }
+  .dcard .ic img.bill { height: 36px; }
   .dcard .dv { font-size: 16px; font-variant-numeric: tabular-nums; }
   .dcard.today { border-color: #ffc928; background: linear-gradient(#fff8d6, #ffe98a); box-shadow: 0 0 0 3px rgba(255, 201, 40, .5); animation: dpulse 1.5s ease-in-out infinite; }
   .dcard.today .dn { background: #e5a800; }
   @keyframes dpulse { 50% { transform: scale(1.05); } }
   .dcard.done { background: #eaf7e6; border-color: #9fd48f; }
-  .dcard.done img, .dcard.done .dv { opacity: .45; }
+  .dcard.done .ic, .dcard.done .dv { opacity: .45; }
   .dcard.done::after { content: "✓"; position: absolute; top: 34px; left: 50%; transform: translateX(-50%); font-size: 26px; font-weight: 900; color: #2f9d3a; text-shadow: 0 1px 0 #fff; }
   .dcard.d7 { grid-column: 1 / -1; flex-direction: row; justify-content: center; gap: 12px; padding: 10px 12px; background: linear-gradient(135deg, #f3e6ff, #ffe6f5); border-color: #c98bff; }
   .dcard.d7 .dn { background: #7b3ff2; }
@@ -1985,7 +1990,13 @@
     $('boostBar').hidden = !(on && info.boostLeft > 0); if (info.boostLeft > 0) $('boostLeft').textContent = fmtLeft(info.boostLeft);
     if ($('daily').classList.contains('show')) paintDailyButton();                      // cada segundo solo se actualiza el texto del botón (la cuadrícula no se redibuja)
   }
-  const cardIcon = i => ['skins/peso1.webp', 'skins/peso1.webp', 'skins/peso10.webp', 'skins/peso10.webp', 'skins/peso100.webp', 'skins/oro.webp'][i];
+  // Los dibujos de cada día son los pesos que regalan: $100 = una moneda de $100 · $200 = dos monedas de $100 · $300 = tres · $400 = cuatro · $500 = la moneda de $500 · $1.000 = el billete de $1.000.
+  const DENOM = [[1000, 'skins/b1000.webp'], [500, 'skins/peso500.webp'], [100, 'skins/peso100.webp'], [50, 'skins/peso50.webp'], [10, 'skins/peso10.webp'], [5, 'skins/peso5.webp'], [1, 'skins/peso1.webp']];
+  function coinsFor(v) {
+    const out = []; let rest = v;
+    for (const [d, src] of DENOM) while (rest >= d && out.length < 5) { out.push(src); rest -= d; }
+    return out;
+  }
   function renderDaily(msg) {
     const info = streakInfo(), grid = $('dailyGrid');
     // tarjeta de hoy (o la última cobrada): si hoy se puede cobrar, las anteriores del ciclo ya están hechas; si ya cobraste, la de hoy también
@@ -2002,9 +2013,10 @@
         const sm = document.createElement('small'); sm.textContent = `Durante ${Math.round(RACHA.dobleMs / 60000)} minutos`;
         dt.append(dn, b, sm); c.append(bolt, dt);
       } else {
-        const im = new Image(); im.src = cardIcon(i); im.alt = ''; im.draggable = false;
+        const ic = document.createElement('div'); ic.className = 'ic'; ic.dataset.n = coinsFor(v).length;
+        for (const src of coinsFor(v)) { const im = new Image(); im.src = src; im.alt = ''; im.draggable = false; if (src.includes('/b1000')) im.className = 'bill'; ic.appendChild(im); }
         const dv = document.createElement('span'); dv.className = 'dv'; dv.textContent = money(v);
-        c.append(dn, im, dv);
+        c.append(dn, ic, dv);
       }
       grid.appendChild(c);
     });
@@ -2384,7 +2396,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v30';
+  const BUILD = 'v31';
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
     out.hidden = false; const show = () => { out.textContent = lines.join('\n'); };

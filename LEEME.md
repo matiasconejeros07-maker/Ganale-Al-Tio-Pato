@@ -142,6 +142,7 @@ Con cuenta, al entrar cada día aparece la **Racha diaria** (también desde el c
 | 6 | $1.000 |
 | 7 | ⚡ **Pesos dobles durante 10 minutos** (las partidas que EMPIEZAN en ese lapso pagan el doble de pesos; los rebotes del marcador no se duplican) |
 
+- Los dibujos de cada día son los pesos que regalan: $100 = una moneda de $100, $200 = dos monedas de $100, $300 = tres, $400 = cuatro, $500 = la moneda de $500 y $1.000 = el billete de $1.000 (se calculan solos a partir del premio, con monedas y billetes de `skins/`).
 - Si pasas un día entero sin entrar, la racha vuelve al día 1. Después del día 7 el ciclo empieza otra vez (día 8 = premio del día 1) y cada séptimo día vuelven los pesos dobles.
 - **El día cambia a medianoche de Chile en horario de verano** (`huso: -3` en `eco.racha` de `tienda.js`; en invierno es una hora antes). Los premios y el tiempo de los pesos dobles también están en `eco.racha`; si los cambias, ejecuta `node herramientas/generar-reglas.js` y vuelve a pegar `firebase-rules.json`.
 - **Lo valida el servidor** (reglas de Firebase, nodo `streaks/<uid>`): el día y la hora los pone Firebase, la racha solo avanza al valor exacto que toca, el premio en pesos tiene que coincidir con la tabla, la racha no se puede borrar para cobrar de nuevo, y el pago doble de una partida solo vale si empezó dentro de los 10 minutos del último día 7. Cambiar el reloj del celular no sirve: si no coincide, Firebase lo rechaza.
