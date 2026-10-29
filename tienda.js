@@ -21,7 +21,15 @@ window.TIENDA = {
       av: { w: 76, fx: .47, fy: .375 }, av2: { w: 80, fx: .62, fy: .41 }, css: { steam: '64% 12%' }, note: 'Bigote, sombrero de copa y bata' },
     { id: 'tios',     n: 'Tíos Patitos',        price: 600, stat: 'trajes/tios.webp',     stat2: 'trajes/tios-enojados.webp',    asp: .83,  asp2: .86,  name: 'los Tíos Patitos',       g: 'p', dw: 1.5,
       av: { w: 70, fx: .49, fy: .31 }, av2: { w: 70, fx: .50, fy: .31 }, css: { steam: '48% 6%' }, note: 'La pareja: te devuelven la pelota de la mano' },
-    // Personaje secreto: aparece como una carta misteriosa hasta que lo compras. Usa el mismo rig del Tío Pato, pintado de oro (carpeta oro/).
+    // devil: true = el personaje se transforma en diablo (su dibujo enojado es un demonio): sus frases del rebote 70 en adelante hablan del infierno; los demás solo se enfurecen.
+    { id: 'angel',     n: 'Tío Pato Ángel',      price: 1000, stat: 'trajes/angel.webp',    stat2: 'trajes/angel-demonio.webp',    asp: 1.723, asp2: 1.172, name: 'el Tío Pato Ángel',      g: 'm', devil: true,
+      av: { w: 84, fx: .50, fy: .33 }, av2: { w: 108, fx: .50, fy: .23 }, css: { steam: '60% 17%' }, note: 'Ángel de traje blanco que baja al infierno' },
+    { id: 'galactico', n: 'Tío Pato Galáctico',  price: 5000, stat: 'trajes/galactico.webp', stat2: 'trajes/galactico-furia.webp', asp: 1.918, asp2: 1.918, name: 'el Tío Pato Galáctico',  g: 'm',
+      av: { w: 74, fx: .46, fy: .35 }, av2: { w: 74, fx: .46, fy: .35 }, css: { steam: '62% 20%' }, note: 'Un trozo del universo con sombrero de copa' },
+    // Personajes secretos: aparecen como una carta misteriosa hasta que los compras.
+    { id: 'dorado',    n: 'Tío Pato Dorado',     price: 50000000, stat: 'trajes/dorado.webp', stat2: 'trajes/dorado-oscuro.webp', asp: 1.812, asp2: 1.767, name: 'el Tío Pato Dorado', g: 'm', secret: true, glow: true,
+      av: { w: 74, fx: .49, fy: .37 }, av2: { w: 70, fx: .54, fy: .36 }, css: { steam: '62% 22%' }, note: 'Rey de oro que se enciende al rojo vivo' },
+    // El Millonario usa el mismo rig del Tío Pato, pintado de oro (carpeta oro/).
     { id: 'millonario', n: 'Tío Pato Millonario', price: 100000000, dir: 'oro/', name: 'el Tío Pato Millonario', g: 'm', secret: true, glow: true,
       css: { wl: '43.5% 64.5%', wr: '59% 63.7%', tr: '60.3% 35.5%', tail: '40% 76%', steam: '58% 22%', avW: '142px', avL: '-47px', avT: '-56px' }, note: 'De oro macizo: el sueño de todo millonario' }
   ],
@@ -70,8 +78,8 @@ window.TIENDA = {
     { id: 'b5000',   n: 'Billete $5.000',  price: 5000,  rate: 9,  img: 'skins/b5000.webp',   fx: 'flutter', w: 1.6,  trail: '#f08a94', nom: 'billete', gen: 'm' },
     { id: 'b10000',  n: 'Billete $10.000', price: 10000, rate: 10, img: 'skins/b10000.webp',  fx: 'flutter', w: 1.6,  trail: '#7cc4f0', nom: 'billete', gen: 'm' },
     { id: 'b20000',  n: 'Billete $20.000', price: 20000, rate: 20, img: 'skins/b20000.webp',  fx: 'flutter', w: 1.6,  trail: '#f0a070', nom: 'billete', gen: 'm' },
-    { id: 'plata',   n: 'Lingote de plata', price: 50000,   rate: 200,   img: 'skins/plata.webp',    fx: 'jump', w: 1.7, trail: '#cfd6e2', nom: 'lingote de plata', gen: 'm', note: 'Un lingote de verdad' },
-    { id: 'oro',     n: 'Lingote de oro',   price: 500000,  rate: 1000,  img: 'skins/oro.webp',      fx: 'jump', w: 1.7, trail: '#ffd54a', nom: 'lingote de oro', gen: 'm' },
-    { id: 'diamante', n: 'Diamante',        price: 1000000, rate: 10000, img: 'skins/diamante.webp', fx: 'jump', w: 1.15, trail: '#8fd3ff', nom: 'diamante', gen: 'm', note: 'La joya de la corona' }
+    { id: 'plata',   n: 'Lingote de plata', price: 50000,   rate: 100,   img: 'skins/plata.webp',    fx: 'jump', w: 1.7, trail: '#cfd6e2', nom: 'lingote de plata', gen: 'm', note: 'Un lingote de verdad' },
+    { id: 'oro',     n: 'Lingote de oro',   price: 500000,  rate: 200,   img: 'skins/oro.webp',     fx: 'jump', w: 1.7, trail: '#ffd54a', nom: 'lingote de oro', gen: 'm' },
+    { id: 'diamante', n: 'Diamante',        price: 1000000, rate: 500,   img: 'skins/diamante.webp', fx: 'jump', w: 1.15, trail: '#8fd3ff', nom: 'diamante', gen: 'm', note: 'La joya de la corona' }
   ]
 };
