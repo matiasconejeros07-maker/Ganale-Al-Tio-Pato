@@ -285,6 +285,7 @@
   .edhint { margin: 4px 0 8px; font-size: 13px; font-weight: 700; color: #6b6840; }
   .edrow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 6px 0; }
   .edchip { min-width: 44px; height: 44px; border-radius: 14px; border: 2px solid var(--line); background: #fff; font: inherit; font-weight: 900; font-size: 17px; cursor: pointer; padding: 0 10px; color: var(--ink); }
+  .edchip.wide { font-size: 15px; padding: 0 14px; }
   .edchip.on { border-color: #111; box-shadow: 0 0 0 2px #ffc928; }
   .edchip:disabled { opacity: .35; cursor: default; }
   .edlbl { margin: 14px 0 6px; text-align: left; font-size: 13px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: #6b6840; }
@@ -963,6 +964,7 @@
         <button class="edchip" id="edSmaller" type="button" aria-label="Más chico">−</button><button class="edchip" id="edBigger" type="button" aria-label="Más grande">+</button>
         <button class="edchip" id="edRotate" type="button" aria-label="Girar">↻</button><button class="edchip" id="edDel" type="button" aria-label="Quitar este símbolo">🗑️</button>
       </div>
+      <div class="edrow"><button class="edchip wide" id="edBack" type="button">⬇️ Al fondo</button><button class="edchip wide" id="edFront" type="button">⬆️ Al frente</button></div>
       <div class="edlbl">Símbolo</div><div class="symgrid" id="edSyms"></div>
       <div class="edlbl">Forma</div><div class="shgrid" id="edShapes"></div>
       <div class="edlbl">Fondo</div><div class="cgrid" id="edC1"></div>
@@ -1787,6 +1789,7 @@
     ed.layers.forEach((l, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'edchip' + (i === edSel ? ' on' : ''); b.textContent = l.sym === 0 ? letter : AVT.emojis[l.sym - 1]; b.setAttribute('aria-label', 'Símbolo ' + (i + 1)); b.onclick = () => { edSel = i; edRender(); }; lay.appendChild(b); });
     if (ed.layers.length < 3) { const b = document.createElement('button'); b.type = 'button'; b.className = 'edchip'; b.textContent = '＋'; b.setAttribute('aria-label', 'Agregar un símbolo'); b.onclick = () => { ed.layers.push({ sym: 1 + rnd2(AVT.emojis.length), x: 16, y: 16, size: 1, rot: 0 }); edSel = ed.layers.length - 1; edRender(); }; lay.appendChild(b); }
     $('edDel').disabled = ed.layers.length < 2; $('edSmaller').disabled = L.size <= 0; $('edBigger').disabled = L.size >= 3;
+    $('edBack').disabled = ed.layers.length < 2 || edSel === 0; $('edFront').disabled = ed.layers.length < 2 || edSel === ed.layers.length - 1;     // el orden de los símbolos es el orden de las capas: el primero queda al fondo
     const mark = (box, i) => [...box.children].forEach((b, k) => b.classList.toggle('on', k === i));
     mark($('edSyms'), L.sym); mark($('edShapes'), ed.shape); mark($('edC1'), ed.c1); mark($('edC2'), ed.c2); mark($('edPats'), ed.pat);
   }
@@ -1814,7 +1817,7 @@
     st.addEventListener('pointerdown', e => {
       if (!ed) return; drag = true; try { st.setPointerCapture(e.pointerId); } catch (_) {}
       const [x, y] = at(e); let best = edSel, bd = 1e9;                                    // si tocas otro símbolo, ese pasa a ser el elegido
-      ed.layers.forEach((l, i) => { const d = Math.hypot(l.x - x, l.y - y); if (d < bd && d < 7) { bd = d; best = i; } }); edSel = best;
+      ed.layers.forEach((l, i) => { const d = Math.hypot(l.x - x, l.y - y); if (d <= bd && d < 7) { bd = d; best = i; } }); edSel = best;               // si hay varios encima, se elige el de más al frente
       const L = ed.layers[edSel]; L.x = x; L.y = y; edRender();
     });
     st.addEventListener('pointermove', e => { if (!drag || !ed) return; const [x, y] = at(e), L = ed.layers[edSel]; if (L.x === x && L.y === y) return; L.x = x; L.y = y; if (!raf) raf = requestAnimationFrame(() => { raf = 0; edRender('stage'); }); });
@@ -1824,6 +1827,8 @@
   $('edSmaller').addEventListener('click', () => { const L = ed.layers[edSel]; if (L.size > 0) { L.size--; edRender(); } });
   $('edBigger').addEventListener('click', () => { const L = ed.layers[edSel]; if (L.size < 3) { L.size++; edRender(); } });
   $('edRotate').addEventListener('click', () => { const L = ed.layers[edSel]; L.rot = (L.rot + 1) % 8; edRender(); });
+  $('edBack').addEventListener('click', () => { if (edSel > 0) { ed.layers.unshift(ed.layers.splice(edSel, 1)[0]); edSel = 0; edRender(); } });
+  $('edFront').addEventListener('click', () => { if (edSel < ed.layers.length - 1) { ed.layers.push(ed.layers.splice(edSel, 1)[0]); edSel = ed.layers.length - 1; edRender(); } });
   $('edDel').addEventListener('click', () => { if (ed.layers.length > 1) { ed.layers.splice(edSel, 1); edSel = 0; edRender(); } });
   $('edRandom').addEventListener('click', () => { ed = randomEmblem(); edSel = 0; edRender(); });
   $('edSave').addEventListener('click', saveEmblem);
@@ -2690,7 +2695,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v35';
+  const BUILD = 'v36';
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
     out.hidden = false; const show = () => { out.textContent = lines.join('\n'); };
