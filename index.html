@@ -308,6 +308,10 @@
   .bgx i::before, .bgx i::after { content: ""; position: absolute; pointer-events: none; }
   .bgx .tile { left: 0; width: 100%; top: 0; height: calc(100% + var(--tile, 420px)); }          /* capa de partículas que sube o cae un tramo exacto y se repite sin saltos */
   #theme { position: fixed; z-index: 0; display: none; }
+  /* modo liviano (lo activa el juego solo si el celular va lento): fondos quietos y sin brillos pesados en el personaje */
+  body.lite #theme i, body.lite #theme::before, body.lite #theme::after { animation-play-state: paused !important; }
+  body.lite #duck .ly { filter: none !important; }
+  body.lite #duck.mad .rig, body.lite #arena.jolt { animation: none; }
   body.themed #theme, body.themed #hellfx { display: block; }
   body.end #theme, body.end #hellfx { display: none; }
   /* cuando el Pato se vuelve diablo, el infierno tiñe también los fondos premium */
@@ -370,23 +374,18 @@
   /* Aurora boreal: cortinas de luz que ondulan sobre una cordillera nevada */
   .bgx[data-bg="aurora"] { --b: #0b1b34; background: linear-gradient(180deg, #02060f 0%, #061428 52%, #0b2a46 100%); }
   .bgx[data-bg="aurora"]::before { content: ""; position: absolute; inset: 0; background: var(--s-starsA) 0 0 / 420px 420px; animation: twinkle 4s ease-in-out infinite alternate; }
-  .bgx[data-bg="aurora"] i:nth-child(1), .bgx[data-bg="aurora"] i:nth-child(2), .bgx[data-bg="aurora"] i:nth-child(3) { top: -8%; height: 80%; transform-origin: 50% 0; filter: blur(11px);
-    -webkit-mask-image: repeating-linear-gradient(90deg, #000 0, rgba(0,0,0,.3) 20px, #000 44px, rgba(0,0,0,.55) 64px, #000 90px), linear-gradient(180deg, #000 55%, transparent); mask-image: repeating-linear-gradient(90deg, #000 0, rgba(0,0,0,.3) 20px, #000 44px, rgba(0,0,0,.55) 64px, #000 90px), linear-gradient(180deg, #000 55%, transparent); -webkit-mask-composite: source-in; mask-composite: intersect; }
-  .bgx[data-bg="aurora"] i:nth-child(1) { left: -22%; width: 78%; background: linear-gradient(180deg, rgba(70,255,190,0) 0%, rgba(70,255,190,.7) 30%, rgba(60,200,160,.45) 62%, rgba(60,130,255,0) 100%); animation: curtain 11s ease-in-out infinite alternate; }
-  .bgx[data-bg="aurora"] i:nth-child(2) { left: 20%; width: 70%; background: linear-gradient(180deg, rgba(150,110,255,0) 0%, rgba(150,110,255,.62) 34%, rgba(90,160,255,.4) 66%, rgba(60,130,255,0) 100%); animation: curtain 14s ease-in-out -4s infinite alternate-reverse; }
-  .bgx[data-bg="aurora"] i:nth-child(3) { left: 46%; width: 70%; background: linear-gradient(180deg, rgba(255,110,200,0) 0%, rgba(255,110,200,.5) 36%, rgba(180,100,255,.32) 68%, rgba(60,130,255,0) 100%); animation: curtain 17s ease-in-out -8s infinite alternate; }
+  .bgx[data-bg="aurora"] i:nth-child(1), .bgx[data-bg="aurora"] i:nth-child(2), .bgx[data-bg="aurora"] i:nth-child(3) { top: -8%; height: 80%; transform-origin: 50% 0; background-repeat: no-repeat; background-size: 100% 100%; }   /* texturas ya difuminadas (fondos/aurora-N.webp): sin filter ni máscara en cada cuadro */
+  .bgx[data-bg="aurora"] i:nth-child(1) { left: -22%; width: 78%; background-image: url("fondos/aurora-1.webp"); animation: curtain 11s ease-in-out infinite alternate; }
+  .bgx[data-bg="aurora"] i:nth-child(2) { left: 20%; width: 70%; background-image: url("fondos/aurora-2.webp"); animation: curtain 14s ease-in-out -4s infinite alternate-reverse; }
+  .bgx[data-bg="aurora"] i:nth-child(3) { left: 46%; width: 70%; background-image: url("fondos/aurora-3.webp"); animation: curtain 17s ease-in-out -8s infinite alternate; }
   .bgx[data-bg="aurora"] i:nth-child(4) { left: 0; width: 100%; height: 20%; bottom: 0; background: var(--s-mountAurora) 0 100% / 100% 100% no-repeat; }
   .bgx[data-bg="aurora"] i:nth-child(5) { left: 0; width: 100%; height: 26%; bottom: 14%; background: radial-gradient(70% 100% at 50% 100%, rgba(80,255,200,.3), transparent 70%); animation: bgPulse 7s ease-in-out infinite alternate; }
   .bgx[data-bg="aurora"]::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(130% 90% at 50% 40%, transparent 55%, rgba(0,4,12,.6)); }
 
   /* Galaxia: espiral girando con su núcleo, dos capas de estrellas a distinta velocidad y una estrella fugaz */
   .bgx[data-bg="galaxia"] { --b: #0a0a1f; background: radial-gradient(ellipse 80% 55% at 22% 14%, rgba(120,60,200,.55), transparent 70%), radial-gradient(ellipse 70% 50% at 88% 78%, rgba(20,100,200,.5), transparent 70%), radial-gradient(ellipse 60% 40% at 40% 98%, rgba(220,60,160,.34), transparent 70%), #050512; }
-  .bgx[data-bg="galaxia"]::before { content: ""; position: absolute; left: -35%; width: 170%; aspect-ratio: 1; top: 50%; translate: 0 -50%; border-radius: 50%; animation: bgSpin 150s linear infinite; filter: blur(9px);
-    background: conic-gradient(rgba(150,90,255,0), rgba(170,110,255,.5) 7%, rgba(70,130,255,0) 21%, rgba(255,110,200,.46) 38%, rgba(70,130,255,0) 54%, rgba(170,110,255,.5) 69%, rgba(255,170,110,.32) 84%, rgba(150,90,255,0));
-    -webkit-mask-image: radial-gradient(circle, #000 4%, transparent 62%); mask-image: radial-gradient(circle, #000 4%, transparent 62%); }
-  .bgx[data-bg="galaxia"] i:nth-child(1) { left: -35%; width: 170%; aspect-ratio: 1; top: 50%; translate: 0 -50%; border-radius: 50%; animation: bgSpinBack 220s linear infinite; filter: blur(12px);
-    background: conic-gradient(from 90deg, rgba(90,160,255,0), rgba(90,160,255,.3) 10%, rgba(90,160,255,0) 28%, rgba(255,140,230,.28) 52%, rgba(90,160,255,0) 70%, rgba(130,100,255,.26) 88%, rgba(90,160,255,0));
-    -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 56%); mask-image: radial-gradient(circle, #000 8%, transparent 56%); }
+  .bgx[data-bg="galaxia"]::before { content: ""; position: absolute; left: -35%; width: 170%; aspect-ratio: 1; top: 50%; translate: 0 -50%; animation: bgSpin 150s linear infinite; background: url("fondos/galaxia-1.webp") center / 100% 100% no-repeat; }
+  .bgx[data-bg="galaxia"] i:nth-child(1) { left: -35%; width: 170%; aspect-ratio: 1; top: 50%; translate: 0 -50%; animation: bgSpinBack 220s linear infinite; background: url("fondos/galaxia-2.webp") center / 100% 100% no-repeat; }
   .bgx[data-bg="galaxia"] i:nth-child(2) { left: 30%; width: 40%; aspect-ratio: 1; top: 50%; translate: 0 -50%; border-radius: 50%; animation: bgPulse 6s ease-in-out infinite alternate;
     background: radial-gradient(circle, #fffdf2 0, #ffe9c8 10%, rgba(255,175,130,.55) 26%, rgba(200,120,255,.18) 48%, transparent 70%); }
   .bgx[data-bg="galaxia"] i:nth-child(3) { left: 0; width: 100%; top: 0; height: calc(100% + var(--tile, 420px)); background: var(--s-starsA) 0 0 / 420px 420px; animation: bgRise 110s linear infinite; }
@@ -810,7 +809,8 @@
   // En cuanto el Pato se enoja (55) pierde la aureola y las alas de ángel y pasa a su piel de diablo.
   const P_CHALLENGE = 30, P_ANGRY = 55, P_DEVIL = 60, P_HELL = 70;
   const TOP_N = 25;               // cuántos jugadores muestra el marcador; tu puesto aparece debajo aunque estés más abajo
-  const REFRESH_MS = 30000;       // el marcador se actualiza solo mientras está abierto
+  const REFRESH_MS = 5000;        // el Top 25 se actualiza cada 5 s mientras el marcador está abierto y a la vista
+  const RANK_MS = 30000;          // tu puesto (lo más pesado: el contador de 500 casillas) se vuelve a leer cada 30 s
   const STORE_KEY = 'gana-al-tio-pato-v2';
   // El fondo cambia cada 10 rebotes (el primero a los 5): del cielo amarillo al infierno, que empieza justo cuando el Pato se enoja
   const PALETTE = ['#fff6c0', '#ffec5c', '#ffb978', '#ffa64f', '#faa3fe', '#f478fd', '#c2312f', '#8a1620', '#5a0e14', '#3a070b', '#2a0508'];
@@ -909,7 +909,7 @@
   let wake = null;                                               // mantiene la pantalla encendida mientras juegas
   async function lockScreen() { try { if ('wakeLock' in navigator && !wake) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) {} }
   function unlockScreen() { try { if (wake) wake.release(); } catch (e) {} wake = null; }
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (state === 'play' || state === 'countdown')) lockScreen(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (state === 'play' || state === 'countdown')) lockScreen(); if (document.visibilityState === 'visible' && boardTimer) refreshBoard(); });
 
   /* ---------- sonido (sintetizado, sin archivos) ---------- */
   function tone(freq, dur = .07, type = 'triangle', vol = .12, to = null) {
@@ -933,6 +933,16 @@
   /* ---------- efectos: estela, partículas y fuego ---------- */
   const fx = $('fx'), cx = fx.getContext('2d');
   let dpr = 1; const trail = [], parts = [], flames = []; let fireAcc = 0;
+  // Sprites de luz: se pintan una sola vez y luego se estampan con drawImage (mucho más barato que crear un degradado por partícula en cada cuadro).
+  const mkSprite = (w, h, paint) => { const c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d')); return c; };
+  const FLAME_SPR = mkSprite(64, 64, g => { const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,236,160,.9)'); r.addColorStop(.35, 'rgba(255,140,30,.6)'); r.addColorStop(1, 'rgba(210,25,8,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); });
+  const AURA_SPR = mkSprite(280, 280, g => { const r = g.createRadialGradient(140, 140, 8, 140, 140, 130); r.addColorStop(0, 'rgba(255,120,30,.55)'); r.addColorStop(.5, 'rgba(255,40,10,.24)'); r.addColorStop(1, 'rgba(255,0,0,0)'); g.fillStyle = r; g.fillRect(0, 0, 280, 280); });
+  const glowCache = new Map();
+  function glowSprite(c) {                                       // círculo de luz de un color: centro opaco → borde transparente
+    let s = glowCache.get(c);
+    if (!s) { if (glowCache.size > 300) glowCache.clear(); s = mkSprite(48, 48, g => { const r = g.createRadialGradient(24, 24, 0, 24, 24, 24); r.addColorStop(0, c); r.addColorStop(1, c + '00'); g.fillStyle = r; g.fillRect(0, 0, 48, 48); }); glowCache.set(c, s); }
+    return s;
+  }
   // Efectos propios de cada barra: luces y partículas que salen de ella y un anillo de luz en cada rebote. Los dibuja makePadFx, que
   // también usa la tienda para animar las vistas previas (cada una con su propio lienzo).
   const RAINBOW = ['#ff3b3b', '#ff9a1f', '#ffe83b', '#3be86a', '#2bc4ff', '#6a5cff', '#d84bff'];
@@ -1044,9 +1054,8 @@
           const a = Math.min(1, p.life * 1.5);
           g.globalCompositeOperation = p.m === 'coin' ? 'source-over' : add_;
           if (p.m === 'glow') {
-            const r = p.s * (.6 + .8 * p.life), gr = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
-            gr.addColorStop(0, p.c); gr.addColorStop(1, p.c + '00');
-            g.globalAlpha = a * .85; g.fillStyle = gr; g.beginPath(); g.arc(p.x, p.y, r, 0, 6.283); g.fill();
+            const r = p.s * (.6 + .8 * p.life);
+            g.globalAlpha = a * .85; g.drawImage(glowSprite(p.c), p.x - r, p.y - r, 2 * r, 2 * r);
           } else if (p.m === 'star') {
             const r = p.s * (.55 + .45 * Math.abs(Math.sin(p.life * 13 + i))) * 1.4;
             g.globalAlpha = a; g.fillStyle = p.c; g.beginPath();
@@ -1108,7 +1117,7 @@
   }
 
   function sizeFx() {
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    dpr = lite ? 1 : Math.min(2, window.devicePixelRatio || 1);
     fx.width = Math.round(W * dpr); fx.height = Math.round(H * dpr);
     fx.style.width = W + 'px'; fx.style.height = H + 'px';
   }
@@ -1122,10 +1131,8 @@
   function fireDraw(dt) {
     const k = fireK(), cxp = duckShow, follow = cxp - prevShow; prevShow = cxp;
     if (k > 0) {
-      const g = cx.createRadialGradient(cxp, DUCK_CY, 8, cxp, DUCK_CY, 130);
-      g.addColorStop(0, `rgba(255,120,30,${.55 * k})`); g.addColorStop(.5, `rgba(255,40,10,${.24 * k})`); g.addColorStop(1, 'rgba(255,0,0,0)');
-      cx.globalAlpha = 1; cx.fillStyle = g; cx.fillRect(cxp - 140, DUCK_CY - 140, 280, 280);
-      fireAcc += (50 + 120 * k) * dt;
+      cx.globalAlpha = k; cx.drawImage(AURA_SPR, cxp - 140, DUCK_CY - 140);                        // resplandor rojo
+      if (flames.length < 90) fireAcc += (45 + 75 * k) * dt;
       while (fireAcc >= 1) {
         fireAcc--;
         flames.push({ x: cxp + (Math.random() - .5) * 64, y: DUCK_CY + (Math.random() - .05) * 58, vx: (Math.random() - .5) * 46, vy: -(60 + Math.random() * 120) * (.7 + .5 * k), life: 1, d: 1 + Math.random() * 1.2, s: 7 + Math.random() * 10 * (.5 + k) });
@@ -1137,11 +1144,9 @@
       if (f.life <= 0) { flames.splice(i, 1); continue; }
       f.x += (f.vx + Math.sin(f.y * .08 + i) * 24) * dt + follow * .85; f.y += f.vy * dt; f.vy -= 40 * dt;
       const r = f.s * (.55 + .9 * f.life), a = Math.min(1, f.life * 1.4);
-      const g = cx.createRadialGradient(f.x, f.y, 0, f.x, f.y, r);
-      g.addColorStop(0, `rgba(255,236,160,${.9 * a})`); g.addColorStop(.35, `rgba(255,140,30,${.6 * a})`); g.addColorStop(1, 'rgba(210,25,8,0)');
-      cx.fillStyle = g; cx.beginPath(); cx.arc(f.x, f.y, r, 0, 6.283); cx.fill();
+      cx.globalAlpha = a; cx.drawImage(FLAME_SPR, f.x - r, f.y - r, 2 * r, 2 * r);
     }
-    cx.globalCompositeOperation = 'source-over';
+    cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over';
   }
   function drawFx(dt) {
     cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, W, H);
@@ -1311,27 +1316,35 @@
       countFailAt = Date.now();                                                           // (también pasa si aún no se publicaron las reglas nuevas)
     } catch (e) {} finally { counting = false; }
   }
-  async function refreshBoard() {
+  let lastMe = null, lastMeAt = 0, lastSig = '';
+  async function refreshBoard(first) {
+    if (document.hidden && !first) return;                       // app o pestaña en segundo plano: no gasta datos
     const note = $('boardNote');
-    note.textContent = ONLINE ? 'Actualizando…' : 'Modo local: aquí solo aparece tu mejor puntaje en este dispositivo.';
+    if (first) note.textContent = ONLINE ? 'Actualizando…' : 'Modo local: aquí solo aparece tu mejor puntaje en este dispositivo.';
     try {
       if (player.dirty) await syncBest();
       if (countedFor !== (session ? session.uid : '') + ':' + player.best) syncCount();
-      const [rows, me] = await Promise.all([fetchTop(TOP_N), ONLINE ? myRank().catch(() => null) : null]);
-      renderBoard(rows, me);
-      if (ONLINE) {
-        const tot = me && me.total > TOP_N ? ` de ${me.total.toLocaleString('es-CL')} jugadores` : '';
-        note.textContent = `Top ${Math.min(rows.length, TOP_N)}${tot} · gana quien más rebotes aguante`;
+      const needRank = ONLINE && (first || Date.now() - lastMeAt >= RANK_MS);
+      const [rows, me] = await Promise.all([fetchTop(TOP_N), needRank ? myRank().catch(() => null) : null]);
+      if (needRank) { lastMe = me; lastMeAt = Date.now(); }
+      const sig = JSON.stringify([rows.map(r => [r.id, r.s, r.n]), lastMe && lastMe.rank, lastMe && lastMe.total, player.best]);
+      if (sig !== lastSig) {                                      // solo se redibuja si algo cambió (así no se pierde el scroll ni parpadea)
+        lastSig = sig; const ul = $('list'), top = ul.scrollTop;
+        renderBoard(rows, lastMe); ul.scrollTop = top;
+        if (ONLINE) {
+          const tot = lastMe && lastMe.total > TOP_N ? ` de ${lastMe.total.toLocaleString('es-CL')} jugadores` : '';
+          note.textContent = `Top ${Math.min(rows.length, TOP_N)}${tot} · gana quien más rebotes aguante`;
+        }
       }
     } catch (e) {
-      note.textContent = 'No se pudo cargar. Reintentando…';
+      if (first) note.textContent = 'No se pudo cargar. Reintentando…';
     }
   }
 
   function openBoard(from) {
     boardFrom = from; delete $('list').dataset.scrolled;
     setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
-    show('board'); refreshBoard();
+    lastSig = ''; lastMe = null; lastMeAt = 0; show('board'); refreshBoard(true);
     clearInterval(boardTimer); boardTimer = setInterval(refreshBoard, REFRESH_MS);
   }
   function closeBoard() {
@@ -1394,8 +1407,8 @@
     av.appendChild(IMG('face0.png', 'ava face')); av.appendChild(IMG('horns.png', 'ava horns'));
     botAv.classList.add('pic');
     $('heroBox').textContent = ''; $('heroBox').appendChild(IMG('hero_angel.png', ''));
-    ['wingL_angel', 'wingR_angel', 'wingL_devil', 'wingR_devil', 'halo', 'horns', 'trident', 'tail', 'face1', 'face2', 'face3', 'hero_mid', 'hero_devil']
-      .forEach(f => { new Image().src = chDir() + f + '.png'; });        // precarga para que no haya parpadeos
+    ['hero_mid', 'hero_devil'].forEach(f => { new Image().src = chDir() + f + '.png'; });        // precarga para que no haya parpadeos
+    rig.querySelectorAll('img').forEach(im => { if (im.decode) im.decode().catch(() => {}); });   // alas, cuernos y tridente de diablo se decodifican ya, no justo cuando aparecen (rebote 55)
     duckLook();
   }
   // Ajusta el rig (centros de giro, vapor, avatar) y los textos al personaje elegido; reconstruye las capas si cambió.
@@ -1409,7 +1422,7 @@
     duck.classList.toggle('glow', !!ch.glow);
     set(duck, '--dw', ch.dw || 1);
     $('ttl').firstChild.textContent = 'Gánale ' + (pl ? 'a los ' : ch.g === 'f' ? 'a la ' : 'al '); $('ttlName').textContent = ch.n.replace(/^Los /, '');
-    $('tagline').textContent = `Rebota la moneda con tu barra y junta pesos. ${cap(ch.name)} siempre te la ${pl ? 'devuelven' : 'devuelve'}.`;
+    { const w = ballWords(); $('tagline').textContent = `Rebota ${w.la} con tu barra y junta pesos. ${cap(ch.name)} siempre te ${w.lo} ${pl ? 'devuelven' : 'devuelve'}.`; }
     $('verdict').textContent = (pl ? 'Ganaron ' : 'Ganó ') + ch.name;
     if (builtCh !== wallet.eq.ch) buildDuck();
   }
@@ -1442,7 +1455,14 @@
     }
     lastFace = f;
   }
-  const tpl = t => t.replace(/%n/g, curCh().name).replace(/%D/g, ({ f: 'LA DIABLA', p: 'LOS DIABLOS' })[curCh().g] || 'EL DIABLO')
+  // La pelota que llevas puesta en palabras: «la moneda», «el billete», «el lingote de oro», «el diamante» (campos nom y gen de cada pelota en tienda.js).
+  function ballWords(b = itemOf('ball', wallet.eq.ball) || CAT.ball[0]) {
+    const nom = b.nom || 'moneda', f = (b.gen || 'f') === 'f', [w1, ...resto] = nom.split(' ');
+    return { la: (f ? 'la ' : 'el ') + nom, esa: (f ? 'esa ' : 'ese ') + nom, esta: (f ? 'esta ' : 'este ') + nom, una: (f ? 'una ' : 'un ') + nom, nom, noms: [w1 + (/[aeiou]$/.test(w1) ? 's' : 'es'), ...resto].join(' '), lo: f ? 'la' : 'lo', kind: w1 };
+  }
+  const tpl = t => t.replace(/\{(la|esa|esta|una|nom|noms)\}/gi, (m, k) => { const v = ballWords()[k.toLowerCase()]; return k === k.toUpperCase() ? v.toUpperCase() : k[0] === k[0].toUpperCase() ? v[0].toUpperCase() + v.slice(1) : v; })
+    .replace(/\{pago\}/g, () => money(gameRate * rateAt(Math.max(1, hits))))
+    .replace(/%n/g, curCh().name).replace(/%D/g, ({ f: 'LA DIABLA', p: 'LOS DIABLOS' })[curCh().g] || 'EL DIABLO')
     .replace(/%h/g, hits).replace(/%b/g, leaderBest).replace(/%j/g, player.name || (session && session.name) || 'amigo');
   function say(text, ms) {
     const b = $('bubble'), t = tpl(text); b.textContent = t; b.classList.add('on'); lastSay = text; bubbleW = b.offsetWidth;
@@ -1455,29 +1475,33 @@
   const rnd = n => Math.floor(Math.random() * n);
   // amable (1-29) → reto (30-54) → enojo (55-69) → diablo (70+) solo para los que se transforman (el rig del Tío Pato); las skins de una imagen pasan a furia
   const phaseKey = () => hits < P_CHALLENGE ? 'amable' : hits < P_ANGRY ? 'reto' : hits < P_HELL ? 'enojo' : curCh().stat ? 'furia' : 'diablo';
-  function poolOf(ph) {
-    const mine = (DLG.personajes || {})[curCh().id] || {};
-    return [...((DLG.comun || {})[ph === 'diablo' ? 'furia' : ph] || []), ...(mine[ph] || [])].filter(t => leaderBest > 0 || !t.includes('%b'));
-  }
-  function nextLine() {
-    const ph = phaseKey(), key = curCh().id + ':' + ph;
-    if (!bag[key] || !bag[key].length) {
-      bag[key] = shuffle(poolOf(ph));
-      if (bag[key].length > 1 && bag[key][bag[key].length - 1] === lastSay) bag[key].unshift(bag[key].pop());   // que no repita la última al volver a barajar
-    }
+  const faseDe = ph => ph === 'diablo' ? 'furia' : ph;
+  const okLinea = t => leaderBest > 0 || !t.includes('%b');                    // las que hablan del récord solo salen si ya hay uno
+  const poolOf = ph => [...((DLG.comun || {})[faseDe(ph)] || []), ...((((DLG.personajes || {})[curCh().id]) || {})[ph] || [])].filter(okLinea);
+  const poolPelota = ph => (((DLG.pelota || {})[ballWords().kind] || {})[faseDe(ph)] || []).filter(okLinea);       // frases de la pelota con la que juegas
+  const sacar = (key, lista) => {                                              // saca una frase de la bolsa `key`; si se acabó, la vuelve a barajar (sin repetir la última)
+    if (!bag[key] || !bag[key].length) { bag[key] = shuffle(lista.slice()); if (bag[key].length > 1 && bag[key][bag[key].length - 1] === lastSay) bag[key].unshift(bag[key].pop()); }
     return bag[key].pop();
+  };
+  function nextLine() {
+    const ph = phaseKey(), key = curCh().id + ':' + ph, pel = poolPelota(ph);
+    const kp = key + ':pelota';
+    if (bag[kp] === undefined) bag[kp] = shuffle(pel.slice());
+    if (bag[kp].length && Math.random() < .3) return bag[kp].pop();               // 3 de cada 10 frases hablan de tu pelota (billete, lingote, diamante…); cada una sale una sola vez por fase
+    return sacar(key, poolOf(ph));
   }
   function hito() {                                                // frase de un rebote especial (30, 55, 60, 100…): propia del personaje o, si no tiene, común
     const mine = ((DLG.personajes || {})[curCh().id] || {}).hitos || {}, l = mine[hits] || ((DLG.comun || {}).hitos || {})[hits];
     return l && l[rnd(l.length)];
   }
-  function resetTalk() { for (const k in bag) delete bag[k]; lastSay = ''; talkAt = 2 + rnd(3); }
+  const gap = () => 4 + rnd(7);                                                // la próxima frase sale entre 4 y 10 rebotes después (al azar)
+  function resetTalk() { for (const k in bag) delete bag[k]; lastSay = ''; talkAt = gap(); }
   function talk() {
     const sp = hito();
-    if (sp) { say(sp, 3000); talkAt = hits + 3; if (hits >= 30) tone(hits >= P_ANGRY ? 110 : 660, .3, hits >= P_ANGRY ? 'sawtooth' : 'triangle', .1, hits >= P_ANGRY ? 55 : 880); return; }
+    if (sp) { say(sp, 3000); talkAt = hits + gap(); if (hits >= 30) tone(hits >= P_ANGRY ? 110 : 660, .3, hits >= P_ANGRY ? 'sawtooth' : 'triangle', .1, hits >= P_ANGRY ? 55 : 880); return; }
     if (hits < talkAt) return;
     const t = nextLine(); if (!t) return;
-    say(t); talkAt = hits + (hits < P_ANGRY ? 3 + rnd(3) : 2 + rnd(3));       // la próxima frase sale en 3-5 rebotes (2-4 desde que se enoja)
+    say(t); talkAt = hits + gap();
   }
 
   // Dónde llegará el billete a la altura del Tío Pato (con rebotes en las paredes), para que salga a recibirlo.
@@ -1949,7 +1973,7 @@
   }
 
   function beginPlay() {
-    state = 'play';
+    state = 'play'; slowN = frameN = slowWins = 0;
     launch(); draw();
     target.style.visibility = 'visible';
     setBig(0);
@@ -1958,9 +1982,20 @@
     requestAnimationFrame(loop);
   }
 
+  // Si el celular no da abasto (muchos cuadros lentos seguidos) se congelan los fondos animados y los brillos del personaje: el juego se ve casi igual pero fluido.
+  let slowN = 0, frameN = 0, slowWins = 0, lite = false;
+  function perfWatch(ms) {
+    if (lite || document.hidden) return;
+    frameN++; if (ms > 36) slowN++;
+    if (frameN >= 90) {                                            // cada 90 cuadros (~1,5 s) se mira cuántos fueron lentos; 3 ventanas seguidas con más del 30% → modo liviano
+      slowWins = slowN / frameN > .3 ? slowWins + 1 : 0; frameN = slowN = 0;
+      if (slowWins >= 3) { lite = true; document.body.classList.add('lite'); sizeFx(); }
+    }
+  }
   function loop(now) {
     if (state !== 'play') return;
     if (paused) { last = now; requestAnimationFrame(loop); return; }   // celular en horizontal: pausa
+    perfWatch(now - last);
     const dt = Math.min((now - last) / 1000, .034); last = now;   // si la pestaña se oculta, el juego se pausa solo
     elapsed += dt;
     if (keyDir) px = clamp(px + keyDir * 760 * dt, pw / 2, W - pw / 2);
