@@ -154,6 +154,19 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     ok('el emblema guardado se ve en el encabezado y queda en el dispositivo', t.e === '🚀' && /^e/.test(t.ls), JSON.stringify(t));
     await p.reload(); await p.waitForTimeout(500);
     ok('tras recargar sigue ahí', await p.evaluate(() => document.getElementById('meEmb').textContent === '🚀'));
+    // orden de los símbolos: al fondo / al frente
+    await p.click('#openSettings'); await p.click('#openEmblem'); await p.waitForTimeout(200);
+    await p.evaluate(() => { document.getElementById('edLayers').lastElementChild.click(); document.querySelectorAll('#edSyms button')[2].click(); });    // segundo símbolo: 😎 (queda al frente)
+    const orden = () => p.evaluate(() => [...document.querySelectorAll('#edStage .embs')].map(e => e.textContent).join(''));
+    ok('un símbolo nuevo queda al frente (se dibuja después)', await orden() === '🚀😎', await orden());
+    ok('el que está al frente no se puede traer más al frente', await p.evaluate(() => document.getElementById('edFront').disabled && !document.getElementById('edBack').disabled));
+    await p.click('#edBack');
+    ok('«Al fondo» pasa 😎 detrás del 🚀', await orden() === '😎🚀', await orden());
+    ok('el símbolo elegido sigue siendo el mismo (ahora el primero) y ya no se puede mandar más al fondo', await p.evaluate(() => document.getElementById('edBack').disabled && !document.getElementById('edFront').disabled));
+    await p.click('#edFront');
+    ok('«Al frente» lo vuelve a poner delante', await orden() === '🚀😎', await orden());
+    await p.click('#edSave'); await p.waitForTimeout(200);
+    ok('el orden se guarda en el emblema', await p.evaluate(() => document.getElementById('meEmb').textContent === '🚀😎'));
     ok('sin errores de página', errs.length === 0, errs.join('|'));
     await ctx.close();
   }
