@@ -5,12 +5,13 @@ window.TIENDA = {
   // Economía: cada punto vale lo que paga tu pelota (ball[].rate) multiplicado por «Monedas dobles»: ×1 del punto 1 al 99, ×2 del 100 al 199, ×3 del 200 al 299…
   eco: { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500, cMax: 1000000000000 },
 
-  // Personajes: el rival que te devuelve la pelota. Los dos primeros tienen carpeta con las capas del ángel y del demonio; el resto son imágenes sueltas
-  // (sin alas ni aureola) que se enojan con temblor, brillo rojo y vapor. stat = dibujo calmado · stat2 = dibujo enojado, al que cambian cuando el personaje se enoja.
+  // Personajes: el rival que te devuelve la pelota. La Tía Patita (patita/) y el Millonario (oro/) tienen carpeta con las capas del ángel y del demonio; el resto son imágenes sueltas
+  // que se enojan con temblor, brillo rojo y vapor. stat = dibujo calmado · stat2 = dibujo enojado, al que cambian cuando el personaje se enoja.
   // av = recorte de la cara para el avatar · dw = ancho de la caja del personaje (la pareja es más ancha) · g = género/número del nombre (m, f o p = plural).
+  // devil: true = el personaje se transforma en diablo (su dibujo enojado es un demonio): sus frases del rebote 70 en adelante hablan del infierno; los demás solo se enfurecen.
   ch: [
-    { id: 'tio', n: 'Tío Pato',   price: 0,   dir: 'pato/',    name: 'el Tío Pato', g: 'm',
-      css: { wl: '43.5% 64.5%', wr: '59% 63.7%', tr: '60.3% 35.5%', tail: '40% 76%', steam: '58% 22%', avW: '142px', avL: '-47px', avT: '-56px' }, note: 'El de siempre' },
+    { id: 'tio', n: 'Tío Pato',   price: 0,   stat: 'trajes/angel.webp', stat2: 'trajes/angel-demonio.webp', asp: 1.723, asp2: 1.172, name: 'el Tío Pato', g: 'm', devil: true,
+      av: { w: 84, fx: .50, fy: .33 }, av2: { w: 108, fx: .50, fy: .23 }, css: { steam: '60% 17%' }, note: 'El de siempre: ángel que baja al infierno' },
     { id: 'tia', n: 'Tía Patita', price: 150,  dir: 'patita/',  name: 'la Tía Patita', g: 'f',
       css: { wl: '42% 64.2%', wr: '60.3% 62.8%', tr: '65.6% 39.2%', tail: '39.5% 78.4%', steam: '58% 26%', avW: '166px', avL: '-50px', avT: '-67px' }, note: 'Ángel que se vuelve demonio' },
     { id: 'conejo',   n: 'Tío Pato Conejo',     price: 300, stat: 'trajes/conejo.webp',   stat2: 'trajes/conejo-enojado.webp',   asp: 1.92, asp2: 1.65, name: 'el Tío Pato Conejo',     g: 'm',
@@ -21,15 +22,12 @@ window.TIENDA = {
       av: { w: 76, fx: .47, fy: .375 }, av2: { w: 80, fx: .62, fy: .41 }, css: { steam: '64% 12%' }, note: 'Bigote, sombrero de copa y bata' },
     { id: 'tios',     n: 'Tíos Patitos',        price: 600, stat: 'trajes/tios.webp',     stat2: 'trajes/tios-enojados.webp',    asp: .83,  asp2: .86,  name: 'los Tíos Patitos',       g: 'p', dw: 1.5,
       av: { w: 70, fx: .49, fy: .31 }, av2: { w: 70, fx: .50, fy: .31 }, css: { steam: '48% 6%' }, note: 'La pareja: te devuelven la pelota de la mano' },
-    // devil: true = el personaje se transforma en diablo (su dibujo enojado es un demonio): sus frases del rebote 70 en adelante hablan del infierno; los demás solo se enfurecen.
-    { id: 'angel',     n: 'Tío Pato Ángel',      price: 1000, stat: 'trajes/angel.webp',    stat2: 'trajes/angel-demonio.webp',    asp: 1.723, asp2: 1.172, name: 'el Tío Pato Ángel',      g: 'm', devil: true,
-      av: { w: 84, fx: .50, fy: .33 }, av2: { w: 108, fx: .50, fy: .23 }, css: { steam: '60% 17%' }, note: 'Ángel de traje blanco que baja al infierno' },
     { id: 'galactico', n: 'Tío Pato Galáctico',  price: 5000, stat: 'trajes/galactico.webp', stat2: 'trajes/galactico-furia.webp', asp: 1.918, asp2: 1.918, name: 'el Tío Pato Galáctico',  g: 'm',
       av: { w: 74, fx: .46, fy: .35 }, av2: { w: 74, fx: .46, fy: .35 }, css: { steam: '62% 20%' }, note: 'Un trozo del universo con sombrero de copa' },
     // Personajes secretos: aparecen como una carta misteriosa hasta que los compras.
     { id: 'dorado',    n: 'Tío Pato Dorado',     price: 50000000, stat: 'trajes/dorado.webp', stat2: 'trajes/dorado-oscuro.webp', asp: 1.812, asp2: 1.767, name: 'el Tío Pato Dorado', g: 'm', secret: true, glow: true,
       av: { w: 74, fx: .49, fy: .37 }, av2: { w: 70, fx: .54, fy: .36 }, css: { steam: '62% 22%' }, note: 'Rey de oro que se enciende al rojo vivo' },
-    // El Millonario usa el mismo rig del Tío Pato, pintado de oro (carpeta oro/).
+    // El Millonario usa el rig de capas del Tío Pato de antes (alas, aureola, cuernos y tridente), pintado de oro (carpeta oro/).
     { id: 'millonario', n: 'Tío Pato Millonario', price: 100000000, dir: 'oro/', name: 'el Tío Pato Millonario', g: 'm', secret: true, glow: true,
       css: { wl: '43.5% 64.5%', wr: '59% 63.7%', tr: '60.3% 35.5%', tail: '40% 76%', steam: '58% 22%', avW: '142px', avL: '-47px', avT: '-56px' }, note: 'De oro macizo: el sueño de todo millonario' }
   ],

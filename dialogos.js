@@ -4,7 +4,7 @@
 // Fases: amable (rebotes 1-29) · reto (30-54, te provocan) · enojo (55-69) · furia (70 en adelante; los personajes que se vuelven diablo usan `diablo`).
 // `comun`: frases para TODOS los personajes; no hablan de sí mismos ni de su género o número, solo de ti y del juego.
 // `personajes[id]`: frases propias de cada skin (se suman a las comunes). Los que no se transforman en diablo (conejos, Simi, Tíos Patitos, Galáctico, Dorado) nunca hablan del infierno.
-// Los que sí se transforman (el rig del Tío Pato y las skins con `devil: true` en tienda.js, como el Ángel) usan `diablo` del 70 en adelante en vez de `furia`.
+// Los que sí se transforman (la Tía Patita, el Millonario y las skins con `devil: true` en tienda.js, como el Tío Pato) usan `diablo` del 70 en adelante en vez de `furia`.
 // hitos: frases que salen justo en ese rebote (si hay varias, se elige una al azar).
 // Se puede escribir: %j = tu nombre · %h = tus rebotes · %b = el récord (solo sale si ya hay uno) · %n = el nombre del personaje · %D = EL DIABLO / LA DIABLA / LOS DIABLOS.
 // Y la pelota con la que juegas (moneda, billete, lingote o diamante): {la} = la moneda / el billete / el lingote de oro / el diamante · {esa} · {esta} · {una} · {nom} = moneda / billete… · {noms} = monedas / billetes…
@@ -84,29 +84,47 @@ window.DIALOGOS = {
   },
 
   personajes: {
+    // Tío Pato (el principal): ángel de traje blanco que se vuelve demonio (devil: true en tienda.js), por eso tiene fase `diablo`. Tiene muchas frases y provoca más.
     tio: {
       amable: [
-        '¡Cuac! ¡Qué buen amigo eres!', 'Soy el pato más feliz del mundo', 'Mis alas aplauden por ti', 'Con esta aureola me siento dichoso', '¡Cuac cuac! ¡Juguemos toda la tarde!',
-        'Dicen que soy buen perdedor… ¡mira cómo aprendo!', '¡Qué rico es rebotar {noms}, cuac!', 'Mis plumitas se erizan de alegría', 'Hoy me levanté con ganas de jugar contigo',
-        '¡Soy un angelito, pero con mucha puntería!'
+        '¡Cuac! ¡Qué buen amigo eres!', 'Soy el pato más feliz del mundo', '¡Que los cielos aplaudan, %j!', 'Mi aureola brilla un poquito más con cada rebote', 'Hoy el cielo está de tu lado, amigo',
+        '¡Qué rebote! Hasta mis alas se emocionan', 'Mi traje blanco sigue impecable… ¡buen comienzo!', '¡Bendito sea ese rebote, cuac!', 'Soy un ángel, pero {la} no me la dejas fácil',
+        '¡Los ángeles también sabemos disfrutar!', 'Con este sombrero de copa me siento elegantísimo', 'Mmm, ¿seguro que no practicas en el cielo?', '¡Cuac celestial! ¡Sigue así!',
+        'Mis alas hacen ploc ploc de alegría', '¡Qué rico rebote, angelito!', 'Hasta San Pedro anotó ese rebote', 'Voy a mantener mi traje blanco… por ahora', '¡Divino, simplemente divino!',
+        'Dicen que soy buen perdedor… ¡mira cómo aprendo!', '¡Qué rico es rebotar {noms}, cuac!', '¡Soy un angelito, pero con mucha puntería!', '¡Cuac cuac! ¡Juguemos toda la tarde!',
+        'Hoy me levanté con ganas de jugar contigo'
       ],
       reto: [
-        'Los patos también tenemos orgullo, ¿sabes?', 'Mi aureola brilla menos cuando me desafían', 'Ahora sí me pongo serio, cuac', 'Mis alas ya no aplauden tanto…',
-        'No subestimes a un pato, amigo', 'Me estoy calentando, ¿ves mis plumas?', '¡Ojo! Este pato no se deja ganar', 'Dicen que de ángel a demonio hay un solo paso… ¿quieres verlo?',
-        'Mi aureola se está torciendo… mala señal', 'Todavía soy bueno, pero me estás tentando'
+        'Los ángeles no perdemos… solo nos tomamos un descanso', 'Tu barra no durará una eternidad, %j', 'Mi aureola se está torciendo… no me tientes', '¿Sabes quién nunca falla? Yo. ¿Y tú?',
+        'Cuidado: un ángel enojado es peor que un diablo', 'Dicen que de ángel a demonio hay un solo paso… vas a ver cuál es', 'Mi traje blanco sigue limpio… el tuyo ya tiene manchas',
+        'Te regalo un consejo: pierde ahora y te vas directo al cielo', '¿Eso es todo? ¡Ni para una aureola alcanza!', 'Me estás tentando, %j… y la tentación es pecado',
+        'Rebotas bien… ¿rebotarás también en el purgatorio?', 'Mis alas se están calentando…', 'Un descuido y {la} se te va directo al infierno', 'Apuesto mi aureola a que fallas antes del 55',
+        'Qué pena que tu barra no tenga alas', 'Ya van %h rebotes… ¿no te dan ganas de rezar?', 'Los patos también tenemos orgullo, ¿sabes?', 'No subestimes a un pato, amigo',
+        '¡Ojo! Este pato no se deja ganar', 'Mi aureola brilla menos cuando me desafían'
       ],
       enojo: [
-        'Se me acabó la paciencia, cuac', '¡Mi aureola se derritió, %j!', '¡Siento que me salen cuernos!', '¡Ya me estás sacando de quicio!', '¡Nadie me gana, nadie!',
-        '¡Te voy a destrozar la barra!', '¡Estoy perdiendo la paciencia!', '¡Me sale humo del pico!', '¡Mis plumas se ponen rojas de rabia!', 'Ya no soy tan amable, ¿cachái?'
+        '¡Mi aureola se oscurece, %j!', '¡Me están saliendo cuernos, cuac!', '¡Mis plumas blancas se ponen grises!', '¡Ya no soy tan angelito!', '¡Mi traje blanco se está manchando!',
+        '¡Dejé la paciencia en el cielo!', '¡Siento un calorcito por dentro!', '¡Esto es pecado, %j, pecado!', '¡Deja de tentarme con ese rebote!', '¡Mis alas piden pelea!',
+        '¡Por todos los santos, qué terquedad!', '¡Mi aureola hace cortocircuito!', '¡Me estás sacando del cielo a empujones!', '¡Me pica la cola… ¿yo tenía cola?!',
+        'Se me acabó la paciencia, cuac', '¡Mi aureola se derritió, %j!', '¡Me sale humo del pico!', '¡Nadie me gana, nadie!', '¡Ya me estás sacando de quicio!'
       ],
       diablo: [
-        '¡MUAJAJAJA! ¡Eres mío!', '¡Arde, mortal!', '¡Bienvenido al infierno, cuac!', '¡NO ESCAPARÁS!', '¡Soy %n del infierno!', '¡Quémate!', '¡Mi tridente tiene hambre de {noms}!',
-        '¡Aquí abajo hace calorcito, ¿no?!', '¡El infierno es mío y tú eres mi invitado!', '¡Sufre, sufre, mortal!', '¡Mis llamas no se apagan con rebotes!', '¡Hasta el diablo se asombra de ti, cuac!'
+        '¡MUAJAJAJA! ¡Bienvenido a mi infierno!', '¡Ya no hay aureola que me detenga!', '¡Arde, %j, arde!', '¡Mi traje blanco ahora es rojo… de rabia!', '¡Soy %n, pero ahora del otro bando!',
+        '¡Cayó el ángel, subió el diablo!', '¡Mis alas de murciélago tienen hambre de {noms}!', '¡Les presento al ángel caído… a MÍ!', '¡Te espera una eternidad de rebotes!',
+        '¡Mi cola no te quita los ojos de encima!', '¡Aquí abajo no hay vuelta atrás!', '¡Ahora sí, a quemar esa barra!', '¡Cuac infernal!', '¡Entré al infierno por la puerta grande!',
+        '¡Te voy a dejar hecho cenizas, cuac!', '¡Qué rico es ser malo!', '¡NO ESCAPARÁS!', '¡Quémate!', '¡El infierno es mío y tú eres mi invitado!', '¡Sufre, sufre, mortal!',
+        '¡Mis llamas no se apagan con rebotes!', '¡Hasta el diablo se asombra de ti, cuac!'
       ],
       hitos: {
-        30: ['Mmm… ya me cansé de ser amable', 'Se terminó la amabilidad, amigo', 'Hasta aquí llegó mi lado bueno'],
-        55: ['¡Se me acabó la paciencia! ¡AAARGH! 😡', '¡YA BASTA! ¡AAARGH! 😡', '¡Mi aureola se rompió! ¡CUAAAC! 😡'],
-        60: ['¡AHORA SOY %D! 😈', '¡ME CONVIERTO EN %D! 😈', '¡MIREN, SOY %D! 😈']
+        10: ['¡Diez! El cielo te está mirando 😇', '¡Ya van diez! Voy a rezar por ti… o contra ti 😇'],
+        20: ['¡Veinte! Mis alas ya sudan 😇', '¡Veinte rebotes! Cada vez te creo más pecador 😇'],
+        30: ['Mmm… ya me cansé de ser amable', 'Se terminó la amabilidad, amigo', 'Hasta aquí llegó mi lado bueno', 'Mi aureola acaba de apagarse un poquito'],
+        45: ['¡45! Mi traje blanco empieza a ponerse rojizo…', '¡45 rebotes! Se me está subiendo el calor 🔥'],
+        55: ['¡Se me acabó la paciencia! ¡AAARGH! 😡', '¡YA BASTA! ¡AAARGH! 😡', '¡Mi aureola se rompió! ¡CUAAAC! 😡', '¡ME SALEN CUERNOS! ¡AAARGH! 😡'],
+        60: ['¡AHORA SOY %D! 😈', '¡ME CONVIERTO EN %D! 😈', '¡MIREN, SOY %D! 😈', '¡CAÍ DEL CIELO Y SOY %D! 😈', '¡MIREN, SOY %D… Y TODO ES TU CULPA! 😈'],
+        80: ['¡80! ¡El infierno hace fila para verte! 🔥', '¡Ochenta! Hasta Lucifer se asombra 🔥'],
+        120: ['¡120! Ni en el infierno vi algo así 🔥', '¡Ciento veinte! ¿Seguro que no eres un demonio, %j? 🔥'],
+        150: ['¡150! Este ángel caído se rinde a tus pies 🔥', '¡Ciento cincuenta! ¡Eres leyenda en el cielo y en el infierno! 🔥']
       }
     },
 
@@ -256,46 +274,7 @@ window.DIALOGOS = {
       }
     },
 
-    // Los tres siguientes tienen muchas más frases y provocan más: hay para que no se repitan en una partida larga.
-    // Tío Pato Ángel: se transforma en diablo (devil: true en tienda.js), por eso tiene fase `diablo`.
-    angel: {
-      amable: [
-        '¡Que los cielos aplaudan, %j!', 'Mi aureola brilla un poquito más con cada rebote', 'Hoy el cielo está de tu lado, amigo', '¡Qué rebote! Hasta mis alas se emocionan',
-        'Mi traje blanco sigue impecable… ¡buen comienzo!', '¡Bendito sea ese rebote, cuac!', 'Soy un ángel, pero {la} no me la dejas fácil', '¡Los ángeles también sabemos disfrutar!',
-        'Con este sombrero de copa me siento elegantísimo', 'Mmm, ¿seguro que no practicas en el cielo?', '¡Cuac celestial! ¡Sigue así!', 'Mis alas hacen ploc ploc de alegría',
-        '¡Qué rico rebote, angelito!', 'Hasta San Pedro anotó ese rebote', 'Voy a mantener mi traje blanco… por ahora', '¡Divino, simplemente divino!'
-      ],
-      reto: [
-        'Los ángeles no perdemos… solo nos tomamos un descanso', 'Tu barra no durará una eternidad, %j', 'Mi aureola se está torciendo… no me tientes', '¿Sabes quién nunca falla? Yo. ¿Y tú?',
-        'Cuidado: un ángel enojado es peor que un diablo', 'Dicen que de ángel a demonio hay un solo paso… vas a ver cuál es', 'Mi traje blanco sigue limpio… el tuyo ya tiene manchas',
-        'Te regalo un consejo: pierde ahora y te vas directo al cielo', '¿Eso es todo? ¡Ni para una aureola alcanza!', 'Me estás tentando, %j… y la tentación es pecado',
-        'Rebotas bien… ¿rebotarás también en el purgatorio?', 'Mis alas se están calentando…', 'Un descuido y {la} se te va directo al infierno', 'Apuesto mi aureola a que fallas antes del 55',
-        'Qué pena que tu barra no tenga alas', 'Ya van %h rebotes… ¿no te dan ganas de rezar?'
-      ],
-      enojo: [
-        '¡Mi aureola se oscurece, %j!', '¡Me están saliendo cuernos, cuac!', '¡Mis plumas blancas se ponen grises!', '¡Ya no soy tan angelito!', '¡Mi traje blanco se está manchando!',
-        '¡Dejé la paciencia en el cielo!', '¡Siento un calorcito por dentro!', '¡Esto es pecado, %j, pecado!', '¡Deja de tentarme con ese rebote!', '¡Mis alas piden pelea!',
-        '¡Por todos los santos, qué terquedad!', '¡Mi aureola hace cortocircuito!', '¡Me estás sacando del cielo a empujones!', '¡Me pica la cola… ¿yo tenía cola?!'
-      ],
-      diablo: [
-        '¡MUAJAJAJA! ¡Bienvenido a mi infierno!', '¡Ya no hay aureola que me detenga!', '¡Arde, %j, arde!', '¡Mi traje blanco ahora es rojo… de rabia!', '¡Soy %n, pero ahora del otro bando!',
-        '¡Cayó el ángel, subió el diablo!', '¡Mis alas de murciélago tienen hambre de {noms}!', '¡Les presento al ángel caído… a MÍ!', '¡Te espera una eternidad de rebotes!',
-        '¡Mi cola no te quita los ojos de encima!', '¡Aquí abajo no hay vuelta atrás!', '¡Ahora sí, a quemar esa barra!', '¡Cuac infernal!', '¡Entré al infierno por la puerta grande!',
-        '¡Te voy a dejar hecho cenizas, cuac!', '¡Qué rico es ser malo!'
-      ],
-      hitos: {
-        10: ['¡Diez! El cielo te está mirando 😇', '¡Ya van diez! Voy a rezar por ti… o contra ti 😇'],
-        20: ['¡Veinte! Mis alas ya sudan 😇', '¡Veinte rebotes! Cada vez te creo más pecador 😇'],
-        30: ['Mmm… se me acabó el lado bueno', 'Hasta aquí llegó mi santidad, amigo', 'Mi aureola acaba de apagarse un poquito'],
-        45: ['¡45! Mi traje blanco empieza a ponerse rojizo…', '¡45 rebotes! Se me está subiendo el calor 🔥'],
-        55: ['¡Mi aureola se rompió! ¡CUAAAC! 😡', '¡ME SALEN CUERNOS! ¡AAARGH! 😡', '¡Se me acabó la paciencia! ¡Ya no soy un ángel! 😡'],
-        60: ['¡AHORA SOY %D! 😈', '¡CAÍ DEL CIELO Y SOY %D! 😈', '¡MIREN, SOY %D… Y TODO ES TU CULPA! 😈'],
-        80: ['¡80! ¡El infierno hace fila para verte! 🔥', '¡Ochenta! Hasta Lucifer se asombra 🔥'],
-        120: ['¡120! Ni en el infierno vi algo así 🔥', '¡Ciento veinte! ¿Seguro que no eres un demonio, %j? 🔥'],
-        150: ['¡150! Este ángel caído se rinde a tus pies 🔥', '¡Ciento cincuenta! ¡Eres leyenda en el cielo y en el infierno! 🔥']
-      }
-    },
-
+    // Los dos siguientes tienen muchas más frases y provocan más: hay para que no se repitan en una partida larga.
     // Tío Pato Galáctico: cósmico y burlón. Al enojarse su galaxia se vuelve lava (no habla del infierno).
     galactico: {
       amable: [

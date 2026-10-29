@@ -95,9 +95,6 @@
           "ch_tios": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 600)"
           },
-          "ch_angel": {
-            ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 1000)"
-          },
           "ch_galactico": {
             ".validate": "newData.val() === true && (data.exists() || newData.parent().parent().child('sp').val() - root.child('wallets').child(auth.uid).child('sp').val() >= 5000)"
           },
