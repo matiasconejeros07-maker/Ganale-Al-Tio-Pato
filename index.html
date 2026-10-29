@@ -274,7 +274,9 @@
   .avatar.bot.emb #botEmb { display: block; }
   .chip .uemb { display: inline-flex; flex: none; }
   .pav { display: inline-flex; flex: none; }
-  #list li .nm, #myRow li .nm { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: visible; text-overflow: clip; }
+  #list li .nm, #myRow li .nm { display: flex; align-items: center; gap: 14px; min-width: 0; overflow: visible; text-overflow: clip; }
+  #list li, #myRow li { padding-top: 9px !important; padding-bottom: 9px !important; }                 /* filas más altas para que el emblema respire */
+  #list li .pav .emb, #myRow li .pav .emb { transition: none; }
   #list li .nm .t, #myRow li .nm .t { overflow: hidden; min-width: 0; text-overflow: ellipsis; white-space: nowrap; }
   .mcard.ed { max-height: calc(100% - 8px); overflow-y: auto; overscroll-behavior: contain; }
   .mcard.ed .setx { top: 8px; right: 8px; }
@@ -1550,7 +1552,7 @@
       if (row.id === player.id) li.classList.add('mine');
       const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = medals[i] || (i + 1);
       const nm = document.createElement('span'); nm.className = 'nm';
-      const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(row.id === player.id ? player.av : row.a), avLetter(row.n), 30));
+      const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(row.id === player.id ? (avParse(player.av) ? player.av : row.a) : row.a), avLetter(row.n), embBoard()));
       const tx = document.createElement('span'); tx.className = 't'; tx.textContent = row.n; nm.append(pv, tx);   // textContent: nunca HTML
       const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = row.s;
       li.append(rk, nm, sc); frag.appendChild(li);
@@ -1564,7 +1566,7 @@
       const list = document.createElement('ul'), li = document.createElement('li');
       const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = '#' + me.rank.toLocaleString('es-CL');
       const nm = document.createElement('span'); nm.className = 'nm';
-      const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(player.av), avLetter(player.name || (session && session.name)), 30));
+      const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(player.av), avLetter(player.name || (session && session.name)), embBoard()));
       const tx = document.createElement('span'); tx.className = 't'; tx.textContent = cleanName(player.name || (session && session.name)) || 'Tú';
       const you = document.createElement('small'); you.textContent = '(tú)'; nm.append(pv, tx, you);
       const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = player.best;
@@ -1743,6 +1745,7 @@
     }
     w.appendChild(o); return w;
   }
+  const EMB_BOARD = 52, embBoard = () => (innerWidth < 360 ? 44 : EMB_BOARD);    // tamaño del emblema en las filas del marcador (px; un poco menor en celulares angostos para que quepa el nombre)
   const mount = (el, node) => { el.textContent = ''; el.appendChild(node); };
   let leaderTop = null;                                                          // el jugador del primer lugar: { n, a, s }
   function paintBotAvatar() {                                                    // el rival del encabezado es el emblema de quien va primero
@@ -2711,7 +2714,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v37';
+  const BUILD = 'v38';
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
     out.hidden = false; const show = () => { out.textContent = lines.join('\n'); };

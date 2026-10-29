@@ -36,6 +36,8 @@ const ok = (n, c, x = '') => { if (c) { pass++; console.log('  ok  ', n); } else
   await p.tap('#openBoard2'); await p.waitForTimeout(1200);
   const filas = await p.evaluate(() => [...document.querySelectorAll('#list li')].map(li => [li.querySelector('.t').textContent, li.querySelector('.pav .embs') ? li.querySelector('.pav .embs').textContent : '']));
   ok('el marcador muestra el emblema de cada jugador', filas.length === 3 && filas[0][0] === 'Matías' && filas[0][1] === '👑' && filas.some(f => f[0] === 'Perfil Test' && f[1].includes('💎')), JSON.stringify(filas));
+  const tam = await p.evaluate(() => Math.round(document.querySelector('#list li .pav .emb').getBoundingClientRect().width));
+  ok('en el marcador el emblema mide 52 px (antes 30) y deja espacio al nombre', tam === 52, String(tam));
   console.log('Otro dispositivo');
   await p.evaluate(() => { const o = JSON.parse(localStorage.getItem('gana-al-tio-pato-v2')); delete o.av; localStorage.setItem('gana-al-tio-pato-v2', JSON.stringify(o)); });
   await p.reload(); await p.waitForTimeout(2500);
