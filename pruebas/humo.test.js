@@ -95,6 +95,21 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     await ctx.close();
   }
 
+  console.log('Pulido: ayuda de la primera partida y sonido');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    await jugar(p); await p.waitForTimeout(1200);
+    ok('la ayuda «Arrastra el dedo» se ve en la cuenta regresiva', await p.evaluate(() => document.getElementById('hint').classList.contains('on')));
+    await p.evaluate(() => document.getElementById('arena').dispatchEvent(new PointerEvent('pointerdown', { clientX: 100, clientY: 400, pointerId: 1, pointerType: 'touch', bubbles: true })));
+    ok('la ayuda desaparece al tocar', await p.evaluate(() => !document.getElementById('hint').classList.contains('on')));
+    await p.evaluate(() => document.getElementById('soundBtn').click());
+    const snd = await p.evaluate(() => ({ pressed: document.getElementById('soundBtn').getAttribute('aria-pressed'), ls: localStorage.getItem('gana-al-tio-pato-sonido') }));
+    ok('el botón de sonido silencia y lo recuerda', snd.pressed === 'false' && snd.ls === '0', JSON.stringify(snd));
+    ok('todos los botones principales miden al menos 44 px de alto', await p.evaluate(() => [...document.querySelectorAll('#close, #soundBtn, .seg button, .btn, .link:not([hidden])')].filter(e => e.offsetParent !== null || getComputedStyle(e).position === 'absolute').every(e => e.getBoundingClientRect().height >= 43.5 || e.getBoundingClientRect().height === 0)));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
   console.log('Tienda y personajes (modo local)');
   {
     const ids = ['tio', 'tia', 'conejo', 'conejita', 'bigotes', 'tios', 'galactico', 'millonario'];

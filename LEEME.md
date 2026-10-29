@@ -128,6 +128,13 @@ El Tío Pato y la Tía Patita (`devil: true` en `tienda.js`) cambian de ángel a
 
 Para agregar otro personaje: prepara sus dos imágenes, añade una entrada en `ch` dentro de `tienda.js` (`stat`, `stat2`, `asp` = alto/ancho, `av`, `av2`), vuelve a generar las reglas y agrega las imágenes a la lista de `sw.js`.
 
+## Interfaz y accesibilidad
+
+- **Sonido:** botón 🔊/🔇 arriba a la derecha durante la partida y «Sonido: sí/no» al pie del inicio; la elección se guarda en el dispositivo.
+- **Ayuda de la primera partida:** «👆 Arrastra el dedo para mover la barra» durante la cuenta regresiva en las 3 primeras partidas de cada dispositivo (desaparece al tocar).
+- **Legibilidad:** el marcador de rebotes tiene contraste de más de 4,5:1 sobre el fondo amarillo; todos los botones, pestañas y enlaces miden al menos 44 px de alto; las pantallas entran con un desvanecido suave (se desactiva con «reducir movimiento»); la tienda se desvanece abajo para mostrar que se puede seguir bajando.
+- **Teclado y lectores de pantalla:** anillo de foco visible, pestañas con `role="tab"` y `aria-selected`, botones con `aria-label` y avisos con `role="alert"`/`aria-live`.
+
 ## Fluidez (celulares lentos)
 
 - Los fondos **Galaxia** y **Aurora boreal** usan texturas ya difuminadas en `fondos/*.webp` (en vez de `filter: blur` y máscaras que se recalculaban en cada cuadro). Para regenerarlas: `python3 herramientas/generar-fondos.py fondos` (necesita Pillow y numpy).
