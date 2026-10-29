@@ -853,9 +853,10 @@
   const faceIdx = () => hits < P_CHALLENGE ? 0 : hits < P_ANGRY ? 1 : hits < P_HELL - 2 ? 2 : 3;
   const phaseName = () => {                                      // hasta dónde llegó el personaje (las skins de una imagen se enojan, no se vuelven diablo)
     const ch = curCh(), g = ch.g, o = g === 'f' ? 'a' : 'o', pl = g === 'p' ? 's' : '';
-    if (hits < P_CHALLENGE) return ch.stat ? 'amable' + pl + ' 😊' : 'ángel 😇';
+    const solo = ch.stat && !ch.devil;                           // una imagen y sin transformación (las skins con devil: true, como el Ángel, sí terminan de diablo)
+    if (hits < P_CHALLENGE) return solo ? 'amable' + pl + ' 😊' : 'ángel 😇';
     if (hits < P_ANGRY) return 'desafiante' + pl + ' 😏';
-    if (ch.stat) return hits < P_HELL ? 'enojad' + o + pl + ' 😡' : 'furios' + o + pl + ' 🤬';
+    if (solo) return hits < P_HELL ? 'enojad' + o + pl + ' 😡' : 'furios' + o + pl + ' 🤬';
     return hits < P_DEVIL ? 'enojad' + o + ' 😡' : g === 'f' ? 'diabla 😈' : 'diablo 😈';
   };
   const level = () => Math.floor(hits / 20);                                   // afina la puntería del Pato
@@ -1501,8 +1502,8 @@
   const bag = {}; let talkAt = 3;
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const rnd = n => Math.floor(Math.random() * n);
-  // amable (1-29) → reto (30-54) → enojo (55-69) → diablo (70+) solo para los que se transforman (el rig del Tío Pato); las skins de una imagen pasan a furia
-  const phaseKey = () => hits < P_CHALLENGE ? 'amable' : hits < P_ANGRY ? 'reto' : hits < P_HELL ? 'enojo' : curCh().stat ? 'furia' : 'diablo';
+  // amable (1-29) → reto (30-54) → enojo (55-69) → diablo (70+) solo para los que se transforman (el rig del Tío Pato y las skins con `devil: true`); las demás skins de una imagen pasan a furia
+  const phaseKey = () => hits < P_CHALLENGE ? 'amable' : hits < P_ANGRY ? 'reto' : hits < P_HELL ? 'enojo' : curCh().stat && !curCh().devil ? 'furia' : 'diablo';
   const faseDe = ph => ph === 'diablo' ? 'furia' : ph;
   const okLinea = t => leaderBest > 0 || !t.includes('%b');                    // las que hablan del récord solo salen si ya hay uno
   const poolOf = ph => [...((DLG.comun || {})[faseDe(ph)] || []), ...((((DLG.personajes || {})[curCh().id]) || {})[ph] || [])].filter(okLinea);

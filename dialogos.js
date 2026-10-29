@@ -3,7 +3,8 @@
 //
 // Fases: amable (rebotes 1-29) · reto (30-54, te provocan) · enojo (55-69) · furia (70 en adelante; los personajes que se vuelven diablo usan `diablo`).
 // `comun`: frases para TODOS los personajes; no hablan de sí mismos ni de su género o número, solo de ti y del juego.
-// `personajes[id]`: frases propias de cada skin (se suman a las comunes). Los que no se transforman en diablo (conejos, Simi, Tíos Patitos) nunca hablan del infierno.
+// `personajes[id]`: frases propias de cada skin (se suman a las comunes). Los que no se transforman en diablo (conejos, Simi, Tíos Patitos, Galáctico, Dorado) nunca hablan del infierno.
+// Los que sí se transforman (el rig del Tío Pato y las skins con `devil: true` en tienda.js, como el Ángel) usan `diablo` del 70 en adelante en vez de `furia`.
 // hitos: frases que salen justo en ese rebote (si hay varias, se elige una al azar).
 // Se puede escribir: %j = tu nombre · %h = tus rebotes · %b = el récord (solo sale si ya hay uno) · %n = el nombre del personaje · %D = EL DIABLO / LA DIABLA / LOS DIABLOS.
 // Y la pelota con la que juegas (moneda, billete, lingote o diamante): {la} = la moneda / el billete / el lingote de oro / el diamante · {esa} · {esta} · {una} · {nom} = moneda / billete… · {noms} = monedas / billetes…
@@ -252,6 +253,119 @@ window.DIALOGOS = {
         30: ['Mmm… se me acabó la generosidad', 'Ya no regalo más puntos, amigo', 'Hasta aquí llegó el millonario bueno'],
         55: ['¡Se me acabó la paciencia! ¡AAARGH! 😡', '¡ESTO ME ESTÁ COSTANDO UNA FORTUNA! 😡', '¡Mi corona se torció de la rabia! 😡'],
         60: ['¡AHORA SOY %D! 😈', '¡ME CONVIERTO EN %D… Y RICO! 😈', '¡MIREN, SOY %D DE ORO! 😈']
+      }
+    },
+
+    // Los tres siguientes tienen muchas más frases y provocan más: hay para que no se repitan en una partida larga.
+    // Tío Pato Ángel: se transforma en diablo (devil: true en tienda.js), por eso tiene fase `diablo`.
+    angel: {
+      amable: [
+        '¡Que los cielos aplaudan, %j!', 'Mi aureola brilla un poquito más con cada rebote', 'Hoy el cielo está de tu lado, amigo', '¡Qué rebote! Hasta mis alas se emocionan',
+        'Mi traje blanco sigue impecable… ¡buen comienzo!', '¡Bendito sea ese rebote, cuac!', 'Soy un ángel, pero {la} no me la dejas fácil', '¡Los ángeles también sabemos disfrutar!',
+        'Con este sombrero de copa me siento elegantísimo', 'Mmm, ¿seguro que no practicas en el cielo?', '¡Cuac celestial! ¡Sigue así!', 'Mis alas hacen ploc ploc de alegría',
+        '¡Qué rico rebote, angelito!', 'Hasta San Pedro anotó ese rebote', 'Voy a mantener mi traje blanco… por ahora', '¡Divino, simplemente divino!'
+      ],
+      reto: [
+        'Los ángeles no perdemos… solo nos tomamos un descanso', 'Tu barra no durará una eternidad, %j', 'Mi aureola se está torciendo… no me tientes', '¿Sabes quién nunca falla? Yo. ¿Y tú?',
+        'Cuidado: un ángel enojado es peor que un diablo', 'Dicen que de ángel a demonio hay un solo paso… vas a ver cuál es', 'Mi traje blanco sigue limpio… el tuyo ya tiene manchas',
+        'Te regalo un consejo: pierde ahora y te vas directo al cielo', '¿Eso es todo? ¡Ni para una aureola alcanza!', 'Me estás tentando, %j… y la tentación es pecado',
+        'Rebotas bien… ¿rebotarás también en el purgatorio?', 'Mis alas se están calentando…', 'Un descuido y {la} se te va directo al infierno', 'Apuesto mi aureola a que fallas antes del 55',
+        'Qué pena que tu barra no tenga alas', 'Ya van %h rebotes… ¿no te dan ganas de rezar?'
+      ],
+      enojo: [
+        '¡Mi aureola se oscurece, %j!', '¡Me están saliendo cuernos, cuac!', '¡Mis plumas blancas se ponen grises!', '¡Ya no soy tan angelito!', '¡Mi traje blanco se está manchando!',
+        '¡Dejé la paciencia en el cielo!', '¡Siento un calorcito por dentro!', '¡Esto es pecado, %j, pecado!', '¡Deja de tentarme con ese rebote!', '¡Mis alas piden pelea!',
+        '¡Por todos los santos, qué terquedad!', '¡Mi aureola hace cortocircuito!', '¡Me estás sacando del cielo a empujones!', '¡Me pica la cola… ¿yo tenía cola?!'
+      ],
+      diablo: [
+        '¡MUAJAJAJA! ¡Bienvenido a mi infierno!', '¡Ya no hay aureola que me detenga!', '¡Arde, %j, arde!', '¡Mi traje blanco ahora es rojo… de rabia!', '¡Soy %n, pero ahora del otro bando!',
+        '¡Cayó el ángel, subió el diablo!', '¡Mis alas de murciélago tienen hambre de {noms}!', '¡Les presento al ángel caído… a MÍ!', '¡Te espera una eternidad de rebotes!',
+        '¡Mi cola no te quita los ojos de encima!', '¡Aquí abajo no hay vuelta atrás!', '¡Ahora sí, a quemar esa barra!', '¡Cuac infernal!', '¡Entré al infierno por la puerta grande!',
+        '¡Te voy a dejar hecho cenizas, cuac!', '¡Qué rico es ser malo!'
+      ],
+      hitos: {
+        10: ['¡Diez! El cielo te está mirando 😇', '¡Ya van diez! Voy a rezar por ti… o contra ti 😇'],
+        20: ['¡Veinte! Mis alas ya sudan 😇', '¡Veinte rebotes! Cada vez te creo más pecador 😇'],
+        30: ['Mmm… se me acabó el lado bueno', 'Hasta aquí llegó mi santidad, amigo', 'Mi aureola acaba de apagarse un poquito'],
+        45: ['¡45! Mi traje blanco empieza a ponerse rojizo…', '¡45 rebotes! Se me está subiendo el calor 🔥'],
+        55: ['¡Mi aureola se rompió! ¡CUAAAC! 😡', '¡ME SALEN CUERNOS! ¡AAARGH! 😡', '¡Se me acabó la paciencia! ¡Ya no soy un ángel! 😡'],
+        60: ['¡AHORA SOY %D! 😈', '¡CAÍ DEL CIELO Y SOY %D! 😈', '¡MIREN, SOY %D… Y TODO ES TU CULPA! 😈'],
+        80: ['¡80! ¡El infierno hace fila para verte! 🔥', '¡Ochenta! Hasta Lucifer se asombra 🔥'],
+        120: ['¡120! Ni en el infierno vi algo así 🔥', '¡Ciento veinte! ¿Seguro que no eres un demonio, %j? 🔥'],
+        150: ['¡150! Este ángel caído se rinde a tus pies 🔥', '¡Ciento cincuenta! ¡Eres leyenda en el cielo y en el infierno! 🔥']
+      }
+    },
+
+    // Tío Pato Galáctico: cósmico y burlón. Al enojarse su galaxia se vuelve lava (no habla del infierno).
+    galactico: {
+      amable: [
+        '¡Qué rebote tan estelar, %j!', 'Mi cabeza guarda una galaxia entera… ¡y ahí cabe tu puntería!', '¡Cuac cósmico! Esto es lo mejor del universo', 'Tus rebotes brillan como estrellas',
+        'Hasta los planetas se detienen a mirarte', '¡Qué órbita más perfecta tiene {la}!', 'Dicen que soy un pato de otro mundo… ¡y tú de otra galaxia!', '¡Sigue así, astronauta!',
+        'Mi sombrero de copa viene de la Vía Láctea', 'Hasta el Big Bang aplaudió ese rebote', '¡Estás en órbita, %j!', 'Mi galaxia gira de la emoción', '¡Qué buen aterrizaje, comandante!',
+        'Con esa puntería, la NASA te contrata', '¡Despegamos! ¡Cuac, cuac!', 'Brillas más que una supernova'
+      ],
+      reto: [
+        'El universo es infinito… ¿tu paciencia también?', 'Soy un pato de otro mundo, ¿y tú de cuál?', 'Hasta un agujero negro se aburre con tus rebotes', '¿Esto es todo lo que ofrece tu planeta?',
+        'La luz tarda años en llegar… tu próximo fallo ya viene', 'Los astros dicen que vas a fallar pronto', 'No eres el primer terrícola que intenta ganarme', 'Mi galaxia gira más rápido que tu barra',
+        '¿Y si {la} desaparece en un agujero negro?', 'Cuidado: la gravedad siempre gana, %j', 'Veamos cuánto aguantas, terrícola', 'Tu barra se achica como una estrella enana',
+        'Mi órbita es más estable que la tuya', '¿Sientes la presión cósmica?', 'Un error y te vuelves polvo de estrellas', 'Ya van %h rebotes… en el espacio nadie te oye fallar'
+      ],
+      enojo: [
+        '¡Mi galaxia gira de rabia, %j!', '¡Se me está formando un agujero negro de la furia!', '¡Esto es una supernova de mal humor!', '¡Terrícola terco!', '¡Me hierven las estrellas!',
+        '¡Hasta los planetas se alinearon en tu contra… y aun así!', '¡Mi sombrero salió en órbita!', '¡Tus rebotes desordenan mi constelación!', '¡Voy a explotar como una estrella!',
+        '¡Me estás sacando de órbita!', '¡Ni la gravedad te para!', '¡Esto va a terminar en un Big Bang!', '¡Mi cabeza es un torbellino!'
+      ],
+      furia: [
+        '¡MI GALAXIA ESTÁ EN LLAMAS!', '¡AGUJERO NEGRO, TRÁGATE {ESA}!', '¡SUPERNOVAAAA!', '¡EL UNIVERSO ENTERO TIENE QUE PARAR!', '¡TODO EL COSMOS ARDE, %j!', '¡ME CONVIERTO EN LAVA ESTELAR!',
+        '¡CUAC CÓSMICO!', '¡LAS ESTRELLAS ESTÁN EXPLOTANDO!', '¡NO HAY GALAXIA QUE AGUANTE ESTO!', '¡FALLA DE UNA VEZ, TERRÍCOLA!', '¡MI PLANETA SE ESTÁ DERRITIENDO!',
+        '¡ESTO ES EL FIN DEL UNIVERSO!', '¡METEORITOS, A MÍ!', '¡NI UN AGUJERO NEGRO TE TRAGA!'
+      ],
+      hitos: {
+        10: ['¡Diez! Todavía estás en órbita baja 🚀', '¡Ya van diez, astronauta! 🚀'],
+        20: ['¡Veinte! Ya saliste de la atmósfera 🚀', '¡Veinte rebotes! Qué rápido llegas a la Luna 🚀'],
+        30: ['Mmm… el universo se está poniendo serio', 'Se acabó el paseo espacial, amigo', 'Mi galaxia acaba de acelerar'],
+        45: ['¡45! Se me está calentando la galaxia ☄️', '¡45 rebotes! Las estrellas empiezan a inquietarse ☄️'],
+        55: ['¡Mi galaxia se enciende! ¡CUAAAC! 😡', '¡Se me acabó la paciencia cósmica! 😡', '¡Explota la primera estrella! 😡'],
+        60: ['¡Mi universo arde! 🔥', '¡Mi galaxia es lava ahora! 🔥', '¡Soy una supernova con pico! 🔥'],
+        80: ['¡80! ¡Ni los cometas van tan rápido! ☄️', '¡Ochenta! Las estrellas hablan de ti ☄️'],
+        120: ['¡120! Hasta los agujeros negros te respetan 🌌', '¡Ciento veinte! ¿Seguro que eres terrícola, %j? 🌌'],
+        150: ['¡150! Eres una constelación nueva 🌌', '¡Ciento cincuenta! El universo se rinde ante ti 🌌']
+      }
+    },
+
+    // Tío Pato Dorado (secreto): un rey presumido. Al enojarse su oro se vuelve brasa (no habla del infierno).
+    dorado: {
+      amable: [
+        '¡Un rey de oro aprueba ese rebote!', 'Mi corona brilla un poquito más gracias a ti', 'Cada rebote tuyo vale su peso en oro', '¡Qué modales tan reales, %j!', '¡Cuac, cuac! ¡Salve el campeón!',
+        'Todo lo que toco se vuelve oro… hasta tu partida', 'Mi corte aplaude de pie', 'Puedes ser mi caballero real, %j', 'Con este traje negro hasta los reyes me envidian', 'Qué puntería digna de un reino',
+        '¡Brilla, brilla, %j!', '¡Cuac real!', 'Hoy el rey está de buen humor', 'Mi tesoro y tú: lo mejor de mi reino', 'Un aplauso real para %j', '¡Bien jugado, plebeyo… digo, amigo!'
+      ],
+      reto: [
+        'Un rey no pierde contra un plebeyo, ¿lo sabías?', 'Mi corona pesa… pero tu paciencia pesa menos', '¿Te atreves a desafiar a la realeza?', 'Mi reino nunca ha sido conquistado',
+        'Para ganarme hay que tener sangre de oro, %j', 'Se te están acabando los súbditos… digo, los rebotes', 'Un rey siempre gana la última partida', 'Mi tesoro es más grande que tu ego',
+        'Cuidado: la corona se pone pesada cuando me enojo', 'Rebotas bien… ¡para ser plebeyo!', 'Tu barra no vale ni una moneda de mi tesoro', 'Mis guardias ya preparan tu destierro',
+        'El trono es mío, amigo', 'Ya van %h rebotes… ¡ni un siervo aguanta tanto!', 'No me hagas quitarme la corona', '¿Todo el oro del mundo y tú sin poder fallar?'
+      ],
+      enojo: [
+        '¡Tu insolencia es un insulto al reino, %j!', '¡Mi corona se está calentando!', '¡Guardias! ¡Detengan a este plebeyo!', '¡Se me derrite el oro de la rabia!', '¡Ya no soy tan generoso con los rebotes!',
+        '¡Esto es una traición a la corona!', '¡Mi tesoro tiembla de rabia!', '¡Un rey no debería sufrir esto!', '¡Se me oscurece el oro, cuac!', '¡Te voy a desterrar de mi reino!',
+        '¡Mis rubíes están al rojo vivo!', '¡Mis plumas doradas se ponen naranjas!', '¡Esto es alta traición!', '¡CUAC REAL! ¡CUAC REAL!'
+      ],
+      furia: [
+        '¡MI CORONA ARDE AL ROJO VIVO!', '¡SOY EL REY DE LAS BRASAS!', '¡TODO EL ORO SE HACE LAVA!', '¡ARRODÍLLATE ANTE EL REY ARDIENTE!', '¡MI REINO SE INCENDIA POR TU CULPA, %j!',
+        '¡CUAAAC! ¡REY EN LLAMAS!', '¡EL ORO OSCURO NO PERDONA!', '¡MIS RUBÍES SE ESTÁN FUNDIENDO!', '¡GUARDIAS, A LA TORRE CON ESTE PLEBEYO!', '¡MI TESORO ES MÁS GRANDE QUE TU PACIENCIA… Y QUE LA MÍA!',
+        '¡ESTE TRONO ESTÁ HIRVIENDO!', '¡NADIE LE GANA AL REY!', '¡FALLA DE UNA VEZ, PLEBEYO!', '¡MI CORONA SE ESTÁ DERRITIENDO DE LA RABIA!'
+      ],
+      hitos: {
+        10: ['¡Diez rebotes! Mi corte te observa 👑', '¡Ya van diez! Voy a anotarlo en el libro real 👑'],
+        20: ['¡Veinte! Vas camino a duque 👑', '¡Veinte rebotes! Mi tesorero está impresionado 👑'],
+        30: ['Mmm… el rey se está aburriendo de ser amable', 'Se acabó la cortesía real, amigo', 'Mi corona se siente pesada de repente'],
+        45: ['¡45! Se me está calentando el oro 🔥', '¡45 rebotes! Los guardias empiezan a sudar 🔥'],
+        55: ['¡Se me enciende la corona! ¡CUAAAC! 😡', '¡HASTA AQUÍ LLEGÓ EL REY BUENO! 😡', '¡Mi oro se está poniendo negro! 😡'],
+        60: ['¡AHORA SOY EL REY ARDIENTE! 🔥', '¡MI ORO ES BRASA! 🔥', '¡ARRODÍLLENSE, QUE ARDE EL TRONO! 🔥'],
+        80: ['¡80! Hasta mis rubíes se asustan 🔥', '¡Ochenta! Ningún súbdito había llegado tan lejos 🔥'],
+        120: ['¡120! Te mereces un reino propio 👑', '¡Ciento veinte! Me quitaría la corona por ti… ¡pero no! 👑'],
+        150: ['¡150! ¡Eres el nuevo rey del tablero! 👑', '¡Ciento cincuenta! ¡Este trono tiene dos asientos! 👑']
       }
     }
   }
