@@ -127,24 +127,24 @@ window.DIALOGOS = {
 
     tia: {
       amable: [
-        '¡Cuac! ¡Qué lindo es jugar contigo, cariño!', 'Mi aureola brilla por ti', 'Soy un angelito con mucho estilo', '¡Qué educado rebotas, %j!', 'Hoy me puse mis mejores plumas',
-        '¡Ay, qué emoción, cuac cuac!', '¡Me encanta cómo juegas, cielo!', 'Con ese rebote me derrites el corazoncito', 'Un angelito feliz es un pato feliz', 'Qué bonito baila tu barra'
+        '¡Cuac! ¡Qué lindo es jugar contigo, cariño!', 'Mi moñito brilla por ti', 'Soy una angelita con mucho estilo', '¡Qué educado rebotas, %j!', 'Hoy me puse mis mejores plumas',
+        '¡Ay, qué emoción, cuac cuac!', '¡Me encanta cómo juegas, cielo!', 'Con ese rebote me derrites el corazoncito', 'Una angelita feliz es una pata feliz', 'Qué bonito baila tu barra'
       ],
       reto: [
-        'Ay, no me subestimes, cariño', 'Hasta los angelitos tenemos carácter', 'Mi aureola se inclina… ¡cuidado!', 'Ya se me acaba la dulzura, ¿lo notas?', '¡Ojito! Esta patita no se deja',
+        'Ay, no me subestimes, cariño', 'Hasta los angelitos tenemos carácter', 'Mi moño se ladea… ¡cuidado!', 'Ya se me acaba la dulzura, ¿lo notas?', '¡Ojito! Esta patita no se deja',
         'No me hagas perder la compostura, %j', 'Qué atrevimiento… ¡me gusta!', 'Mis alitas empiezan a temblar de rabia', 'Me estás sacando la ternura a empujones', 'Mmm, ¿con esa puntería quieres ganarme?'
       ],
       enojo: [
-        '¡Se me acabó la dulzura, %j!', '¡Ya me tienes harta!', '¡Mis alas se ponen negras de rabia!', '¡Ay, qué rabia, qué rabia, cuac!', '¡Nadie me gana, nadie!',
-        '¡Te voy a destrozar la barra, cariño!', '¡Me sacas de quicio!', '¡Se me torció la aureola de la furia!', '¡Esto ya no es amable, cielo!'
+        '¡Se me acabó la dulzura, %j!', '¡Ya me tienes harta!', '¡Mis alas se ponen rojas de rabia!', '¡Ay, qué rabia, qué rabia, cuac!', '¡Nadie me gana, nadie!',
+        '¡Te voy a destrozar la barra, cariño!', '¡Me sacas de quicio!', '¡Se me torció el moño de la furia!', '¡Esto ya no es amable, cielo!'
       ],
       diablo: [
         '¡MUAJAJAJA! ¡Eres mío, cariño!', '¡Arde, mortal!', '¡Bienvenido al infierno, cuac!', '¡NO ESCAPARÁS!', '¡Soy %n del infierno!', '¡Quémate, cielo!',
-        '¡Mi tridente ya te tiene el ojo puesto!', '¡Hasta el infierno se pone elegante conmigo!', '¡Qué calorcito, ¿no?!', '¡SOY LA DIABLA MÁS ELEGANTE!'
+        '¡Mis cuernitos ya te tienen el ojo puesto!', '¡Hasta el infierno se pone elegante conmigo!', '¡Qué calorcito, ¿no?!', '¡SOY LA DIABLA MÁS ELEGANTE!'
       ],
       hitos: {
         30: ['Mmm… ya me cansé de ser dulce', 'Se acabó la ternura, cariño', 'Hasta aquí llegó mi lado bueno, cielo'],
-        55: ['¡Se me acabó la paciencia! ¡AAARGH! 😡', '¡YA ME TIENES HARTA! ¡CUAAAC! 😡', '¡Mi aureola se rompió! ¡CUAAAC! 😡'],
+        55: ['¡Se me acabó la paciencia! ¡AAARGH! 😡', '¡YA ME TIENES HARTA! ¡CUAAAC! 😡', '¡Se me desató el moño! ¡CUAAAC! 😡'],
         60: ['¡AHORA SOY %D! 😈', '¡ME CONVIERTO EN %D! 😈', '¡MIREN, SOY %D! 😈']
       }
     },
