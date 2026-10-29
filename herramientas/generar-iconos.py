@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Genera los íconos de la app (carpeta icons/) a partir del logo (PNG con fondo transparente).
+"""Genera los íconos de la app (carpeta icons/) a partir del logo.
+
+El logo puede ser un dibujo con fondo transparente (se le pone el fondo amarillo del juego) o una imagen cuadrada con su propio fondo (se usa tal cual).
 
 Uso (desde la carpeta del juego):  python3 herramientas/generar-iconos.py logo.png
 Crea icon-192.png, icon-512.png, maskable-512.png (con margen de seguridad para Android), apple-touch-icon.png (iOS, sin transparencia)
@@ -12,8 +14,26 @@ from PIL import Image, ImageDraw, ImageFilter
 
 logo = Image.open(sys.argv[1]).convert('RGBA')
 a = np.array(logo)[:, :, 3]
-ys, xs = np.where(a > 8)
-logo = logo.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+if (a < 250).any():                                                    # dibujo con fondo transparente
+    ys, xs = np.where(a > 8)
+    logo = logo.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+else:                                                                  # imagen con su propio fondo: se usa entera
+    cuadrado = logo.convert('RGB'); fondo_color = cuadrado.getpixel((4, 4))
+    d = np.abs(np.array(cuadrado).astype(int) - np.array(fondo_color)).sum(2) > 60
+    fy, fx = np.where(d); lado = round(max(fx.max() - fx.min(), fy.max() - fy.min()) * 1.1)      # recuadro de la figura (para los favicons, que se ven más grandes)
+    cx, cy = (fx.min() + fx.max()) // 2, (fy.min() + fy.max()) // 2
+    W = cuadrado.width
+    box = (max(0, min(W - lado, cx - lado // 2)), max(0, min(W - lado, cy - lado // 2)))
+    caras = cuadrado.crop((box[0], box[1], box[0] + lado, box[1] + lado))
+
+    def guardar(nombre, S, im):
+        im.resize((S, S), Image.LANCZOS).save(f'icons/{nombre}.png', optimize=True); print(nombre, S)
+    guardar('icon-512', 512, cuadrado); guardar('icon-192', 192, cuadrado)
+    guardar('apple-touch-icon', 180, cuadrado)
+    mk = Image.new('RGB', (512, 512), fondo_color); m = round(512 * .66)                          # maskable: la figura queda dentro de la zona segura (Android recorta en círculo)
+    mk.paste(cuadrado.resize((m, m), Image.LANCZOS), ((512 - m) // 2, (512 - m) // 2)); mk.save('icons/maskable-512.png', optimize=True); print('maskable-512 512')
+    guardar('favicon-64', 64, caras); guardar('favicon-32', 32, caras)
+    sys.exit(0)
 
 
 def fondo(S, redondo=False):
