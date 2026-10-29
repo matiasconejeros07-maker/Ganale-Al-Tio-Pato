@@ -797,7 +797,7 @@
   let SIZE = 56;                  // tamaño del emoji (px)
   let R = 24;                     // radio de la estela de la pelota (solo se dibuja: los choques usan BX, BC y BY)
   // Medidas de choque de la pelota puesta (mitades, en px). Salen de lo que mide de verdad en pantalla (ancho w × SIZE, alto = ancho × asp) y de cómo se mueve (ver fitBall):
-  let BX = 24, BC = 24, BY = 24;  // BX: hasta dónde llega hacia los lados en el peor momento (nunca pasa del borde) · BC: mitad del ancho que cuenta para tocar la barra · BY: mitad del alto (barra, Pato y caída)
+  let BX = 24, BC = 24, BH = 24, BY = 24;  // BX: hasta dónde llega hacia los lados en el peor momento (nunca pasa del borde) · BH: mitad del ancho de la pelota · BC: cuánto de ella puede quedar más allá de la punta de la barra y aun así contar como golpe · BY: mitad del alto (barra, Pato y caída)
   let ballItem = null;            // la pelota que llevas puesta
   let PADDLE_H = 16, PADDLE_BOTTOM = 56;
   let DUCK_TOP = 26;              // el Pato queda pegado a lo más alto de la pantalla
@@ -917,7 +917,13 @@
   // «Tocar» es lo que se ve: la pelota choca con las paredes, la barra y el Pato según lo que mide en pantalla. El billete es 1,6 veces más ancho que la moneda y los lingotes 1,7:
   // con un radio igual para todas (24 px) se salían de la pantalla por los lados y atravesaban la barra por sus costados.
   const FLUTTER = [[-11, 1, 1], [3, 1.05, .8], [12, 1, 1], [-4, 1.05, .8]];   // fotogramas de la animación «flutter» (ángulo, escala x, escala y)
-  const CONTACT = .9;                                                         // fracción del medio ancho que debe verse sobre la barra para que cuente como toque
+  // Dificultad: la zona de golpe total (barra + lo que sobresale a cada lado) es la de siempre para TODAS las pelotas: el ancho de la barra más 2 × 16,8 px (OLD_TOL).
+  // Una pelota más ancha que la moneda cuenta con más ancho a cada lado, así que su barra se ve más angosta (padWidth): la suma no cambia. GRAZE es cuánto puede rozar
+  // la punta una pelota que no cuenta como golpe (11,2 px, igual que la moneda de siempre); la punta de la barra es sólida y la pelota rebota contra ella.
+  const OLD_TOL = .7 * 24, GRAZE = 11.2, PAD_MIN = 26;                        // en px a escala K = 1 (PAD_MIN: la barra nunca se ve más angosta que eso)
+  const oldWindow = () => basePw * shrink() + 2 * OLD_TOL * K;               // zona de golpe total que tenía el juego
+  const padWidth = () => Math.max(PAD_MIN * K, oldWindow() - 2 * BC);        // lo que se ve de la barra
+  const catchTol = () => clamp((oldWindow() - pw) / 2, 0, BH);               // cuánto más allá de la punta cuenta como golpe (BC, salvo que la barra ya no pueda achicarse más)
   function fitBall(b = ballItem || CAT.ball[0]) {
     const hx = SIZE * (b.w || 1) / 2, hy = hx * (b.asp || 1);
     let bx = hx, by = hy;
@@ -931,7 +937,8 @@
       }
       bx = mx; by = sy / n;                                                     // a los lados, lo máximo que llega; en alto, lo que mide en promedio
     } else if (b.fx === 'jump') bx = hx * 1.1;                                  // al caer se aplasta y se ensancha un 10%
-    BX = bx + K; BC = (b.fx === 'spin' ? bx : hx) * CONTACT; BY = by;           // BX lleva 1 px más por la sombra y el suavizado
+    BH = b.fx === 'spin' ? bx : hx; BC = Math.max(8 * K, BH - GRAZE * K);      // la moneda de siempre: 28 − 11,2 = 16,8 px
+    BX = bx + K; BY = by;                                                       // BX lleva 1 px más por la sombra y el suavizado
   }
   const refit = () => { measure(); layout(); draw(); };
   addEventListener('resize', refit);
@@ -1601,7 +1608,7 @@
     setVel(Math.sin(a), Math.cos(a), .1);
   }
   function layout() {
-    basePw = clamp(W * PADDLE_START, 100, 200); pw = basePw * shrink();
+    basePw = clamp(W * PADDLE_START, 100, 200); pw = padWidth();
     paddle.style.width = pw + 'px';
     paddle.style.top = paddleTop() + 'px';
     px = clamp(px || W / 2, pw / 2, W - pw / 2);
@@ -1624,12 +1631,12 @@
 
     if (vy < 0 && y - BY <= DUCK_BOTTOM) duckReturn();          // el Tío Pato nunca falla
 
-    const top = paddleTop();
-    if (vy > 0 && prevY + BY <= top + 2 && y + BY >= top && Math.abs(x - px) <= pw / 2 + BC) {      // toca si lo que se ve de la pelota toca la barra
+    const top = paddleTop(), tol = catchTol();
+    if (vy > 0 && prevY + BY <= top + 2 && y + BY >= top && Math.abs(x - px) <= pw / 2 + tol) {      // toca si lo que se ve de la pelota toca la barra (zona de golpe: la de siempre)
       y = top - BY;
       hits++;                                                    // ¡un rebote más: aquí se cuenta el puntaje!
       const rt = rateAt(hits), val = gameRate * rt;             // lo que vale este rebote en pesos: lo que paga tu pelota × «monedas dobles»
-      const off = clamp((x - px) / (pw / 2 + BC) + (Math.random() - .5) * .3, -1, 1);
+      const off = clamp((x - px) / (pw / 2 + tol) + (Math.random() - .5) * .3, -1, 1);
       setVel(Math.sin(off * 1.05), -Math.cos(off * 1.05));       // el ángulo depende de dónde pega en la barra
       renderScores(); bump(meNum); setBig(hits); setBg(); duckLook(); talk();
       spawn(val > 1 ? 'pop gold' : 'pop', x, top - 28, '+' + money(val));
@@ -1641,7 +1648,7 @@
     }
     // La barra también es sólida por las puntas: si la pelota ya está a la altura de la barra (no la tocó por arriba) y se mete por un costado, rebota contra la punta en vez de atravesarla.
     if (y + BY > top + 2 && y - BY < top + PADDLE_H) {
-      const lim = pw / 2 + BC, dx = x - px;
+      const lim = pw / 2 + tol, dx = x - px;
       if (Math.abs(dx) < lim) {
         const side = Math.abs(prevX - px) >= lim ? Math.sign(prevX - px) : dx < 0 ? -1 : 1;     // por qué lado se metió
         x = Math.abs(prevX - px) >= lim ? px + side * lim : x + side * Math.min(10, lim - Math.abs(dx));   // si la barra se movió debajo de la pelota, la saca de a poco (sin saltos)
@@ -2063,7 +2070,7 @@
     const dt = Math.min((now - last) / 1000, .034); last = now;   // si la pestaña se oculta, el juego se pausa solo
     elapsed += dt;
     if (keyDir) px = clamp(px + keyDir * 760 * dt, pw / 2, W - pw / 2);
-    const wantPw = basePw * shrink();                              // la barra se achica suavemente con cada rebote
+    const wantPw = padWidth();                                     // la barra se achica suavemente con cada rebote
     if (Math.abs(pw - wantPw) > .3) { pw += (wantPw - pw) * Math.min(1, dt * 5); paddle.style.width = pw + 'px'; px = clamp(px, pw / 2, W - pw / 2); }
     duckTrack(dt);
     const n = Math.max(1, Math.ceil(Math.hypot(vx, vy) * dt / 10));
