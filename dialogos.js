@@ -247,32 +247,8 @@ window.DIALOGOS = {
       }
     },
 
-    millonario: {
-      amable: [
-        'Con tus rebotes me haces más rico', '¡Cada {nom} suena a música!', 'Soy tan millonario que hasta mis plumas son de oro', '¡Qué buena inversión eres, %j!', 'Mi fortuna crece con cada rebote',
-        'Hasta mi chofer aplaude', 'El oro brilla, pero tu juego brilla más', '¡Cuac de oro, cuac de lujo!', 'Esto sí es vida de millonario', 'Después de esto, caviar para todos'
-      ],
-      reto: [
-        'Un millonario no se deja ganar, ¿sabes?', 'Tengo oro para aburrir… ¿y tú?', 'Mis monedas valen más que tu puntería', '¿Crees que puedes con una fortuna como la mía?', 'Para ganarme hay que ser millonario… ¿lo eres?',
-        'Ya me aburrí de regalarte puntos', 'Mi banco no pierde, amigo', 'Estoy contando mis monedas… y tú vas perdiendo las tuyas', 'Mil pesos más y te rindes, ¿cierto?', 'Mi caja fuerte está más segura que tu barra'
-      ],
-      enojo: [
-        '¡Esto me está costando una fortuna!', '¡Mi oro se está enfriando de la rabia!', '¡Llamen a mi contador, esto es un robo!', '¡Estás gastando mi paciencia, que vale millones!', '¡Ya no soy tan generoso, cuac!',
-        '¡Mi paciencia se agrietó como un lingote!', '¡Pierdo millones por tu culpa!', '¡Eso fue un robo a mano alzada!'
-      ],
-      diablo: [
-        '¡MUAJAJAJA! ¡Tu alma tiene precio!', '¡Arde, mortal… pero yo pago!', '¡El infierno también se compra, cuac!', '¡NO ESCAPARÁS DE MI FORTUNA!', '¡Soy %n del infierno… y rico!',
-        '¡Mis llamas son de oro puro!', '¡Todo el infierno es mío, hasta el último peso!', '¡Quémate… en billetes!', '¡Hasta el diablo me debe plata!', '¡Mi tridente es de oro macizo!'
-      ],
-      hitos: {
-        30: ['Mmm… se me acabó la generosidad', 'Ya no regalo más puntos, amigo', 'Hasta aquí llegó el millonario bueno'],
-        55: ['¡Se me acabó la paciencia! ¡AAARGH! 😡', '¡ESTO ME ESTÁ COSTANDO UNA FORTUNA! 😡', '¡Mi corona se torció de la rabia! 😡'],
-        60: ['¡AHORA SOY %D! 😈', '¡ME CONVIERTO EN %D… Y RICO! 😈', '¡MIREN, SOY %D DE ORO! 😈']
-      }
-    },
-
-    // Los dos siguientes tienen muchas más frases y provocan más: hay para que no se repitan en una partida larga.
-    // Tío Pato Galáctico: cósmico y burlón. Al enojarse su galaxia se vuelve lava (no habla del infierno).
+    // Los dos últimos (Galáctico y el secreto Dorado) tienen muchas más frases y provocan más: hay para que no se repitan en una partida larga.
+    // Tío Pato Galáctico: cósmico y burlón. Al enojarse se le eriza la melena morada y le salen rayos en los puños (no habla del infierno).
     galactico: {
       amable: [
         '¡Qué rebote tan estelar, %j!', 'Mi cabeza guarda una galaxia entera… ¡y ahí cabe tu puntería!', '¡Cuac cósmico! Esto es lo mejor del universo', 'Tus rebotes brillan como estrellas',
@@ -292,9 +268,9 @@ window.DIALOGOS = {
         '¡Me estás sacando de órbita!', '¡Ni la gravedad te para!', '¡Esto va a terminar en un Big Bang!', '¡Mi cabeza es un torbellino!'
       ],
       furia: [
-        '¡MI GALAXIA ESTÁ EN LLAMAS!', '¡AGUJERO NEGRO, TRÁGATE {ESA}!', '¡SUPERNOVAAAA!', '¡EL UNIVERSO ENTERO TIENE QUE PARAR!', '¡TODO EL COSMOS ARDE, %j!', '¡ME CONVIERTO EN LAVA ESTELAR!',
-        '¡CUAC CÓSMICO!', '¡LAS ESTRELLAS ESTÁN EXPLOTANDO!', '¡NO HAY GALAXIA QUE AGUANTE ESTO!', '¡FALLA DE UNA VEZ, TERRÍCOLA!', '¡MI PLANETA SE ESTÁ DERRITIENDO!',
-        '¡ESTO ES EL FIN DEL UNIVERSO!', '¡METEORITOS, A MÍ!', '¡NI UN AGUJERO NEGRO TE TRAGA!'
+        '¡MI GALAXIA SE DESATA!', '¡AGUJERO NEGRO, TRÁGATE {ESA}!', '¡SUPERNOVAAAA!', '¡EL UNIVERSO ENTERO TIENE QUE PARAR!', '¡TODO EL COSMOS TIEMBLA, %j!', '¡ME CONVIERTO EN TORMENTA ESTELAR!',
+        '¡CUAC CÓSMICO!', '¡LAS ESTRELLAS ESTÁN EXPLOTANDO!', '¡NO HAY GALAXIA QUE AGUANTE ESTO!', '¡FALLA DE UNA VEZ, TERRÍCOLA!', '¡MI PLANETA SE SACUDE!',
+        '¡ESTO ES EL FIN DEL UNIVERSO!', '¡METEORITOS, A MÍ!', '¡NI UN AGUJERO NEGRO TE TRAGA!', '¡PUÑOS ESTELARES, A LA CARGA!', '¡MI MELENA CÓSMICA SE ERIZÓ!', '¡RAYOS DE GALAXIA, DESPIERTEN!'
       ],
       hitos: {
         10: ['¡Diez! Todavía estás en órbita baja 🚀', '¡Ya van diez, astronauta! 🚀'],
@@ -302,30 +278,37 @@ window.DIALOGOS = {
         30: ['Mmm… el universo se está poniendo serio', 'Se acabó el paseo espacial, amigo', 'Mi galaxia acaba de acelerar'],
         45: ['¡45! Se me está calentando la galaxia ☄️', '¡45 rebotes! Las estrellas empiezan a inquietarse ☄️'],
         55: ['¡Mi galaxia se enciende! ¡CUAAAC! 😡', '¡Se me acabó la paciencia cósmica! 😡', '¡Explota la primera estrella! 😡'],
-        60: ['¡Mi universo arde! 🔥', '¡Mi galaxia es lava ahora! 🔥', '¡Soy una supernova con pico! 🔥'],
+        60: ['¡Mi melena se erizó! ¡Soy una tormenta cósmica! ⚡', '¡Puños estelares, a la carga! ⚡', '¡Soy una supernova con pico! ⚡'],
         80: ['¡80! ¡Ni los cometas van tan rápido! ☄️', '¡Ochenta! Las estrellas hablan de ti ☄️'],
         120: ['¡120! Hasta los agujeros negros te respetan 🌌', '¡Ciento veinte! ¿Seguro que eres terrícola, %j? 🌌'],
         150: ['¡150! Eres una constelación nueva 🌌', '¡Ciento cincuenta! El universo se rinde ante ti 🌌']
       }
     },
 
-    // Tío Pato Dorado (secreto): un rey presumido. Al enojarse su oro se vuelve brasa (no habla del infierno).
-    dorado: {
+    // Tío Pato Dorado (el secreto de $100.000.000; su id sigue siendo millonario): rey presumido y millonario. Al enojarse su oro se vuelve brasa (no habla del infierno).
+    millonario: {
       amable: [
         '¡Un rey de oro aprueba ese rebote!', 'Mi corona brilla un poquito más gracias a ti', 'Cada rebote tuyo vale su peso en oro', '¡Qué modales tan reales, %j!', '¡Cuac, cuac! ¡Salve el campeón!',
         'Todo lo que toco se vuelve oro… hasta tu partida', 'Mi corte aplaude de pie', 'Puedes ser mi caballero real, %j', 'Con este traje negro hasta los reyes me envidian', 'Qué puntería digna de un reino',
-        '¡Brilla, brilla, %j!', '¡Cuac real!', 'Hoy el rey está de buen humor', 'Mi tesoro y tú: lo mejor de mi reino', 'Un aplauso real para %j', '¡Bien jugado, plebeyo… digo, amigo!'
+        '¡Brilla, brilla, %j!', '¡Cuac real!', 'Hoy el rey está de buen humor', 'Mi tesoro y tú: lo mejor de mi reino', 'Un aplauso real para %j', '¡Bien jugado, plebeyo… digo, amigo!',
+        'Con tus rebotes me haces más rico', '¡Cada {nom} suena a música!', 'Soy tan millonario que hasta mis plumas son de oro', '¡Qué buena inversión eres, %j!', 'Mi fortuna crece con cada rebote',
+        'Hasta mi chofer aplaude', 'El oro brilla, pero tu juego brilla más', '¡Cuac de oro, cuac de lujo!', 'Esto sí es vida de millonario', 'Después de esto, caviar para todos'
       ],
       reto: [
         'Un rey no pierde contra un plebeyo, ¿lo sabías?', 'Mi corona pesa… pero tu paciencia pesa menos', '¿Te atreves a desafiar a la realeza?', 'Mi reino nunca ha sido conquistado',
         'Para ganarme hay que tener sangre de oro, %j', 'Se te están acabando los súbditos… digo, los rebotes', 'Un rey siempre gana la última partida', 'Mi tesoro es más grande que tu ego',
         'Cuidado: la corona se pone pesada cuando me enojo', 'Rebotas bien… ¡para ser plebeyo!', 'Tu barra no vale ni una moneda de mi tesoro', 'Mis guardias ya preparan tu destierro',
-        'El trono es mío, amigo', 'Ya van %h rebotes… ¡ni un siervo aguanta tanto!', 'No me hagas quitarme la corona', '¿Todo el oro del mundo y tú sin poder fallar?'
+        'El trono es mío, amigo', 'Ya van %h rebotes… ¡ni un siervo aguanta tanto!', 'No me hagas quitarme la corona', '¿Todo el oro del mundo y tú sin poder fallar?',
+        'Un millonario no se deja ganar, ¿sabes?', 'Tengo oro para aburrir… ¿y tú?', 'Mis monedas valen más que tu puntería', '¿Crees que puedes con una fortuna como la mía?',
+        'Para ganarme hay que ser millonario… ¿lo eres?', 'Ya me aburrí de regalarte puntos', 'Mi banco no pierde, amigo', 'Estoy contando mis monedas… y tú vas perdiendo las tuyas',
+        'Mi caja fuerte está más segura que tu barra'
       ],
       enojo: [
         '¡Tu insolencia es un insulto al reino, %j!', '¡Mi corona se está calentando!', '¡Guardias! ¡Detengan a este plebeyo!', '¡Se me derrite el oro de la rabia!', '¡Ya no soy tan generoso con los rebotes!',
         '¡Esto es una traición a la corona!', '¡Mi tesoro tiembla de rabia!', '¡Un rey no debería sufrir esto!', '¡Se me oscurece el oro, cuac!', '¡Te voy a desterrar de mi reino!',
-        '¡Mis rubíes están al rojo vivo!', '¡Mis plumas doradas se ponen naranjas!', '¡Esto es alta traición!', '¡CUAC REAL! ¡CUAC REAL!'
+        '¡Mis rubíes están al rojo vivo!', '¡Mis plumas doradas se ponen naranjas!', '¡Esto es alta traición!', '¡CUAC REAL! ¡CUAC REAL!',
+        '¡Esto me está costando una fortuna!', '¡Llamen a mi contador, esto es un robo!', '¡Estás gastando mi paciencia, que vale millones!', '¡Mi paciencia se agrietó como un lingote!',
+        '¡Pierdo millones por tu culpa!', '¡Eso fue un robo a mano alzada!'
       ],
       furia: [
         '¡MI CORONA ARDE AL ROJO VIVO!', '¡SOY EL REY DE LAS BRASAS!', '¡TODO EL ORO SE HACE LAVA!', '¡ARRODÍLLATE ANTE EL REY ARDIENTE!', '¡MI REINO SE INCENDIA POR TU CULPA, %j!',
@@ -335,9 +318,9 @@ window.DIALOGOS = {
       hitos: {
         10: ['¡Diez rebotes! Mi corte te observa 👑', '¡Ya van diez! Voy a anotarlo en el libro real 👑'],
         20: ['¡Veinte! Vas camino a duque 👑', '¡Veinte rebotes! Mi tesorero está impresionado 👑'],
-        30: ['Mmm… el rey se está aburriendo de ser amable', 'Se acabó la cortesía real, amigo', 'Mi corona se siente pesada de repente'],
+        30: ['Mmm… el rey se está aburriendo de ser amable', 'Se acabó la cortesía real, amigo', 'Mi corona se siente pesada de repente', 'Mmm… se me acabó la generosidad', 'Ya no regalo más puntos, amigo'],
         45: ['¡45! Se me está calentando el oro 🔥', '¡45 rebotes! Los guardias empiezan a sudar 🔥'],
-        55: ['¡Se me enciende la corona! ¡CUAAAC! 😡', '¡HASTA AQUÍ LLEGÓ EL REY BUENO! 😡', '¡Mi oro se está poniendo negro! 😡'],
+        55: ['¡Se me enciende la corona! ¡CUAAAC! 😡', '¡HASTA AQUÍ LLEGÓ EL REY BUENO! 😡', '¡Mi oro se está poniendo negro! 😡', '¡ESTO ME ESTÁ COSTANDO UNA FORTUNA! 😡', '¡Mi corona se torció de la rabia! 😡'],
         60: ['¡AHORA SOY EL REY ARDIENTE! 🔥', '¡MI ORO ES BRASA! 🔥', '¡ARRODÍLLENSE, QUE ARDE EL TRONO! 🔥'],
         80: ['¡80! Hasta mis rubíes se asustan 🔥', '¡Ochenta! Ningún súbdito había llegado tan lejos 🔥'],
         120: ['¡120! Te mereces un reino propio 👑', '¡Ciento veinte! Me quitaría la corona por ti… ¡pero no! 👑'],
