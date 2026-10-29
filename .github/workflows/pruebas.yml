@@ -25,6 +25,9 @@ jobs:
       - name: Racha diaria de punta a punta (juego + reglas reales)
         working-directory: pruebas
         run: node racha.test.js
+      - name: Emblema de perfil de punta a punta
+        working-directory: pruebas
+        run: node perfil.test.js
       - name: Las reglas coinciden con el catálogo (tienda.js)
         run: |
           cp firebase-rules.json /tmp/reglas-antes.json

@@ -340,5 +340,27 @@ console.log('Racha diaria');
   ok('sin racha nunca hay doble (×2 rechazado)', as('u1', { wallets: { u1: wal(0) }, runs: { u1: { s: D0 - 30000, b: 'peso1', r: 1 } } }, claimDob(40, 2, D0 - 30000), D0 + 40 * 450), false);
 }
 
+
+// ---------- 8. foto de perfil (emblema) ----------
+console.log('Foto de perfil (emblema)');
+{
+  const as = (uid, data, o) => db(data, T0, uid).update('/', o);
+  const OKS = ['e41A33GGG', 'e41A33GGGhKWG', 'e41A33GGGhKWGiqQh', 'e0000' + '0GGG'];
+  const MALOS = ['', 'e', 'e41A3', 'e41A33GG', 'e41A33GGGx', 'x41A33GGG', 'i07c03', 'e41A33GGGhKWGiqQhAAAA', 'e41A33GGG<script>', 'e41A33GG G'];
+  const wal = { wallets: { u1: { c: 100, sp: 0 } } };
+  for (const c of OKS) ok('emblema válido en la cartera: ' + c, as('u1', wal, { 'wallets/u1/av': c }), true);
+  for (const c of MALOS) ok('emblema inválido en la cartera: ' + JSON.stringify(c), as('u1', wal, { 'wallets/u1/av': c }), false);
+  ok('emblema como número', as('u1', wal, { 'wallets/u1/av': 5 }), false);
+  ok('emblema de otra cuenta', as('u2', wal, { 'wallets/u1/av': 'e41A33GGG' }), false);
+  ok('cuenta sin cartera: emblema junto con c y sp', as('u1', {}, { 'wallets/u1/av': 'e41A33GGG', 'wallets/u1/c': 0, 'wallets/u1/sp': 0 }), true);
+  ok('cuenta sin cartera: solo el emblema (falta c y sp)', as('u1', {}, { 'wallets/u1/av': 'e41A33GGG' }), false);
+  const fila = { scores: { u1: { n: 'Mati', k: 'mati', s: 40, t: T0 - 5000, c: 40 } }, hist: { 40: 1 }, runs: { u1: { s: T0 - 60000, b: 'peso1', r: 1, e: T0 - 1000, h: 40, p: 40 } } };
+  ok('el emblema aparece en la fila del marcador', as('u1', fila, { 'scores/u1/a': 'e41A33GGG' }), true);
+  ok('emblema inválido en el marcador', as('u1', fila, { 'scores/u1/a': 'rojo' }), false);
+  ok('emblema en la fila de otra cuenta', as('u2', fila, { 'scores/u1/a': 'e41A33GGG' }), false);
+  ok('un campo cualquiera sigue prohibido en el marcador', as('u1', fila, { 'scores/u1/foto': 'e41A33GGG' }), false);
+  ok('los demás pueden leer el marcador con emblema', db({ scores: { u1: { n: 'Mati', k: 'mati', s: 40, t: 1, a: 'e41A33GGG' } } }, T0, 'u2').read('/scores'), true);
+}
+
 console.log(`\n${pass} correctas, ${fail} fallas`);
 process.exit(fail ? 1 : 0);

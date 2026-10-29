@@ -18,6 +18,8 @@ const tExp = h => `((${h} - ${h} % ${E}) / ${E})`;
 const pesosExp = h => `(${h} + ${E} * ${tExp(h)} * (${tExp(h)} - 1) / 2 + ${tExp(h)} * (${h} - ${E} * ${tExp(h)} + 1))`;
 
 const RUN = "newData.parent().parent().parent().child('runs').child($uid)";
+const AVATAR = "newData.isString() && newData.val().matches(/^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,3}$/)";       // foto de perfil (emblema): 'e' + 4 de forma/colores/diseño + de 1 a 3 símbolos de 4 caracteres
+
 
 // ---- racha diaria ----
 // Todo lo decide el servidor: el día (medianoche del huso de Chile), si la racha sigue o se corta, cuánto se paga y cuándo empieza el «pesos dobles».
@@ -77,6 +79,7 @@ const rules = { rules: {
       k: { '.validate': `newData.isString() && newData.val().matches(/^[a-z0-9.]{3,24}$/) && auth.token.email === newData.val() + '${MAIL}'` },
       s: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && ${RUN}.child('e').exists() && newData.val() <= ${RUN}.child('h').val()` },
       t: { '.validate': 'newData.val() === now' },
+      a: { '.validate': AVATAR },                                                         // foto de perfil que ven los demás en el marcador (solo el formato i00c00)
       // c = el puntaje que ya está contado en `hist` (así cada cuenta cuenta una sola vez y se puede mover de casilla al mejorar). Solo sube y siempre es igual al puntaje de ese momento.
       c: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && newData.val() === ${P}.child('s').val() && (!data.exists() || newData.val() > data.val())` },
       $other: { '.validate': false }
@@ -119,6 +122,7 @@ const rules = { rules: {
       + ` || (${STR}.child('t').val() === now && newData.val() - (data.exists() ? data.val() : 0) === ${rewardExp(`${STR}.child('n').val()`)}))` },
     sp: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && (!data.exists() || newData.val() >= data.val()) && newData.val() <= ${P}.child('c').val()` },
     lr: { '.validate': `newData.isNumber() && newData.val() === ${RUN}.child('s').val() && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val())` },
+    av: { '.validate': AVATAR },                                                           // tu foto de perfil (se sincroniza entre tus dispositivos)
     own, eq,
     $other: { '.validate': false }
   } }

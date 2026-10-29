@@ -142,6 +142,22 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     await ctx.close();
   }
 
+  console.log('Emblema de perfil (modo local)');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    await p.click('#openSettings'); await p.click('#openEmblem'); await p.waitForTimeout(300);
+    ok('el editor se abre desde Ajustes', await p.evaluate(() => document.getElementById('emblem').classList.contains('show')));
+    ok('hay 48 símbolos + la inicial, 8 formas, 16 colores de fondo y de borde y 6 diseños', await p.evaluate(() => [['edSyms', 49], ['edShapes', 8], ['edC1', 16], ['edC2', 16], ['edPats', 6]].every(([id, n]) => document.getElementById(id).children.length === n)));
+    await p.evaluate(() => { document.querySelectorAll('#edSyms button')[9].click(); document.querySelectorAll('#edShapes button')[2].click(); document.getElementById('edSave').click(); });
+    await p.waitForTimeout(300);
+    const t = await p.evaluate(() => ({ e: document.getElementById('meEmb').textContent, ls: JSON.parse(localStorage.getItem('gana-al-tio-pato-v2')).av }));
+    ok('el emblema guardado se ve en el encabezado y queda en el dispositivo', t.e === '🚀' && /^e/.test(t.ls), JSON.stringify(t));
+    await p.reload(); await p.waitForTimeout(500);
+    ok('tras recargar sigue ahí', await p.evaluate(() => document.getElementById('meEmb').textContent === '🚀'));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
   console.log('Tienda y personajes (modo local)');
   {
     const ids = ['tio', 'tia', 'conejo', 'conejita', 'bigotes', 'tios', 'galactico', 'millonario'];

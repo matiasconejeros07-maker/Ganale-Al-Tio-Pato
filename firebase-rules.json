@@ -50,6 +50,9 @@
         "t": {
           ".validate": "newData.val() === now"
         },
+        "a": {
+          ".validate": "newData.isString() && newData.val().matches(/^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,3}$/)"
+        },
         "c": {
           ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 500 && newData.val() === newData.parent().child('s').val() && (!data.exists() || newData.val() > data.val())"
         },
@@ -97,6 +100,9 @@
         },
         "lr": {
           ".validate": "newData.isNumber() && newData.val() === newData.parent().parent().parent().child('runs').child($uid).child('s').val() && newData.parent().parent().parent().child('runs').child($uid).child('e').exists() && (!data.exists() || newData.val() > data.val())"
+        },
+        "av": {
+          ".validate": "newData.isString() && newData.val().matches(/^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,3}$/)"
         },
         "own": {
           "ch_tia": {
