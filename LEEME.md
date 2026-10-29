@@ -38,7 +38,7 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
   la pelota acelera mucho más rápido y la barra se achica hasta el 28%. Los valores están al inicio del código de `index.html` (`SPEED0`, `STEP_LO`, `STEP_HI`, `SPEED_MAX`, `SHRINK_LO`, `SHRINK_HI`).
 - **Los golpes del personaje son aleatorios:** cada vez que te devuelve la pelota la manda en una dirección al azar (de casi vertical a muy abierta).
 - En la **Tienda** (desde el menú o al terminar una partida) hay cuatro pestañas. Lo comprado queda en la cuenta y viaja con ella a cualquier celular:
-  - **Personajes:** Tío Pato (incluido), Tía Patita ($150), Tío Pato Conejo ($300), Tía Patita Conejita ($300), Tío Pato Simi ($600), Tíos Patitos ($600), **Tío Pato Ángel ($1.000)** (de ángel con traje blanco a demonio rojo) y **Tío Pato Galáctico ($5.000)** (su cabeza y cola son una galaxia; al enojarse la galaxia se vuelve lava). El Tío Pato y la Tía Patita empiezan de ángel y se vuelven demonio.
+  - **Personajes:** Tío Pato (incluido), Tía Patita ($150), Tío Pato Conejo ($300), Tía Patita Conejita ($300), Tío Pato Simi ($600), Tíos Patitos ($600) y **Tío Pato Galáctico ($5.000)** (su cabeza y cola son una galaxia; al enojarse la galaxia se vuelve lava). El **Tío Pato** (el principal, incluido) es un ángel de traje blanco que se vuelve demonio rojo: dos imágenes sueltas, `trajes/angel.webp` y `trajes/angel-demonio.webp`, con `devil: true` en `tienda.js`. La Tía Patita empieza de ángel y se vuelve demonio con el rig de capas de `patita/`.
     Las demás skins son imágenes sueltas (`trajes/`): cada una tiene su dibujo calmado y su dibujo enojado, al que cambia cuando el personaje se enoja (rebote 55), con temblor, brillo rojo, vapor y fuego.
   - **Fondos:** Atardecer ($200), Cristal helado ($220), Aurora boreal ($300), Galaxia ($400), Holográfico ($450) y Synthwave ($550): escenas en capas (cielo, astros, siluetas, partículas) con movimiento lento. Las imágenes van dentro del CSS como SVG.
   - **Barras:** Oro líquido ($220), Llamarada ($280), Cristal ($300), Neón ($350), Galaxia ($400), Arcoíris ($450) y Holográfica ($500); cada una con su color, brillo, partículas y un anillo de luz en cada rebote. La Llamarada dibuja lenguas de fuego de verdad (tres capas, parpadeo y brasas) y la tienda anima la vista previa de cada barra.
@@ -49,7 +49,7 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
   (más de 160 por partida para cada personaje), en cuatro fases: amables (1-29), de reto (30-54, te provocan), de enojo (55-69) y de furia (70 en adelante). Salen al azar y sin repetirse
   hasta que se acaban las de esa fase; la próxima frase llega entre 4 y 10 rebotes después (al azar). Pueden usar tu nombre (`%j`), tus rebotes (`%h`) y el récord (`%b`).
   Los textos también nombran **la pelota con la que juegas** (`{la}` = la moneda / el billete / el lingote de oro / el diamante, `{esa}`, `{esta}`, `{una}`, `{nom}`, `{noms}`, `{pago}` = lo que vale cada rebote) y hay frases propias de cada tipo de pelota (`pelota` en `dialogos.js`; 3 de cada 10 frases son de ellas). Cada pelota se nombra en `tienda.js` con `nom` y `gen`.
-  Solo el Tío Pato, la Tía Patita, el Tío Pato Millonario y el Tío Pato Ángel (que en `tienda.js` lleva `devil: true`) se vuelven diablo y hablan del infierno; las demás skins de una imagen (conejos, Simi, Tíos Patitos, Galáctico y Dorado) solo se enojan. El Ángel, el Galáctico y el Dorado tienen unas 16 frases por fase y frases especiales en los rebotes 10, 20, 30, 45, 55, 60, 80, 120 y 150.
+  Solo el Tío Pato (`devil: true` en `tienda.js`), la Tía Patita y el Tío Pato Millonario se vuelven diablo y hablan del infierno; las demás skins de una imagen (conejos, Simi, Tíos Patitos, Galáctico y Dorado) solo se enojan. El Tío Pato, el Galáctico y el Dorado tienen unas 16 a 23 frases por fase y frases especiales en los rebotes 10, 20, 30, 45, 55, 60, 80, 120 y 150.
 - El catálogo y los precios están en `tienda.js`. Si cambias algo, ejecuta `node herramientas/generar-reglas.js`
   (regenera `firebase-rules.json`, porque las reglas también validan precios y pesos) y vuelve a pegar las reglas en Firebase → Realtime Database → Reglas → Publicar.
 
@@ -91,7 +91,7 @@ modificadas del juego; (2) **Cloud Functions** (plan Blaze) permiten registrar l
 
 ## El arte de los personajes
 
-Cada personaje tiene su carpeta (`pato/`, `patita/`) con capas PNG transparentes del mismo tamaño: 4 caras, alas de ángel y de diablo, aureola, cuernos, tridente, cola y 3 retratos (`hero_*`).
+Los personajes con capas (Tía Patita en `patita/` y Millonario en `oro/`) tienen su carpeta con capas PNG transparentes del mismo tamaño (`pato/` es el rig del Tío Pato de antes: hoy solo sirve de respaldo si falta `tienda.js`, porque el Tío Pato usa `trajes/angel*.webp`): 4 caras, alas de ángel y de diablo, aureola, cuernos, tridente, cola y 3 retratos (`hero_*`).
 El juego las superpone y las anima según los rebotes:
 
 - **0–29 rebotes:** ángel amistoso, con aureola y alas, frases cariñosas.
