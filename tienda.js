@@ -5,7 +5,7 @@ window.TIENDA = {
   // Economía: cada punto vale lo que paga tu pelota (ball[].rate) multiplicado por «Monedas dobles»: ×1 del punto 1 al 99, ×2 del 100 al 199, ×3 del 200 al 299…
   eco: { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500, cMax: 1000000000000 },
 
-  // Personajes: el rival que te devuelve la pelota. La Tía Patita (patita/) y el Millonario (oro/) tienen carpeta con las capas del ángel y del demonio; el resto son imágenes sueltas
+  // Personajes: el rival que te devuelve la pelota. Solo la Tía Patita (patita/) tiene carpeta con las capas del ángel y del demonio; el resto son imágenes sueltas
   // que se enojan con temblor, brillo rojo y vapor. stat = dibujo calmado · stat2 = dibujo enojado, al que cambian cuando el personaje se enoja.
   // av = recorte de la cara para el avatar · dw = ancho de la caja del personaje (la pareja es más ancha) · g = género/número del nombre (m, f o p = plural).
   // devil: true = el personaje se transforma en diablo (su dibujo enojado es un demonio): sus frases del rebote 70 en adelante hablan del infierno; los demás solo se enfurecen.
@@ -22,14 +22,12 @@ window.TIENDA = {
       av: { w: 76, fx: .47, fy: .375 }, av2: { w: 80, fx: .62, fy: .41 }, css: { steam: '64% 12%' }, note: 'Bigote, sombrero de copa y bata' },
     { id: 'tios',     n: 'Tíos Patitos',        price: 600, stat: 'trajes/tios.webp',     stat2: 'trajes/tios-enojados.webp',    asp: .83,  asp2: .86,  name: 'los Tíos Patitos',       g: 'p', dw: 1.5,
       av: { w: 70, fx: .49, fy: .31 }, av2: { w: 70, fx: .50, fy: .31 }, css: { steam: '48% 6%' }, note: 'La pareja: te devuelven la pelota de la mano' },
-    { id: 'galactico', n: 'Tío Pato Galáctico',  price: 5000, stat: 'trajes/galactico.webp', stat2: 'trajes/galactico-furia.webp', asp: 1.918, asp2: 1.918, name: 'el Tío Pato Galáctico',  g: 'm',
-      av: { w: 74, fx: .46, fy: .35 }, av2: { w: 74, fx: .46, fy: .35 }, css: { steam: '62% 20%' }, note: 'Un trozo del universo con sombrero de copa' },
-    // Personajes secretos: aparecen como una carta misteriosa hasta que los compras.
-    { id: 'dorado',    n: 'Tío Pato Dorado',     price: 50000000, stat: 'trajes/dorado.webp', stat2: 'trajes/dorado-oscuro.webp', asp: 1.812, asp2: 1.767, name: 'el Tío Pato Dorado', g: 'm', secret: true, glow: true,
-      av: { w: 74, fx: .49, fy: .37 }, av2: { w: 70, fx: .54, fy: .36 }, css: { steam: '62% 22%' }, note: 'Rey de oro que se enciende al rojo vivo' },
-    // El Millonario usa el rig de capas del Tío Pato de antes (alas, aureola, cuernos y tridente), pintado de oro (carpeta oro/).
-    { id: 'millonario', n: 'Tío Pato Millonario', price: 100000000, dir: 'oro/', name: 'el Tío Pato Millonario', g: 'm', secret: true, glow: true,
-      css: { wl: '43.5% 64.5%', wr: '59% 63.7%', tr: '60.3% 35.5%', tail: '40% 76%', steam: '58% 22%', avW: '142px', avL: '-47px', avT: '-56px' }, note: 'De oro macizo: el sueño de todo millonario' }
+    { id: 'galactico', n: 'Tío Pato Galáctico',  price: 5000, stat: 'trajes/galactico.webp', stat2: 'trajes/galactico-furia.webp', asp: 1.918, asp2: 1.56, name: 'el Tío Pato Galáctico',  g: 'm',
+      av: { w: 74, fx: .46, fy: .35 }, av2: { w: 88, fx: .56, fy: .40 }, css: { steam: '60% 14%' }, note: 'Un trozo del universo: se enoja y se le eriza la melena' },
+    // Personaje secreto: aparece como una carta misteriosa hasta que lo compras. Es el Tío Pato Dorado (rey de oro con corona que al enojarse se enciende al rojo vivo).
+    // Su id sigue siendo «millonario» para que quien ya lo compró no lo pierda (las reglas de Firebase guardan lo comprado como ch_millonario).
+    { id: 'millonario', n: 'Tío Pato Dorado', price: 100000000, stat: 'trajes/dorado.webp', stat2: 'trajes/dorado-oscuro.webp', asp: 1.812, asp2: 1.767, name: 'el Tío Pato Dorado', g: 'm', secret: true, glow: true,
+      av: { w: 74, fx: .49, fy: .37 }, av2: { w: 70, fx: .54, fy: .36 }, css: { steam: '62% 22%' }, note: 'El secreto: rey de oro que se enciende al rojo vivo' }
   ],
 
   // vip: true = artículo para millonarios (la tienda los separa y los marca con 💎; el precio ya los deja fuera del alcance de quien recién empieza).
