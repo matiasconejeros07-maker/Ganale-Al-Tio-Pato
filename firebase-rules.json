@@ -50,9 +50,19 @@
         "t": {
           ".validate": "newData.val() === now"
         },
+        "c": {
+          ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 500 && newData.val() === newData.parent().child('s').val() && (!data.exists() || newData.val() > data.val())"
+        },
         "$other": {
           ".validate": false
         }
+      }
+    },
+    "hist": {
+      ".read": true,
+      "$b": {
+        ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && $b.matches(/^([0-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)$/)",
+        ".write": "auth != null && (newData.val() === (data.exists() ? data.val() : 0) + 1 && newData.parent().parent().child('scores').child(auth.uid).child('c').val() + '' === $b && (!root.child('scores').child(auth.uid).child('c').exists() || root.child('scores').child(auth.uid).child('c').val() + '' !== $b) || data.exists() && newData.val() === data.val() - 1 && root.child('scores').child(auth.uid).child('c').exists() && root.child('scores').child(auth.uid).child('c').val() + '' === $b && newData.parent().parent().child('scores').child(auth.uid).child('c').exists() && newData.parent().parent().child('scores').child(auth.uid).child('c').val() + '' !== $b)"
       }
     },
     "wallets": {
