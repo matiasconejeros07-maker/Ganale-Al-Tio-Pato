@@ -18,6 +18,20 @@ const tExp = h => `((${h} - ${h} % ${E}) / ${E})`;
 const pesosExp = h => `(${h} + ${E} * ${tExp(h)} * (${tExp(h)} - 1) / 2 + ${tExp(h)} * (${h} - ${E} * ${tExp(h)} + 1))`;
 
 const RUN = "newData.parent().parent().parent().child('runs').child($uid)";
+
+// ---- racha diaria ----
+// Todo lo decide el servidor: el día (medianoche del huso de Chile), si la racha sigue o se corta, cuánto se paga y cuándo empieza el «pesos dobles».
+// Las reglas no tienen variables locales, por eso las fórmulas se escriben completas con funciones que devuelven texto.
+const R = ECO.racha, DAY = 86400000, OFF = R.huso * 3600000;
+const dayOf = ts => `((${ts} + (${OFF}) - (${ts} + (${OFF})) % ${DAY}) / ${DAY})`;        // número de día (entero) de una hora en ms
+const TODAY = dayOf('now');
+const STR = "newData.parent().parent().parent().child('streaks').child($uid)";           // la racha de esta cuenta, vista desde la cartera (ya con lo que se está escribiendo)
+const STR_ROOT = "root.child('streaks').child($uid)";                                     // la racha de esta cuenta, vista desde una partida
+// n que le toca a la racha: la primera vez 1 · al día siguiente del último cobro n+1 · después de saltarse un día, 1 · el mismo día, -1 (no vale)
+const NEXT_N = "(data.parent().child('n').exists() ? (" + `${TODAY} === ${dayOf("data.parent().child('t').val()")} + 1 ? data.parent().child('n').val() + 1 : (${TODAY} > ${dayOf("data.parent().child('t').val()")} ? 1 : -1)` + ") : 1)";
+const rewardExp = n => '(' + R.dias.map((v, i) => `(${n} - 1) % ${R.dias.length} === ${i} ? ${v}`).join(' : ') + ' : 0)';
+const BOOST = `(${STR_ROOT}.child('bx').exists() && ${P_ROOT_S()} >= ${STR_ROOT}.child('bx').val() && ${P_ROOT_S()} < ${STR_ROOT}.child('bx').val() + ${R.dobleMs} ? 2 : 1)`;
+function P_ROOT_S() { return "newData.parent().child('s').val()"; }
 // contador de puestos (hist): SC = tu fila de scores antes de la escritura · NS = tu fila de scores después
 const SC = "root.child('scores').child(auth.uid)", NS = "newData.parent().parent().child('scores').child(auth.uid)";
 const HIST_INC = `newData.val() === (data.exists() ? data.val() : 0) + 1 && ${NS}.child('c').val() + '' === $b && (!${SC}.child('c').exists() || ${SC}.child('c').val() + '' !== $b)`;
@@ -49,7 +63,7 @@ const rules = { rules: {
     e: { '.validate': `newData.isNumber() && newData.val() === now && !data.exists() && data.parent().child('s').exists() && ${P}.child('s').val() === data.parent().child('s').val() && ${P}.hasChildren(['s', 'b', 'r', 'h', 'p'])` },
     h: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && !data.exists() && ${P}.hasChildren(['s', 'b', 'r', 'e', 'p'])`
       + ` && newData.val() * ${ECO.msPorRebote} <= now - ${P}.child('s').val() + ${ECO.holguraMs}` },
-    p: { '.validate': `newData.isNumber() && !data.exists() && ${P}.hasChildren(['s', 'b', 'r', 'e', 'h']) && newData.val() === ${P}.child('r').val() * ${pesosExp(`${P}.child('h').val()`)}` },
+    p: { '.validate': `newData.isNumber() && !data.exists() && ${P}.hasChildren(['s', 'b', 'r', 'e', 'h']) && newData.val() === ${P}.child('r').val() * ${pesosExp(`${P}.child('h').val()`)} * ${BOOST}` },
     $other: { '.validate': false }
   } },
 
@@ -80,6 +94,18 @@ const rules = { rules: {
     }
   },
 
+  // ---- racha diaria: n = días seguidos · t = hora del último cobro (la pone el servidor) · bx = hora en que empezó el último «pesos dobles» (día 7).
+  //      Cada cobro mueve n y t juntos al valor exacto que toca; la recompensa en pesos la valida la cartera (c) y no se puede borrar la racha para cobrar otra vez. ----
+  streaks: { $uid: {
+    '.read': 'auth != null && auth.uid === $uid',
+    '.write': 'auth != null && auth.uid === $uid && newData.exists()',
+    '.validate': "newData.hasChildren(['n', 't'])",
+    n: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && newData.val() <= 100000 && newData.val() === ${NEXT_N} && ${P}.child('t').val() === now` },
+    t: { '.validate': `newData.isNumber() && newData.val() === now && ${P}.child('n').val() === ${NEXT_N}` },
+    bx: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (newData.val() === now && ${P}.child('t').val() === now && (${P}.child('n').val() - 1) % ${R.dias.length} === ${R.dias.length - 1}))` },
+    $other: { '.validate': false }
+  } },
+
   // ---- cartera: c = pesos ganados · sp = gastados · lr = última partida cobrada · own = compras · eq = lo que llevas puesto ----
   // Los pesos solo suben cobrando UNA partida terminada (exactamente lo que valió) y cada partida se cobra una sola vez.
   wallets: { $uid: {
@@ -89,7 +115,8 @@ const rules = { rules: {
     c: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.cMax}`
       + " && (newData.val() === (data.exists() ? data.val() : 0)"
       + ` || (${P}.child('lr').exists() && (!data.parent().child('lr').exists() || ${P}.child('lr').val() > data.parent().child('lr').val())`
-      + ` && newData.val() - (data.exists() ? data.val() : 0) === ${RUN}.child('p').val()))` },
+      + ` && newData.val() - (data.exists() ? data.val() : 0) === ${RUN}.child('p').val())`
+      + ` || (${STR}.child('t').val() === now && newData.val() - (data.exists() ? data.val() : 0) === ${rewardExp(`${STR}.child('n').val()`)}))` },
     sp: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && (!data.exists() || newData.val() >= data.val()) && newData.val() <= ${P}.child('c').val()` },
     lr: { '.validate': `newData.isNumber() && newData.val() === ${RUN}.child('s').val() && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val())` },
     own, eq,

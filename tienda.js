@@ -3,7 +3,9 @@
 // Firebase (las reglas también validan precios y recompensas, por eso deben coincidir con este archivo).
 window.TIENDA = {
   // Economía: cada punto vale lo que paga tu pelota (ball[].rate) multiplicado por «Monedas dobles»: ×1 del punto 1 al 99, ×2 del 100 al 199, ×3 del 200 al 299…
-  eco: { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500, cMax: 1000000000000 },
+  eco: { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500, cMax: 1000000000000,
+    // Racha diaria: entrar cada día da premios. dias = pesos del día 1 al 7 (el 7 no da pesos: da «pesos dobles» durante dobleMs) · el día cambia a medianoche de Chile en horario de verano (huso -3)
+    racha: { dias: [100, 200, 300, 400, 500, 1000, 0], dobleMs: 600000, huso: -3 } },
 
   // Personajes: el rival que te devuelve la pelota. Todos son imágenes sueltas (el Tío Pato y la Tía Patita se transforman de ángel a diablo/diabla; el resto solo se enoja)
   // con temblor, brillo rojo y vapor. stat = dibujo calmado · stat2 = dibujo enojado, al que cambian cuando el personaje se enoja.

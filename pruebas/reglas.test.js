@@ -13,7 +13,7 @@ let pass = 0, fail = 0;
 const N = Date.now(), T0 = N, SV = { '.sv': 'timestamp' };
 const A = uid => ({ uid, token: { email: 'matias@tio-pato.invalid' } });
 // targaryen ignora with({now}) y usa la hora real: se desplazan hacia atrás las horas guardadas y escritas para simular 'now'
-const isT = (k, v) => ['s', 'e', 'lr'].includes(k) && typeof v === 'number' && v >= T0 - 5e6;
+const isT = (k, v) => ['s', 'e', 'lr', 't', 'bx'].includes(k) && typeof v === 'number' && v >= 1e12;       // horas en ms (los puntajes y rebotes son números chicos)
 function shiftObj(o, off) { if (!o || typeof o !== 'object') return o; const c = Array.isArray(o) ? [] : {}; for (const k in o) c[k] = (o[k] && typeof o[k] === 'object' && !o[k]['.sv']) ? shiftObj(o[k], off) : (isT(k, o[k]) ? o[k] - off : o[k]); return c; }
 function db(data, now, uid = 'u1') {
   const off = now - Date.now(), base = () => targaryen.database(rules, shiftObj(data || {}, off)).as(A(uid));
@@ -265,6 +265,79 @@ ok('… y c sigue en 50', { allowed: cl.allowed && cl.newDatabase.root.$value().
   ok('u1 mejora de 50 a 90 y se mueve de casilla', res, true); d = res.newDatabase.root.$value();
   const above = (m) => Object.entries(d.hist).filter(([k]) => +k > m).reduce((a, [, v]) => a + v, 0);
   ok('puestos: u1 (90) es el 1º, u3 (80) el 2º, u2 (50) el 3º', { allowed: above(90) + 1 === 1 && above(80) + 1 === 2 && above(50) + 1 === 3 }, true);
+}
+
+
+// ---------- 7. racha diaria ----------
+console.log('Racha diaria');
+{
+  const RA = ECO.racha, DAYMS = 86400000, OFFMS = RA.huso * 3600000;
+  const D0 = Date.UTC(2026, 9, 29, 15, 0, 0);                      // 12:00 en Chile (huso -3)
+  const as = (uid, data, o, now) => db(data, now, uid).update('/', o);
+  const wal = (c = 0) => ({ c, sp: 0 });
+  const reward = n => RA.dias[(n - 1) % RA.dias.length];
+  const claimS = (n, c0, over = {}) => Object.assign({ 'streaks/u1/n': n, 'streaks/u1/t': SV, 'wallets/u1/c': c0 + reward(n) }, over);
+  const strk = (n, tMs) => ({ n, t: tMs });
+  const day = ms => Math.floor((ms + OFFMS) / DAYMS);
+  ok('el día cambia a medianoche del huso de Chile (el 29 a las 12:00 y el 30 a las 12:00 son días seguidos)', { allowed: day(D0 + DAYMS) === day(D0) + 1 }, true);
+
+  ok('día 1: primera vez, +$' + reward(1), as('u1', { wallets: { u1: wal() } }, claimS(1, 0), D0), true);
+  ok('día 1 pero la racha empieza en 2', as('u1', { wallets: { u1: wal() } }, claimS(2, 0), D0), false);
+  ok('día 1 con más pesos de los que da (+$150)', as('u1', { wallets: { u1: wal() } }, claimS(1, 0, { 'wallets/u1/c': 150 }), D0), false);
+  ok('día 1 con la hora inventada', as('u1', { wallets: { u1: wal() } }, claimS(1, 0, { 'streaks/u1/t': D0 - 99999999 }), D0), false);
+  ok('sin tocar los pesos (solo la racha) sí vale', as('u1', { wallets: { u1: wal(500) } }, { 'streaks/u1/n': 1, 'streaks/u1/t': SV }, D0), true);
+
+  const hoy = { wallets: { u1: wal(100) }, streaks: { u1: strk(1, D0 - 3 * 3600000) } };           // ya cobró hoy, 3 horas antes
+  ok('cobrar dos veces el mismo día (n=2)', as('u1', hoy, claimS(2, 100), D0), false);
+  ok('cobrar dos veces el mismo día repitiendo el día 1', as('u1', hoy, claimS(1, 100), D0), false);
+  ok('mismo día: solo cambiar la hora (t) y subir pesos', as('u1', hoy, { 'streaks/u1/t': SV, 'wallets/u1/c': 200 }, D0), false);
+  ok('mismo día: subir pesos sin tocar la racha', as('u1', hoy, { 'wallets/u1/c': 200 }, D0), false);
+
+  const ayer = (n, c) => ({ wallets: { u1: wal(c) }, streaks: { u1: strk(n, D0 - DAYMS) } });
+  ok('día 2 (al día siguiente): +$' + reward(2), as('u1', ayer(1, 100), claimS(2, 100), D0), true);
+  ok('día 2 pero cobrando como día 3', as('u1', ayer(1, 100), claimS(3, 100), D0), false);
+  ok('día 2 sin sumar el premio (c igual) y racha 2 vale (solo no cobra)', as('u1', ayer(1, 100), { 'streaks/u1/n': 2, 'streaks/u1/t': SV }, D0), true);
+  ok('día 3: +$' + reward(3), as('u1', ayer(2, 300), claimS(3, 300), D0), true);
+  ok('día 6: +$' + reward(6), as('u1', ayer(5, 1500), claimS(6, 1500), D0), true);
+  ok('día 6 cobrando el premio del día 5', as('u1', ayer(5, 1500), claimS(6, 1500, { 'wallets/u1/c': 1500 + reward(5) }), D0), false);
+
+  const hace2 = (n, c) => ({ wallets: { u1: wal(c) }, streaks: { u1: strk(n, D0 - 2 * DAYMS) } });
+  ok('se saltó un día: la racha vuelve a 1 (+$' + reward(1) + ')', as('u1', hace2(4, 1000), claimS(1, 1000), D0), true);
+  ok('se saltó un día e intenta seguir en 5', as('u1', hace2(4, 1000), claimS(5, 1000), D0), false);
+  ok('se saltó un día e intenta ir a 2', as('u1', hace2(4, 1000), claimS(2, 1000), D0), false);
+
+  ok('día 7: pesos dobles (bx) y sin pesos', as('u1', ayer(6, 3000), { 'streaks/u1/n': 7, 'streaks/u1/t': SV, 'streaks/u1/bx': SV }, D0), true);
+  ok('día 7 con pesos de regalo', as('u1', ayer(6, 3000), { 'streaks/u1/n': 7, 'streaks/u1/t': SV, 'streaks/u1/bx': SV, 'wallets/u1/c': 3500 }, D0), false);
+  ok('día 5: bx de contrabando', as('u1', ayer(4, 1000), claimS(5, 1000, { 'streaks/u1/bx': SV }), D0), false);
+  ok('bx con una hora inventada', as('u1', ayer(6, 3000), { 'streaks/u1/n': 7, 'streaks/u1/t': SV, 'streaks/u1/bx': D0 + 3600000 }, D0), false);
+  ok('día 8 = vuelve el premio del día 1 (+$' + reward(8) + ')', as('u1', ayer(7, 3000), claimS(8, 3000), D0), true);
+  ok('día 14 (segunda semana) también da pesos dobles', as('u1', ayer(13, 3000), { 'streaks/u1/n': 14, 'streaks/u1/t': SV, 'streaks/u1/bx': SV }, D0), true);
+
+  console.log(' Ataques');
+  ok('cambiar solo t (sin n) para cobrar el premio otra vez', as('u1', ayer(1, 100), { 'streaks/u1/t': SV, 'wallets/u1/c': 300 }, D0), false);
+  ok('subir los pesos con la racha de otro día sin tocar nada', as('u1', ayer(1, 100), { 'wallets/u1/c': 300 }, D0), false);
+  ok('borrar la racha para empezar de nuevo', db(ayer(3, 100), D0).write('/streaks/u1', null), false);
+  ok('borrar la racha y volver a crearla el mismo día (premio del día 1 otra vez)', as('u1', hoy, { 'streaks/u1': { n: 1, t: SV }, 'wallets/u1/c': 200 }, D0), false);
+  ok('ponerse una racha de 7 de un golpe', as('u1', { wallets: { u1: wal() } }, claimS(7, 0, { 'streaks/u1/bx': SV }), D0), false);
+  ok('racha con campos extra', as('u1', { wallets: { u1: wal() } }, claimS(1, 0, { 'streaks/u1/oro': 5 }), D0), false);
+  ok('cobrar la racha de otra cuenta', as('u2', { wallets: { u2: wal() } }, claimS(1, 0), D0), false);
+  ok('leer la racha de otra cuenta', db({ streaks: { u1: strk(3, D0 - DAYMS) } }, D0, 'u2').read('/streaks/u1'), false);
+  ok('leer tu propia racha', db({ streaks: { u1: strk(3, D0 - DAYMS) } }, D0).read('/streaks/u1'), true);
+  ok('leer todas las rachas', db({ streaks: { u1: strk(3, D0 - DAYMS) } }, D0).read('/streaks'), false);
+
+  console.log(' Pesos dobles durante 10 minutos');
+  const bxAt = D0 - 60000;                                                    // el «pesos dobles» empezó hace 1 minuto
+  const conBoost = (sMs, extra = {}) => Object.assign({ wallets: { u1: wal(0) }, streaks: { u1: { n: 7, t: D0 - 60000, bx: bxAt } }, runs: { u1: { s: sMs, b: 'peso1', r: 1 } } }, extra);
+  const claimDob = (h, mult, sMs, wc = 0) => ({ 'runs/u1/e': SV, 'runs/u1/h': h, 'runs/u1/p': pesosFor(h) * mult, 'wallets/u1/c': wc + pesosFor(h) * mult, 'wallets/u1/sp': 0, 'wallets/u1/lr': sMs });
+  ok('partida empezada dentro de los 10 minutos: se paga el doble (40 rebotes)', as('u1', conBoost(D0 - 30000), claimDob(40, 2, D0 - 30000), D0 + 40 * 450), true);
+  ok('partida con el boost pagada normal (×1) no vale (las reglas exigen ×2)', as('u1', conBoost(D0 - 30000), claimDob(40, 1, D0 - 30000), D0 + 40 * 450), false);
+  ok('partida con el boost pagada ×3', as('u1', conBoost(D0 - 30000), claimDob(40, 3, D0 - 30000), D0 + 40 * 450), false);
+  ok('partida empezada ANTES del boost: paga normal', as('u1', conBoost(bxAt - 30000), claimDob(40, 1, bxAt - 30000), D0 + 40 * 450), true);
+  ok('partida empezada antes del boost pagada ×2', as('u1', conBoost(bxAt - 30000), claimDob(40, 2, bxAt - 30000), D0 + 40 * 450), false);
+  const sTarde = bxAt + 10 * 60000 + 1000;                                    // empezó 10 min y 1 s después del boost: ya venció
+  ok('partida empezada con el boost vencido: paga normal', as('u1', conBoost(sTarde, { streaks: { u1: { n: 7, t: D0 - 60000, bx: bxAt } } }), claimDob(40, 1, sTarde), sTarde + 40 * 450 + 1000), true);
+  ok('partida empezada con el boost vencido pagada ×2', as('u1', conBoost(sTarde), claimDob(40, 2, sTarde), sTarde + 40 * 450 + 1000), false);
+  ok('sin racha nunca hay doble (×2 rechazado)', as('u1', { wallets: { u1: wal(0) }, runs: { u1: { s: D0 - 30000, b: 'peso1', r: 1 } } }, claimDob(40, 2, D0 - 30000), D0 + 40 * 450), false);
 }
 
 console.log(`\n${pass} correctas, ${fail} fallas`);

@@ -179,6 +179,47 @@
   #hint.on { opacity: 1; animation: hintNudge 1.5s ease-in-out infinite; }
   @keyframes hintNudge { 50% { transform: translateX(calc(-50% + 16px)); } }
 
+  /* ---------- racha diaria ---------- */
+  .chip.streak { position: relative; cursor: pointer; padding: 4px 12px; font: inherit; font-weight: 800; font-size: 15px; color: var(--ink); gap: 5px; }
+  .chip.streak.go { background: linear-gradient(#fff8d6, #ffe98a); border-color: #ffc928; animation: chipPulse 1.6s ease-in-out infinite; }
+  .chip.streak.go::after { content: ""; position: absolute; top: -3px; right: -3px; width: 11px; height: 11px; border-radius: 50%; background: #e5281c; border: 2px solid #fff; }
+  @keyframes chipPulse { 50% { transform: scale(1.07); } }
+  .boostbar { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #7b3ff2, #e0149f); color: #fff; font-weight: 800; font-size: 14px; padding: 5px 14px; border-radius: 999px; box-shadow: 0 4px 12px rgba(123, 63, 242, .35); font-variant-numeric: tabular-nums; }
+  .boostbar[hidden] { display: none; }
+  .modal { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(12, 10, 40, .6); }
+  .modal.show { display: flex; animation: fadeIn .2s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .mcard { position: relative; width: min(100%, 380px); max-height: calc(100% - 8px); overflow-y: auto; background: #fffdf0; border-radius: 26px; padding: 22px 16px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); animation: cardIn .3s cubic-bezier(.2, 1.2, .3, 1); }
+  @keyframes cardIn { from { transform: translateY(24px) scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  .mcard h2 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -.01em; }
+  .mcard .msub { margin: 6px 0 0; font-size: 14px; font-weight: 700; color: #6b6840; min-height: 1.3em; }
+  .mclose { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; border: 0; background: none; font-size: 20px; cursor: pointer; color: var(--ink); opacity: .6; }
+  .dgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 14px; }
+  .dcard { position: relative; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 8px 4px 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-weight: 800; }
+  .dcard .dn { background: #111; color: #fff; border-radius: 999px; padding: 3px 10px; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+  .dcard img { height: 38px; width: auto; max-width: 54px; object-fit: contain; display: block; }
+  .dcard .dv { font-size: 16px; font-variant-numeric: tabular-nums; }
+  .dcard.today { border-color: #ffc928; background: linear-gradient(#fff8d6, #ffe98a); box-shadow: 0 0 0 3px rgba(255, 201, 40, .5); animation: dpulse 1.5s ease-in-out infinite; }
+  .dcard.today .dn { background: #e5a800; }
+  @keyframes dpulse { 50% { transform: scale(1.05); } }
+  .dcard.done { background: #eaf7e6; border-color: #9fd48f; }
+  .dcard.done img, .dcard.done .dv { opacity: .45; }
+  .dcard.done::after { content: "✓"; position: absolute; top: 34px; left: 50%; transform: translateX(-50%); font-size: 26px; font-weight: 900; color: #2f9d3a; text-shadow: 0 1px 0 #fff; }
+  .dcard.d7 { grid-column: 1 / -1; flex-direction: row; justify-content: center; gap: 12px; padding: 10px 12px; background: linear-gradient(135deg, #f3e6ff, #ffe6f5); border-color: #c98bff; }
+  .dcard.d7 .dn { background: #7b3ff2; }
+  .dcard.d7 .bolt { font-size: 34px; line-height: 1; }
+  .dcard.d7 .dt { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 2px; }
+  .dcard.d7 .dt small { font-size: 12px; font-weight: 700; color: #6b6840; }
+  .dcard.d7.today { background: linear-gradient(135deg, #ead2ff, #ffd0ec); border-color: #7b3ff2; box-shadow: 0 0 0 3px rgba(123, 63, 242, .4); }
+  .dcard.d7.today .dn { background: #7b3ff2; }
+  .dcard.d7.done { background: #eaf7e6; }
+  .dcard.d7.done::after { top: 50%; right: 14px; left: auto; transform: translateY(-50%); }
+  #dailyGo { width: 100%; margin-top: 4px; background: linear-gradient(#58d66a, #2fae3f); box-shadow: 0 5px 0 #1f7a2b; font-size: 20px; }
+  #dailyGo:active { transform: translateY(3px); box-shadow: 0 2px 0 #1f7a2b; }
+  #dailyGo:disabled { background: #cfcbb0; box-shadow: 0 5px 0 #a8a483; color: #fff; cursor: default; }
+  .cf { position: absolute; left: 50%; top: 40%; font-size: 22px; pointer-events: none; animation: cf 1.1s ease-out forwards; }
+  @keyframes cf { to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
+
   /* ---------- pantallas (inicio / final / marcadores) ---------- */
   .screen {
     position: absolute; inset: 0; z-index: 5; display: none; flex-direction: column;
@@ -710,7 +751,7 @@
     .bgx, .bgx i, .bgx i::before, .bgx::before, .bgx::after, #paddle, #paddle::before, #paddle::after, .pvbar, .pvbar::before, .pvbar::after { animation: none !important; }
     #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .item .pv.mystery b, .item .pv.mystery i, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .ball.jump::before, .ball.jump::after, .hero, .rain span, #rotate .ico, #mult.show, .item .pv.chpv img { animation: none; }
     #arena.jolt { animation: none; }
-    .screen.show, #hint.on { animation: none; }
+    .screen.show, #hint.on, .chip.streak.go, .dcard.today, .mcard, .modal.show { animation: none; }
     .btn, .tile, .seg button, .link { transition: none; }
   }
 </style>
@@ -747,8 +788,10 @@
     <section class="screen show" id="menu">
       <div class="topbar" id="topbar">
         <div class="chip" id="userBox" hidden><span class="uav" id="userAv">😎</span><span id="hello"></span></div>
+        <button class="chip streak" id="streakChip" type="button" hidden aria-label="Racha diaria">🔥 <span id="streakNum">0</span></button>
         <div class="coins" id="coinChip" hidden><img class="ci" src="skins/peso1.webp" alt=""><span id="coinNum">$0</span></div>
       </div>
+      <div class="boostbar" id="boostBar" hidden>⚡ Pesos dobles · <b id="boostLeft">10:00</b></div>
       <div class="mid">
         <div class="stage"><span class="hero" id="heroBox"><span style="font-size:84px">🦆</span></span></div>
         <h1 class="ttl" id="ttl">Gánale al <em id="ttlName">Tío Pato</em></h1>
@@ -764,7 +807,7 @@
           <button class="btn" id="authGo" type="submit">Entrar</button>
         </form>
         <!-- sin cuentas (modo local): solo el nombre -->
-        <input id="name" type="text" maxlength="16" placeholder="Tu nombre" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Tu nombre">
+        <input id="name" type="text" maxlength="12" placeholder="Tu nombre" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Tu nombre">
         <div class="actions">
           <button class="btn play" id="play"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>Jugar</button>
           <div class="duo"><button class="tile" id="openShop"><span>🛍️</span>Tienda</button><button class="tile" id="openBoard"><span>🏆</span>Marcadores</button></div>
@@ -813,6 +856,16 @@
 </div>
 
 <div id="rotate" hidden><span class="ico">📱</span><span>Gira tu celular a vertical para jugar</span></div>
+<div class="modal" id="daily" role="dialog" aria-modal="true" aria-labelledby="dailyTitle">
+  <div class="mcard" id="dailyCard">
+    <button class="mclose" id="dailyClose" type="button" aria-label="Cerrar">✕</button>
+    <h2 id="dailyTitle">Racha diaria 🔥</h2>
+    <p class="msub" id="dailySub">Entra cada día y gana premios.</p>
+    <div class="dgrid" id="dailyGrid"></div>
+    <button class="btn" id="dailyGo" type="button">Reclamar</button>
+    <div class="status" id="dailyMsg" role="status"></div>
+  </div>
+</div>
 <div id="tiny" hidden><span class="ico">↔️</span><span>La ventana es muy chica para jugar parejo.<br>Agrándala (o usa pantalla completa) para jugar.</span></div>
 <div class="sheet" id="sheet" hidden>
   <div class="card" role="dialog" aria-labelledby="sheetTitle">
@@ -840,6 +893,7 @@
   let DUCK_CY = 125;              // centro del cuerpo del Pato (para el fuego)
   let SAFE_T = 0, SAFE_B = 0;     // márgenes seguros (notch / barra de gestos)
   const ECO = (window.TIENDA && window.TIENDA.eco) || { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500 };
+  const RACHA = ECO.racha || { dias: [100, 200, 300, 400, 500, 1000, 0], dobleMs: 600000, huso: -3 };   // racha diaria (ver tienda.js)
   const TIER = ECO.tier, H_MAX = ECO.hMax;                  // cada TIER rebotes sube lo que vale cada rebote · tope de rebotes que cuentan por partida
   // Del rebote 1 al 99 el juego es amable y ágil; desde el 100 sube de verdad: la pelota acelera más y la barra se achica más rápido.
   const SPEED0 = 800, STEP_LO = 4, STEP_HI = 16, SPEED_MAX = 1800;           // px/s
@@ -908,6 +962,12 @@
     (window.crypto || { getRandomValues: v => v.map(() => Math.random() * 256) }).getRandomValues(a);
     return Array.from(a, b => (b % 36).toString(36)).join('') + Date.now().toString(36);
   }
+  // Sin caracteres de control ni invisibles o de dirección de texto (RLO, espacios de ancho cero…): con ellos alguien podría disfrazar su nombre en el marcador.
+  const stripBad = s => String(s || '').replace(/[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff\ufff9-\ufffb]/g, '');
+  // Nombres: máximo 12 caracteres para que nunca se salgan de la pantalla. Las cuentas antiguas (hasta 16) siguen entrando con su nombre completo, pero se ven cortadas a 12.
+  const NAME_MAX = 12, NAME_OLD = 16;
+  const clip = (s, max) => { const t = s.slice(0, max); return /[\ud800-\udbff]$/.test(t) ? t.slice(0, -1) : t; };           // sin partir un emoji por la mitad
+  const cleanName = (s, max = NAME_MAX) => clip(stripBad(s).replace(/\s+/g, ' ').trim(), max).trim();
   let player = { id: '', name: '', best: 0, dirty: false };       // best: mayor cantidad de rebotes
   try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); player.id = String(o.id || ''); player.name = cleanName(o.name); player.best = Math.max(0, +o.best || 0); player.dirty = !!o.dirty; } catch (e) {}
   function savePlayer() { try { localStorage.setItem(STORE_KEY, JSON.stringify(player)); } catch (e) {} }
@@ -920,15 +980,12 @@
   const saveSession = () => { try { if (session) localStorage.setItem(AUTH_KEY, JSON.stringify(session)); else localStorage.removeItem(AUTH_KEY); } catch (e) {} };
   if (AUTH) {
     if (!session) player = { id: '', name: '', best: 0, dirty: false };
-    else if (player.id !== session.uid) player = { id: session.uid, name: session.name, best: 0, dirty: false };
+    else if (player.id !== session.uid) player = { id: session.uid, name: cleanName(session.name), best: 0, dirty: false };
   } else if (!/^[a-z0-9]{12,32}$/.test(player.id)) player.id = newId();
   savePlayer();
   // "Matías Pérez" → "matias.perez": el mismo nombre (sin importar mayúsculas ni tildes) es siempre la misma cuenta
   const acctKey = n => String(n).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 24);
 
-  // Sin caracteres de control ni invisibles o de dirección de texto (RLO, espacios de ancho cero…): con ellos alguien podría disfrazar su nombre en el marcador.
-  const stripBad = s => String(s || '').replace(/[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff\ufff9-\ufffb]/g, '');
-  const cleanName = s => stripBad(s).replace(/\s+/g, ' ').trim().slice(0, 16);
   const pad = n => String(n).padStart(3, '0');
   const fmtClock = s => { s = Math.floor(s); return s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} min` : `${s} s`; };
 
@@ -1326,7 +1383,7 @@
   // Lista de los mejores, ya ordenada de mayor a menor.
   async function fetchTop(limit = TOP_N) {
     if (!ONLINE) {
-      return player.best > 0 ? [{ id: player.id, n: player.name || 'Tú', s: player.best, t: 0 }] : [];
+      return player.best > 0 ? [{ id: player.id, n: cleanName(player.name) || 'Tú', s: player.best, t: 0 }] : [];
     }
     const r = await http(`${DB}/scores.json?orderBy=%22s%22&limitToLast=${limit}`);
     if (!r.ok) throw new Error('http ' + r.status);
@@ -1376,7 +1433,7 @@
       const dots = document.createElement('div'); dots.className = 'dots'; dots.setAttribute('aria-hidden', 'true'); dots.innerHTML = '<i></i><i></i><i></i>';
       const list = document.createElement('ul'), li = document.createElement('li');
       const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = '#' + me.rank.toLocaleString('es-CL');
-      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = player.name || (session && session.name) || 'Tú';
+      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = cleanName(player.name || (session && session.name)) || 'Tú';
       const you = document.createElement('small'); you.textContent = '(tú)'; nm.appendChild(you);
       const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = player.best;
       li.append(rk, nm, sc); list.appendChild(li); box.append(dots, list);
@@ -1594,7 +1651,7 @@
   const tpl = t => t.replace(/\{(la|esa|esta|una|nom|noms)\}/gi, (m, k) => { const v = ballWords()[k.toLowerCase()]; return k === k.toUpperCase() ? v.toUpperCase() : k[0] === k[0].toUpperCase() ? v[0].toUpperCase() + v.slice(1) : v; })
     .replace(/\{pago\}/g, () => money(gameRate * rateAt(Math.max(1, hits))))
     .replace(/%n/g, curCh().name).replace(/%D/g, ({ f: 'LA DIABLA', p: 'LOS DIABLOS' })[curCh().g] || 'EL DIABLO')
-    .replace(/%h/g, hits).replace(/%b/g, leaderBest).replace(/%j/g, player.name || (session && session.name) || 'amigo');
+    .replace(/%h/g, hits).replace(/%b/g, leaderBest).replace(/%j/g, cleanName(player.name || (session && session.name)) || 'amigo');
   function say(text, ms) {
     const b = $('bubble'), t = tpl(text); b.textContent = t; b.classList.add('on'); lastSay = text; bubbleW = b.offsetWidth;
     clearTimeout(bubbleTimer); bubbleTimer = setTimeout(() => b.classList.remove('on'), ms || Math.min(4200, 1500 + t.length * 55));
@@ -1806,7 +1863,7 @@
   const PKEY = () => 'gana-al-tio-pato-partida-' + (session ? session.uid : 'local');
   const itemOf = (cat, id) => CAT[cat].find(i => i.id === id);
   const owns = (cat, id) => { const it = itemOf(cat, id); return !!it && (it.price === 0 || wallet.own[cat + '_' + id] === true); };
-  const pendingP = () => (pending ? pending.r * pesosFor(pending.h) : 0);
+  const pendingP = () => (pending ? pending.r * pesosFor(pending.h) * (pending.m || 1) : 0);
   const balance = () => Math.max(0, wallet.c + pendingP() - wallet.sp);
   const curCh = () => itemOf('ch', wallet.eq.ch) || CAT.ch[0];
   const savePending = () => { try { if (pending) localStorage.setItem(PKEY(), JSON.stringify(pending)); else localStorage.removeItem(PKEY()); } catch (e) {} };
@@ -1816,7 +1873,7 @@
       const w = JSON.parse(localStorage.getItem(WKEY()) || 'null');
       if (w) { wallet.c = +w.c || 0; wallet.sp = +w.sp || 0; wallet.lr = +w.lr || 0; wallet.own = w.own || {}; wallet.eq = { ...DEF, ...(w.eq || {}) }; }
       const p = AUTH && session ? JSON.parse(localStorage.getItem(PKEY()) || 'null') : null;
-      if (p && +p.s > 0 && +p.h > 0) pending = { s: +p.s, h: +p.h, r: +p.r || 1 };
+      if (p && +p.s > 0 && +p.h > 0) pending = { s: +p.s, h: +p.h, r: +p.r || 1, m: +p.m === 2 ? 2 : 1 };
     } catch (e) {}
     for (const k in DEF) if (!itemOf(k, wallet.eq[k])) wallet.eq[k] = DEF[k];
   }
@@ -1865,15 +1922,17 @@
     const pr = pending, uid = session.uid;
     try {
       const tok = encodeURIComponent(await idToken());
-      const [wr, sr] = await Promise.all([http(`${DB}/wallets/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}/s.json`)]);
+      const [wr, sr, kr] = await Promise.all([http(`${DB}/wallets/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}/s.json`), http(`${DB}/streaks/${uid}.json?auth=${tok}`)]);
       if (!wr.ok) return wr.status === 401 || wr.status === 403 ? 'denied' : 'error';
       if (!sr.ok) return 'error';                                  // sin saber tu récord no se cobra (si se asumiera 0, el servidor rechazaría la partida entera y se perdería): se reintenta
       const w = (await wr.json()) || {}, best = +(await sr.json()) || 0;
       if (+w.lr === pr.s) { pending = null; savePending(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
-      const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h), body = {};
+      if (!kr.ok && kr.status !== 401 && kr.status !== 403) return 'error';
+      const kv = kr.ok ? await kr.json() : null, mult = boostMult(pr.s, kv && +kv.bx || 0);      // ¿la partida empezó con «pesos dobles»? lo decide la racha que guarda el servidor
+      const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h) * mult, body = {};
       body[`runs/${uid}/e`] = SV; body[`runs/${uid}/h`] = pr.h; body[`runs/${uid}/p`] = p;
       body[`wallets/${uid}/c`] = c0 + p; body[`wallets/${uid}/sp`] = sp0; body[`wallets/${uid}/lr`] = pr.s;
-      if (pr.h > best) { body[`scores/${uid}/n`] = player.name || session.name; body[`scores/${uid}/k`] = session.key; body[`scores/${uid}/s`] = pr.h; body[`scores/${uid}/t`] = SV; }   // por campos: así no se borra `c` (el contador de puestos)
+      if (pr.h > best) { body[`scores/${uid}/n`] = cleanName(player.name || session.name) || 'Jugador'; body[`scores/${uid}/k`] = session.key; body[`scores/${uid}/s`] = pr.h; body[`scores/${uid}/t`] = SV; }   // por campos: así no se borra `c` (el contador de puestos)
       const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
       if (r.ok) {
         wallet.c = c0 + p; wallet.sp = sp0; wallet.lr = pr.s; saveWallet();
@@ -1889,6 +1948,139 @@
       return 'error';
     } catch (e) { return 'error'; }
   }
+  /* ---------- racha diaria: entrar cada día da premios ----------
+     El servidor (reglas de Firebase) decide el día, si la racha sigue o se corta y cuánto se paga; aquí solo se muestra y se pide el cobro.
+     Día 1 a 6: pesos · día 7: «pesos dobles» durante 10 minutos (las partidas que EMPIEZAN en ese lapso pagan el doble) · después vuelve a empezar el ciclo. */
+  const DAYMS = 86400000, RLEN = RACHA.dias.length, HUSO_MS = RACHA.huso * 3600000;
+  const dayOf = ms => Math.floor((ms + HUSO_MS) / DAYMS);                      // número de día (el día cambia a medianoche del huso de Chile)
+  const boostMult = (runS, bx) => (bx && runS >= bx && runS < bx + RACHA.dobleMs ? 2 : 1);
+  let streak = null, streakOk = false, streakDayShown = -1, streakBusy = false;   // streak: { n: días seguidos, t: último cobro, bx: inicio del último «pesos dobles» }
+  function streakInfo(now = Date.now()) {
+    const today = dayOf(now), claimable = !streak || today > dayOf(streak.t);
+    return {
+      today, claimable,
+      broken: !!streak && today > dayOf(streak.t) + 1,                          // se saltó un día: la racha vuelve a empezar
+      n: streak ? streak.n : 0,
+      nextN: !streak ? 1 : (today === dayOf(streak.t) + 1 ? streak.n + 1 : 1),   // la racha que tendrás si cobras hoy
+      boostLeft: streak && streak.bx ? Math.max(0, streak.bx + RACHA.dobleMs - now) : 0,
+      toNext: (today + 1) * DAYMS - HUSO_MS - now                                // ms que faltan para el día siguiente
+    };
+  }
+  async function pullStreak() {
+    if (!AUTH || !session) { streak = null; streakOk = false; return false; }
+    try {
+      const r = await http(`${DB}/streaks/${session.uid}.json?auth=${encodeURIComponent(await idToken())}`);
+      if (!r.ok) { streakOk = false; return false; }                           // 401/403: las reglas nuevas todavía no están publicadas en Firebase
+      const v = await r.json();
+      streak = v && typeof v.n === 'number' ? { n: +v.n, t: +v.t || 0, bx: +v.bx || 0 } : null; streakOk = true; return true;
+    } catch (e) { return false; }
+  }
+  const fmtLeft = ms => { const s = Math.ceil(ms / 1000), m = Math.floor(s / 60); return `${m}:${String(s % 60).padStart(2, '0')}`; };
+  const fmtWait = ms => { const m = Math.max(1, Math.ceil(ms / 60000)), h = Math.floor(m / 60); return h ? `${h} h ${m % 60} min` : `${m} min`; };
+  function renderStreak() {                                                    // chip 🔥 y cartel de «pesos dobles» del inicio
+    const on = AUTH && !!session && streakOk, info = streakInfo(), chip = $('streakChip');
+    chip.hidden = !on; chip.classList.toggle('go', on && info.claimable);
+    $('streakNum').textContent = info.broken ? 0 : info.n;
+    chip.setAttribute('aria-label', on ? `Racha diaria: ${info.broken ? 0 : info.n} días${info.claimable ? '. Tienes un premio para reclamar' : ''}` : 'Racha diaria');
+    $('boostBar').hidden = !(on && info.boostLeft > 0); if (info.boostLeft > 0) $('boostLeft').textContent = fmtLeft(info.boostLeft);
+    if ($('daily').classList.contains('show')) paintDailyButton();                      // cada segundo solo se actualiza el texto del botón (la cuadrícula no se redibuja)
+  }
+  const cardIcon = i => ['skins/peso1.webp', 'skins/peso1.webp', 'skins/peso10.webp', 'skins/peso10.webp', 'skins/peso100.webp', 'skins/oro.webp'][i];
+  function renderDaily(msg) {
+    const info = streakInfo(), grid = $('dailyGrid');
+    // tarjeta de hoy (o la última cobrada): si hoy se puede cobrar, las anteriores del ciclo ya están hechas; si ya cobraste, la de hoy también
+    const ti = info.claimable ? (info.nextN - 1) % RLEN : (info.n - 1) % RLEN, doneTo = info.claimable ? ti - 1 : ti;
+    grid.textContent = '';
+    RACHA.dias.forEach((v, i) => {
+      const c = document.createElement('div'), last = i === RLEN - 1;
+      c.className = 'dcard' + (last ? ' d7' : '') + (i <= doneTo ? ' done' : '') + (info.claimable && i === ti ? ' today' : '');
+      const dn = document.createElement('span'); dn.className = 'dn'; dn.textContent = 'Día ' + (i + 1);
+      if (last) {
+        const bolt = document.createElement('span'); bolt.className = 'bolt'; bolt.textContent = '⚡';
+        const dt = document.createElement('div'); dt.className = 'dt';
+        const b = document.createElement('span'); b.className = 'dv'; b.textContent = 'Pesos dobles';
+        const sm = document.createElement('small'); sm.textContent = `Durante ${Math.round(RACHA.dobleMs / 60000)} minutos`;
+        dt.append(dn, b, sm); c.append(bolt, dt);
+      } else {
+        const im = new Image(); im.src = cardIcon(i); im.alt = ''; im.draggable = false;
+        const dv = document.createElement('span'); dv.className = 'dv'; dv.textContent = money(v);
+        c.append(dn, im, dv);
+      }
+      grid.appendChild(c);
+    });
+    paintDailyButton();
+    if (msg !== undefined) { $('dailyMsg').textContent = msg.t; $('dailyMsg').className = 'status' + (msg.ok ? ' ok' : ' err'); }
+  }
+  function paintDailyButton() {
+    const info = streakInfo();
+    $('dailySub').textContent = info.broken && info.claimable ? '¡Perdiste la racha! Empieza de nuevo hoy.'
+      : info.n > 0 ? `Llevas ${info.broken ? 0 : info.n} día${info.n === 1 ? '' : 's'} seguido${info.n === 1 ? '' : 's'} 🔥` : 'Entra cada día y gana premios.';
+    const go = $('dailyGo');
+    if (streakBusy) { go.disabled = true; go.textContent = 'Reclamando…'; }
+    else if (info.claimable) { go.disabled = false; const v = RACHA.dias[(info.nextN - 1) % RLEN]; go.textContent = v > 0 ? `Reclamar ${money(v)}` : 'Reclamar bono ⚡'; }
+    else { go.disabled = true; go.textContent = `Vuelve en ${fmtWait(info.toNext)}`; }
+  }
+  let dailyFrom = null;
+  function openDaily() {
+    if (!AUTH || !session || !streakOk) return;
+    dailyFrom = document.activeElement; renderDaily({ t: '', ok: true });
+    $('daily').classList.add('show'); $('dailyGo').focus();
+  }
+  function closeDaily() { $('daily').classList.remove('show'); if (dailyFrom && dailyFrom.focus) { try { dailyFrom.focus(); } catch (e) {} } dailyFrom = null; }
+  function autoDaily() {                                                       // al entrar, si hay premio del día, se muestra solo (una vez por día y por visita)
+    renderStreak();
+    const info = streakInfo();
+    if (AUTH && session && streakOk && state === 'menu' && info.claimable && streakDayShown !== info.today) { streakDayShown = info.today; openDaily(); }
+  }
+  function confetti() {
+    const card = $('dailyCard'), E = ['🪙', '✨', '💰', '⭐', '🔥'];
+    for (let i = 0; i < 16; i++) {
+      const el = document.createElement('span'), a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 130;
+      el.className = 'cf'; el.textContent = E[i % E.length];
+      el.style.setProperty('--dx', Math.cos(a) * d + 'px'); el.style.setProperty('--dy', Math.sin(a) * d - 40 + 'px'); el.style.setProperty('--rot', (Math.random() * 360 - 180) + 'deg');
+      card.appendChild(el); setTimeout(() => el.remove(), 1200);
+    }
+  }
+  async function claimStreak() {                                               // 'ok' | 'ya' | 'denied' | 'error'
+    if (!AUTH || !session || streakBusy) return 'error';
+    streakBusy = true; renderDaily();
+    try {
+      for (let intento = 0; intento < 2; intento++) {
+        const tok = encodeURIComponent(await idToken()), uid = session.uid;
+        const [wr, kr] = await Promise.all([http(`${DB}/wallets/${uid}.json?auth=${tok}`), http(`${DB}/streaks/${uid}.json?auth=${tok}`)]);
+        if (!wr.ok || !kr.ok) return wr.status === 401 || wr.status === 403 || kr.status === 401 || kr.status === 403 ? 'denied' : 'error';
+        const w = (await wr.json()) || {}, c0 = +w.c || 0, sp0 = +w.sp || 0, kv = await kr.json();
+        streak = kv && typeof kv.n === 'number' ? { n: +kv.n, t: +kv.t || 0, bx: +kv.bx || 0 } : null;       // manda lo que dice el servidor
+        const info = streakInfo(); if (!info.claimable) return 'ya';
+        const n = info.nextN, v = RACHA.dias[(n - 1) % RLEN], body = {};
+        body[`streaks/${uid}/n`] = n; body[`streaks/${uid}/t`] = SV;
+        if ((n - 1) % RLEN === RLEN - 1) body[`streaks/${uid}/bx`] = SV;        // día 7: empieza el «pesos dobles»
+        if (v > 0) { body[`wallets/${uid}/c`] = c0 + v; body[`wallets/${uid}/sp`] = sp0; }       // la cartera nueva necesita c y sp
+        const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+        if (r.ok) { if (v > 0) { wallet.c = c0 + v; saveWallet(); } await pullStreak(); renderCoins(); return 'ok'; }
+        if (r.status !== 401 && r.status !== 403) return 'error';
+        if (intento === 1) return 'denied';                                      // se reintenta una vez (otra partida pudo cobrarse justo en medio)
+      }
+      return 'denied';
+    } catch (e) { return 'error'; }
+    finally { streakBusy = false; }
+  }
+  async function onDailyGo() {
+    const before = streakInfo(), n = before.nextN, v = RACHA.dias[(n - 1) % RLEN];
+    const res = await claimStreak();
+    if (res === 'ok') {
+      renderStreak(); renderDaily({ t: v > 0 ? `¡Listo! +${money(v)} · racha de ${n} día${n === 1 ? '' : 's'} 🔥` : '¡Listo! Pesos dobles durante 10 minutos ⚡', ok: true });
+      confetti(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .12), i * 90)); if (navigator.vibrate) navigator.vibrate([20, 30, 20, 30, 50]);
+    } else if (res === 'ya') { renderStreak(); renderDaily({ t: 'Ya reclamaste el premio de hoy.', ok: true }); }
+    else renderDaily({ t: res === 'denied' ? 'Firebase no permitió reclamar. Revisa la fecha y la hora de tu celular y que estén publicadas las reglas nuevas.' : 'Sin conexión. Inténtalo de nuevo.', ok: false });
+  }
+  $('streakChip').addEventListener('click', openDaily);
+  $('dailyGo').addEventListener('click', onDailyGo);
+  $('dailyClose').addEventListener('click', closeDaily);
+  $('daily').addEventListener('click', e => { if (e.target === $('daily')) closeDaily(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && $('daily').classList.contains('show')) closeDaily(); });
+  setInterval(() => { if ((state === 'menu' || state === 'over') && AUTH && session && streakOk) renderStreak(); }, 1000);   // cuenta regresiva del «pesos dobles» y del próximo premio
+
   function renderCoins() {
     const b = money(balance());
     $('coinNum').textContent = b; $('shopBal').textContent = b;
@@ -2042,14 +2234,15 @@
     $('userBox').hidden = !logged; $('logout').hidden = !logged;
     nameInput.hidden = AUTH; $('play').hidden = AUTH && !logged;
     $('coinChip').hidden = AUTH && !logged; $('openShop').hidden = AUTH && !logged; $('topbar').hidden = !logged && AUTH;
-    if (logged) { const n = player.name || session.name; $('hello').textContent = n; $('userAv').textContent = [...n][0].toUpperCase(); }
-    renderCoins();
+    if (logged) { const n = cleanName(player.name || session.name) || 'Tú'; $('hello').textContent = n; $('userAv').textContent = [...n][0].toUpperCase(); }
+    renderCoins(); renderStreak();
     $('bestMenu').textContent = player.best ? `🏆 Tu récord: ${player.best}` : '';
   }
   function setAuthMode(m) {
     authMode = m; $('tabIn').classList.toggle('on', m === 'in'); $('tabUp').classList.toggle('on', m === 'up'); $('tabIn').setAttribute('aria-selected', String(m === 'in')); $('tabUp').setAttribute('aria-selected', String(m === 'up'));
     $('authGo').textContent = m === 'in' ? 'Entrar' : 'Crear cuenta'; $('authMsg').textContent = '';
     $('pass').autocomplete = m === 'in' ? 'current-password' : 'new-password'; $('pass').minLength = m === 'in' ? 6 : 8;
+    $('acct').maxLength = m === 'in' ? NAME_OLD : NAME_MAX; $('acct').placeholder = m === 'in' ? 'Tu nombre' : 'Tu nombre (máx. 12)'; if (m === 'up') $('acct').value = cleanName($('acct').value);
   }
   async function loadMine() {                                      // tu mejor puntaje guardado en la nube (para cuando entras desde otro celular)
     try {
@@ -2061,12 +2254,12 @@
     leaderBest = Math.max(leaderBest, player.best); renderMenu(); renderScores(); setInitial(); syncCount();
   }
   function logout() {
-    session = null; saveSession(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
+    session = null; saveSession(); streak = null; streakOk = false; closeDaily(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
     leaderBest = 0; loadWallet(); applyCosmetics(); setInitial(); renderScores(); renderMenu(); fetchLeader();
   }
   async function submitAuth(e) {
     e.preventDefault();
-    const name = cleanName($('acct').value), pass = $('pass').value, msg = $('authMsg'), key = acctKey(name);
+    const name = cleanName($('acct').value, authMode === 'in' ? NAME_OLD : NAME_MAX), pass = $('pass').value, msg = $('authMsg'), key = acctKey(name);
     msg.textContent = '';
     if (name.length < 3 || key.length < 3) { msg.textContent = 'El nombre debe tener al menos 3 letras o números.'; $('acct').focus(); return; }
     const minPass = authMode === 'up' ? 8 : 6;                    // al crear la cuenta se pide una contraseña más larga (los nombres del marcador son públicos)
@@ -2078,7 +2271,7 @@
       saveSession();
       player = { id: j.localId, name, best: 0, dirty: false }; savePlayer();
       $('pass').value = ''; $('acct').value = '';
-      loadWallet(); applyCosmetics(); await pullWallet(); applyCosmetics();
+      loadWallet(); applyCosmetics(); await pullWallet(); applyCosmetics(); pullStreak().then(() => { renderStreak(); autoDaily(); });
       if (pending) claimRun().then(renderCoins);                   // cobra una partida que quedó pendiente
       setInitial(); renderMenu(); await loadMine(); fetchLeader();
     } catch (err) { msg.textContent = authErr(err.message); }
@@ -2191,7 +2384,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v29';
+  const BUILD = 'v30';
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
     out.hidden = false; const show = () => { out.textContent = lines.join('\n'); };
@@ -2245,15 +2438,17 @@
       st.textContent = rules ? 'Firebase no permitió registrar la partida: hay que publicar las reglas nuevas (firebase-rules.json).' : 'Hace falta internet al empezar la partida para sumar pesos y puntaje.';
       $('bestResult').textContent = `Tu mejor puntaje: ${player.best}`; $('diagBtn').hidden = false; return;
     }
-    pending = { s: rn.s, h: hp, r: rn.r }; savePending(); renderCoins();
-    countUp(cl, p, n => `+${money(n)}`);
+    const mult = boostMult(rn.s, streak && streak.bx), pp = p * mult;                              // «pesos dobles» de la racha: vale si la partida empezó dentro de los 10 minutos
+    pending = { s: rn.s, h: hp, r: rn.r, m: mult }; savePending(); renderCoins();
+    if (mult === 2) $('finalSub').textContent += '\n⚡ ¡Pesos dobles de tu racha!';
+    countUp(cl, pp, n => `+${money(n)}`);
     st.textContent = 'Guardando tu partida…';
     for (let i = 0; i < 4; i++) {
       const res = await claimRun();
       renderCoins();
       if (state !== 'over') return;
       if (res === 'ok') {
-        cl.textContent = `+${money(p)} · ahora tienes ${money(balance())}`;
+        cl.textContent = `+${money(pp)} · ahora tienes ${money(balance())}`;
         st.className = 'status'; st.textContent = '✅ Partida guardada'; fetchLeader();
         try { const me = await myRank(); if (state === 'over' && me) st.textContent = `✅ Guardado · puesto ${me.rank.toLocaleString('es-CL')}${me.total > 1 ? ' de ' + me.total.toLocaleString('es-CL') : ''}`; } catch (e) {}
         return;
@@ -2327,7 +2522,7 @@
   measure(); layout(); setInitial(); duckLook(); renderMenu();
   leaderBest = player.best; renderScores();
   target.style.visibility = 'hidden';
-  if (AUTH && session) { loadMine(); pullWallet().then(() => { applyCosmetics(); renderMenu(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
+  if (AUTH && session) { loadMine(); pullWallet().then(() => { applyCosmetics(); renderMenu(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => { renderStreak(); autoDaily(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
   fetchLeader();
 })();
 </script>

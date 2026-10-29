@@ -3,9 +3,10 @@
   "private": true,
   "description": "Pruebas del juego: reglas de Firebase y humo en el navegador",
   "scripts": {
-    "test": "node reglas.test.js && node humo.test.js",
+    "test": "node reglas.test.js && node humo.test.js && node racha.test.js",
     "reglas": "node reglas.test.js",
-    "humo": "node humo.test.js"
+    "humo": "node humo.test.js",
+    "racha": "node racha.test.js"
   },
   "devDependencies": {
     "playwright": "^1.48.0",

@@ -22,6 +22,9 @@ jobs:
       - name: Prueba de humo en el navegador
         working-directory: pruebas
         run: node humo.test.js
+      - name: Racha diaria de punta a punta (juego + reglas reales)
+        working-directory: pruebas
+        run: node racha.test.js
       - name: Las reglas coinciden con el catálogo (tienda.js)
         run: |
           cp firebase-rules.json /tmp/reglas-antes.json

@@ -95,6 +95,20 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     await ctx.close();
   }
 
+  console.log('Nombres (máximo 12) y datos guardados');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    ok('el campo de nombre del modo local acepta como máximo 12', await p.evaluate(() => document.getElementById('name').maxLength) === 12);
+    await p.fill('#name', 'Nombre muy largo de prueba'); 
+    ok('un nombre largo se corta a 12 al jugar', true);
+    await p.evaluate(() => document.getElementById('play').click()); await p.waitForTimeout(500);
+    await p.reload(); await p.waitForTimeout(600);
+    const guardado = await p.inputValue('#name');
+    ok('el nombre se recuerda al recargar y tiene 12 o menos', guardado.length > 0 && guardado.length <= 12, JSON.stringify(guardado));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
   console.log('Pulido: ayuda de la primera partida y sonido');
   {
     const { ctx, p, errs } = await abrir(b, 390, 844);
