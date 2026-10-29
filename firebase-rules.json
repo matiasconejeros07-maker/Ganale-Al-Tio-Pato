@@ -23,7 +23,7 @@
           ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 500 && !data.exists() && newData.parent().hasChildren(['s', 'b', 'r', 'e', 'p']) && newData.val() * 450 <= now - newData.parent().child('s').val() + 3000"
         },
         "p": {
-          ".validate": "newData.isNumber() && !data.exists() && newData.parent().hasChildren(['s', 'b', 'r', 'e', 'h']) && newData.val() === newData.parent().child('r').val() * (newData.parent().child('h').val() + 100 * ((newData.parent().child('h').val() - newData.parent().child('h').val() % 100) / 100) * (((newData.parent().child('h').val() - newData.parent().child('h').val() % 100) / 100) - 1) / 2 + ((newData.parent().child('h').val() - newData.parent().child('h').val() % 100) / 100) * (newData.parent().child('h').val() - 100 * ((newData.parent().child('h').val() - newData.parent().child('h').val() % 100) / 100) + 1))"
+          ".validate": "newData.isNumber() && !data.exists() && newData.parent().hasChildren(['s', 'b', 'r', 'e', 'h']) && newData.val() === newData.parent().child('r').val() * (newData.parent().child('h').val() + 100 * ((newData.parent().child('h').val() - newData.parent().child('h').val() % 100) / 100) * (((newData.parent().child('h').val() - newData.parent().child('h').val() % 100) / 100) - 1) / 2 + ((newData.parent().child('h').val() - newData.parent().child('h').val() % 100) / 100) * (newData.parent().child('h').val() - 100 * ((newData.parent().child('h').val() - newData.parent().child('h').val() % 100) / 100) + 1)) * (root.child('streaks').child($uid).child('bx').exists() && newData.parent().child('s').val() >= root.child('streaks').child($uid).child('bx').val() && newData.parent().child('s').val() < root.child('streaks').child($uid).child('bx').val() + 600000 ? 2 : 1)"
         },
         "$other": {
           ".validate": false
@@ -65,13 +65,32 @@
         ".write": "auth != null && (newData.val() === (data.exists() ? data.val() : 0) + 1 && newData.parent().parent().child('scores').child(auth.uid).child('c').val() + '' === $b && (!root.child('scores').child(auth.uid).child('c').exists() || root.child('scores').child(auth.uid).child('c').val() + '' !== $b) || data.exists() && newData.val() === data.val() - 1 && root.child('scores').child(auth.uid).child('c').exists() && root.child('scores').child(auth.uid).child('c').val() + '' === $b && newData.parent().parent().child('scores').child(auth.uid).child('c').exists() && newData.parent().parent().child('scores').child(auth.uid).child('c').val() + '' !== $b)"
       }
     },
+    "streaks": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && newData.exists()",
+        ".validate": "newData.hasChildren(['n', 't'])",
+        "n": {
+          ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && newData.val() <= 100000 && newData.val() === (data.parent().child('n').exists() ? (((now + (-10800000) - (now + (-10800000)) % 86400000) / 86400000) === ((data.parent().child('t').val() + (-10800000) - (data.parent().child('t').val() + (-10800000)) % 86400000) / 86400000) + 1 ? data.parent().child('n').val() + 1 : (((now + (-10800000) - (now + (-10800000)) % 86400000) / 86400000) > ((data.parent().child('t').val() + (-10800000) - (data.parent().child('t').val() + (-10800000)) % 86400000) / 86400000) ? 1 : -1)) : 1) && newData.parent().child('t').val() === now"
+        },
+        "t": {
+          ".validate": "newData.isNumber() && newData.val() === now && newData.parent().child('n').val() === (data.parent().child('n').exists() ? (((now + (-10800000) - (now + (-10800000)) % 86400000) / 86400000) === ((data.parent().child('t').val() + (-10800000) - (data.parent().child('t').val() + (-10800000)) % 86400000) / 86400000) + 1 ? data.parent().child('n').val() + 1 : (((now + (-10800000) - (now + (-10800000)) % 86400000) / 86400000) > ((data.parent().child('t').val() + (-10800000) - (data.parent().child('t').val() + (-10800000)) % 86400000) / 86400000) ? 1 : -1)) : 1)"
+        },
+        "bx": {
+          ".validate": "newData.isNumber() && (newData.val() === data.val() || (newData.val() === now && newData.parent().child('t').val() === now && (newData.parent().child('n').val() - 1) % 7 === 6))"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
     "wallets": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['c', 'sp'])",
         "c": {
-          ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (newData.val() === (data.exists() ? data.val() : 0) || (newData.parent().child('lr').exists() && (!data.parent().child('lr').exists() || newData.parent().child('lr').val() > data.parent().child('lr').val()) && newData.val() - (data.exists() ? data.val() : 0) === newData.parent().parent().parent().child('runs').child($uid).child('p').val()))"
+          ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (newData.val() === (data.exists() ? data.val() : 0) || (newData.parent().child('lr').exists() && (!data.parent().child('lr').exists() || newData.parent().child('lr').val() > data.parent().child('lr').val()) && newData.val() - (data.exists() ? data.val() : 0) === newData.parent().parent().parent().child('runs').child($uid).child('p').val()) || (newData.parent().parent().parent().child('streaks').child($uid).child('t').val() === now && newData.val() - (data.exists() ? data.val() : 0) === ((newData.parent().parent().parent().child('streaks').child($uid).child('n').val() - 1) % 7 === 0 ? 100 : (newData.parent().parent().parent().child('streaks').child($uid).child('n').val() - 1) % 7 === 1 ? 200 : (newData.parent().parent().parent().child('streaks').child($uid).child('n').val() - 1) % 7 === 2 ? 300 : (newData.parent().parent().parent().child('streaks').child($uid).child('n').val() - 1) % 7 === 3 ? 400 : (newData.parent().parent().parent().child('streaks').child($uid).child('n').val() - 1) % 7 === 4 ? 500 : (newData.parent().parent().parent().child('streaks').child($uid).child('n').val() - 1) % 7 === 5 ? 1000 : (newData.parent().parent().parent().child('streaks').child($uid).child('n').val() - 1) % 7 === 6 ? 0 : 0)))"
         },
         "sp": {
           ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && (!data.exists() || newData.val() >= data.val()) && newData.val() <= newData.parent().child('c').val()"

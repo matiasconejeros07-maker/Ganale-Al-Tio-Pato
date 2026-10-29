@@ -88,7 +88,7 @@ Revisión hecha con las skills de seguridad y calidad de jeffallan (escaneo est�
 
 - **No hay claves secretas en el código.** La «clave de API web» de `config.js` es pública por diseño (la protegen las reglas); no hay librerías ni scripts de terceros (nada de CDN), y todo texto que viene de otros jugadores se muestra con `textContent` (nunca como HTML).
 - **Política de contenido (CSP) dentro de `index.html`** (GitHub Pages no deja poner cabeceras propias): solo carga lo del mismo sitio y solo habla con Firebase (`*.firebaseio.com`, `identitytoolkit`, `securetoken`). Si cambias de dominio de base de datos, ajusta `connect-src`. Un pequeño script impide que otro sitio meta el juego en un marco (clickjacking). En Firebase Hosting `firebase.json` ya manda las cabeceras reales.
-- **Nombres del marcador:** se les quitan caracteres de control, invisibles y de dirección de texto (alguien podía disfrazar su nombre escribiendo directo en la base de datos).
+- **Nombres:** máximo **12 caracteres** al crear la cuenta (las cuentas antiguas de hasta 16 siguen entrando con su nombre completo y se ven cortadas a 12). Se les quitan caracteres de control, invisibles y de dirección de texto (alguien podía disfrazar su nombre escribiendo directo en la base de datos).
 - **Contraseña:** al crear la cuenta se piden 8 caracteres o más (los nombres del marcador son públicos, y con ellos el nombre de usuario).
 - **Service worker:** nunca guarda respuestas con error, espera como máximo 4 s a internet antes de usar la copia guardada y al instalarse ignora el caché del navegador (GitHub Pages guarda los archivos 10 minutos).
 - **Lo que debes hacer tú en la consola de Google/Firebase** (yo no puedo entrar a tus cuentas):
@@ -98,7 +98,7 @@ Revisión hecha con las skills de seguridad y calidad de jeffallan (escaneo est�
   4. *App Check* (reCAPTCHA Enterprise/Play Integrity/App Attest) cuando lo subas a las tiendas: frena a quien llama a Firebase desde fuera del juego.
 - **Límite que no se puede cerrar sin un servidor:** un programa que juegue perfecto (bot) puede llegar a los 500 rebotes; las reglas solo garantizan que no se pueda llegar más rápido que 1 rebote cada 0,45 s y que los pesos coincidan con la partida.
 
-**Pruebas** (carpeta `pruebas/`): `cd pruebas && npm install && npx playwright install chromium && npm test`. `reglas.test.js` prueba las reglas de Firebase con el simulador oficial (199 casos) y `humo.test.js` abre el juego en Chromium y comprueba que cargue sin errores, que la CSP no bloquee nada, que el campo se adapte a cada forma de celular, el aviso de ventana chica, el multitáctil, el teclado y que los 8 personajes carguen. `.github/workflows/pruebas.yml` las corre solas en cada cambio.
+**Pruebas** (carpeta `pruebas/`): `cd pruebas && npm install && npx playwright install chromium && npm test`. `reglas.test.js` prueba las reglas de Firebase con el simulador oficial (242 casos, con la racha y los pesos dobles), `racha.test.js` prueba la racha de punta a punta (el juego real contra un Firebase de mentira con las reglas reales) y `humo.test.js` abre el juego en Chromium y comprueba que cargue sin errores, que la CSP no bloquee nada, que el campo se adapte a cada forma de celular, el aviso de ventana chica, el multitáctil, el teclado y que los 8 personajes carguen. `.github/workflows/pruebas.yml` las corre solas en cada cambio.
 
 ## Qué hace el marcador
 
@@ -127,6 +127,25 @@ El Tío Pato y la Tía Patita (`devil: true` en `tienda.js`) cambian de ángel a
 `python3 herramientas/ajustar-avatares.py` calcula esos valores a partir del recuadro de la cara de cada skin (editable al principio del archivo) y `python3 herramientas/hoja-avatares.py hoja.png` dibuja cómo quedan todos los avatares para revisarlos.
 
 Para agregar otro personaje: prepara sus dos imágenes, añade una entrada en `ch` dentro de `tienda.js` (`stat`, `stat2`, `asp` = alto/ancho, `av`, `av2`), vuelve a generar las reglas y agrega las imágenes a la lista de `sw.js`.
+
+## Racha diaria (premios por volver cada día)
+
+Con cuenta, al entrar cada día aparece la **Racha diaria** (también desde el chip 🔥 del inicio, con un punto rojo cuando hay premio):
+
+| Día | Premio |
+|---|---|
+| 1 | $100 |
+| 2 | $200 |
+| 3 | $300 |
+| 4 | $400 |
+| 5 | $500 |
+| 6 | $1.000 |
+| 7 | ⚡ **Pesos dobles durante 10 minutos** (las partidas que EMPIEZAN en ese lapso pagan el doble de pesos; los rebotes del marcador no se duplican) |
+
+- Si pasas un día entero sin entrar, la racha vuelve al día 1. Después del día 7 el ciclo empieza otra vez (día 8 = premio del día 1) y cada séptimo día vuelven los pesos dobles.
+- **El día cambia a medianoche de Chile en horario de verano** (`huso: -3` en `eco.racha` de `tienda.js`; en invierno es una hora antes). Los premios y el tiempo de los pesos dobles también están en `eco.racha`; si los cambias, ejecuta `node herramientas/generar-reglas.js` y vuelve a pegar `firebase-rules.json`.
+- **Lo valida el servidor** (reglas de Firebase, nodo `streaks/<uid>`): el día y la hora los pone Firebase, la racha solo avanza al valor exacto que toca, el premio en pesos tiene que coincidir con la tabla, la racha no se puede borrar para cobrar de nuevo, y el pago doble de una partida solo vale si empezó dentro de los 10 minutos del último día 7. Cambiar el reloj del celular no sirve: si no coincide, Firebase lo rechaza.
+- **Hay que publicar las reglas nuevas** (`firebase-rules.json`). Mientras no estén publicadas, el juego funciona igual pero la racha no aparece.
 
 ## Interfaz y accesibilidad
 
