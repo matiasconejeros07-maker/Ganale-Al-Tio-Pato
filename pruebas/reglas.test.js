@@ -345,8 +345,8 @@ console.log('Racha diaria');
 console.log('Foto de perfil (emblema)');
 {
   const as = (uid, data, o) => db(data, T0, uid).update('/', o);
-  const OKS = ['e41A33GGG', 'e41A33GGGhKWG', 'e41A33GGGhKWGiqQh', 'e0000' + '0GGG'];
-  const MALOS = ['', 'e', 'e41A3', 'e41A33GG', 'e41A33GGGx', 'x41A33GGG', 'i07c03', 'e41A33GGGhKWGiqQhAAAA', 'e41A33GGG<script>', 'e41A33GG G'];
+  const OKS = ['e41A33GGG', 'e41A33GGGhKWG', 'e41A33GGGhKWGiqQh', 'e41A33GGGhKWGiqQhAAAA', 'e41A3' + '3GGG'.repeat(5), 'e0000' + '0GGG'];            // de 1 a 5 símbolos
+  const MALOS = ['', 'e', 'e41A3', 'e41A33GG', 'e41A33GGGx', 'x41A33GGG', 'i07c03', 'e41A3' + '3GGG'.repeat(6), 'e41A33GGG<script>', 'e41A33GG G'];
   const wal = { wallets: { u1: { c: 100, sp: 0 } } };
   for (const c of OKS) ok('emblema válido en la cartera: ' + c, as('u1', wal, { 'wallets/u1/av': c }), true);
   for (const c of MALOS) ok('emblema inválido en la cartera: ' + JSON.stringify(c), as('u1', wal, { 'wallets/u1/av': c }), false);

@@ -12,7 +12,6 @@ const st = { rulesFile: null, db: {}, users: {}, log: [], denied: [], failRoot: 
 const authOf = tok => { const [, uid, email] = (tok || '').split('|'); return uid ? { uid, token: { email } } : null; };
 const sub = (obj, parts) => parts.reduce((o, k) => (o == null ? null : o[k] === undefined ? null : o[k]), obj);
 async function mocks(ctx) {
-  const rl = rules();
   await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: st.cfg }));
   if (st.tienda) await ctx.route('**/tienda.js', r => r.fulfill({ contentType: 'text/javascript', body: st.tienda }));
   if (st.htmlPatch) await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: st.htmlPatch(fs.readFileSync(JUEGO + 'index.html', 'utf8')) }));
@@ -35,7 +34,7 @@ async function mocks(ctx) {
     if (st.down) return r.abort();
     const auth = authOf(u.searchParams.get('auth')); const path = '/' + u.pathname.replace(/^\/|\.json$/g, '');
     const parts = path.split('/').filter(Boolean); const m = req.method();
-    const db = () => targaryen.database(rl, st.db).as(auth);
+    const db = () => targaryen.database(rules(), st.db).as(auth);
     if (m === 'GET') {
       const rd = db().read(path === '/' ? '/' : path);
       if (!rd.allowed) { st.denied.push('GET ' + path); return J(r, { error: 'Permission denied' }, 401); }

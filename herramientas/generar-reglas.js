@@ -18,7 +18,7 @@ const tExp = h => `((${h} - ${h} % ${E}) / ${E})`;
 const pesosExp = h => `(${h} + ${E} * ${tExp(h)} * (${tExp(h)} - 1) / 2 + ${tExp(h)} * (${h} - ${E} * ${tExp(h)} + 1))`;
 
 const RUN = "newData.parent().parent().parent().child('runs').child($uid)";
-const AVATAR = "newData.isString() && newData.val().matches(/^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,3}$/)";       // foto de perfil (emblema): 'e' + 4 de forma/colores/diseño + de 1 a 3 símbolos de 4 caracteres
+const AVATAR = "newData.isString() && newData.val().matches(/^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,5}$/)";       // foto de perfil (emblema): 'e' + 4 de forma/colores/diseño + de 1 a 5 símbolos de 4 caracteres
 
 
 // ---- racha diaria ----

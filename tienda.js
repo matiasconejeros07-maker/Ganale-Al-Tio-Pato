@@ -7,8 +7,8 @@ window.TIENDA = {
     // Racha diaria: entrar cada día da premios. dias = pesos del día 1 al 7 (el 7 no da pesos: da «pesos dobles» durante dobleMs) · el día cambia a medianoche de Chile en horario de verano (huso -3)
     racha: { dias: [100, 200, 300, 400, 500, 1000, 0], dobleMs: 600000, huso: -3 } },
 
-  // Foto de perfil = un emblema que cada jugador arma en el editor: forma, colores de fondo y borde, diseño y hasta 3 símbolos puestos donde quiera.
-  // Se guarda en 17 caracteres como máximo («e» + forma + fondo + borde + diseño + 4 por símbolo), así pesa casi nada en la base de datos y se dibuja con CSS (sin imágenes).
+  // Foto de perfil = un emblema que cada jugador arma en el editor: forma, colores de fondo y borde, diseño y hasta 5 símbolos puestos donde quiera.
+  // Se guarda en 25 caracteres como máximo («e» + forma + fondo + borde + diseño + 4 por símbolo), así pesa casi nada en la base de datos y se dibuja con CSS (sin imágenes).
   // emojis = los símbolos que se pueden elegir (el 0 es la inicial del nombre; hasta 63) · paleta = [color claro, color oscuro, color de la letra]; hasta 64 colores.
   avatar: {
     emojis: ['🦆', '😎', '👑', '💰', '🪙', '💎', '🔥', '⚡', '🚀', '🏆', '🎮', '🎩', '🌈', '🍀', '🦁', '🐸', '🐼', '🦊', '👻', '🌙', '⭐', '❤️', '💀', '👽',

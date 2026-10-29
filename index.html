@@ -241,6 +241,7 @@
   .tog i { position: absolute; top: 3px; right: 3px; width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fffaf0, #eadfc8); box-shadow: 0 3px 7px rgba(0, 0, 0, .4); transition: transform .2s cubic-bezier(.3, 1.4, .5, 1); }
   .tog.off { background: linear-gradient(#bdb9a2, #a29e86); padding: 0 16px 0 0; text-align: right; }
   .tog.off i { transform: translateX(-54px); }
+  .setl small { display: block; margin-top: 2px; font-size: 12px; font-weight: 700; line-height: 1.25; color: #6b6840; }
   .btn.mini { margin: 0; padding: 10px 20px; font-size: 16px; }
   .btn.out { width: 100%; margin-top: 20px; background: transparent; color: #c0392b; border: 3px solid #c0392b; font-size: 17px; padding: 13px 20px; }
   .btn.out[hidden] { display: none; }
@@ -944,7 +945,7 @@
     <div class="sethead"><h2 id="setTitle">Ajustes</h2></div>
     <button class="setx" id="setClose" type="button" aria-label="Cerrar">✕</button>
     <div class="setbody">
-      <div class="setrow"><span class="uemb" id="setEmb"></span><span class="setl">Mi emblema</span><button class="btn mini" id="openEmblem" type="button">Editar</button></div>
+      <div class="setrow"><span class="uemb" id="setEmb"></span><span class="setl">Mi emblema<small id="avSt"></small></span><button class="btn mini" id="openEmblem" type="button">Editar</button></div>
       <div class="setrow"><span class="seti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.2 5.8a8.6 8.6 0 0 1 0 12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="setl" id="lblSound">Sonido</span><button class="tog" id="togSound" type="button" role="switch" aria-checked="true" aria-labelledby="lblSound"><span class="tt">SÍ</span><i></i></button></div>
       <div class="setrow"><span class="seti"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="18" rx="2.2"/><path d="M4.5 8v8M2 10.5v3M19.5 8v8M22 10.5v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="setl" id="lblVib">Vibración</span><button class="tog" id="togVib" type="button" role="switch" aria-checked="true" aria-labelledby="lblVib"><span class="tt">SÍ</span><i></i></button></div>
       <button class="btn out" id="logout" type="button" hidden>Cerrar sesión</button>
@@ -1088,7 +1089,7 @@
   const clip = (s, max) => { const t = s.slice(0, max); return /[\ud800-\udbff]$/.test(t) ? t.slice(0, -1) : t; };           // sin partir un emoji por la mitad
   const cleanName = (s, max = NAME_MAX) => clip(stripBad(s).replace(/\s+/g, ' ').trim(), max).trim();
   let player = { id: '', name: '', best: 0, dirty: false };       // best: mayor cantidad de rebotes
-  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); player.id = String(o.id || ''); player.name = cleanName(o.name); player.best = Math.max(0, +o.best || 0); player.dirty = !!o.dirty; player.av = typeof o.av === 'string' ? o.av : ''; } catch (e) {}
+  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); player.id = String(o.id || ''); player.name = cleanName(o.name); player.best = Math.max(0, +o.best || 0); player.dirty = !!o.dirty; player.av = typeof o.av === 'string' ? o.av : ''; player.avDirty = !!o.avDirty; } catch (e) {}
   function savePlayer() { try { localStorage.setItem(STORE_KEY, JSON.stringify(player)); } catch (e) {} }
 
   /* ---------- cuenta (Firebase Authentication por REST): la sesión queda guardada en el teléfono ---------- */
@@ -1696,8 +1697,8 @@
   function setEnd(on) { document.body.classList.toggle('end', on); if (on) setTheme('#8e2bea'); }
   function bump(el) { el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 140); }
   /* ---------- foto de perfil: emblema 100% personalizable ----------
-     Un emblema = forma + color de fondo + color de borde + diseño + hasta 3 símbolos (emoji o la inicial) puestos, girados y agrandados como quiera el jugador.
-     Se guarda como texto de 9 a 17 caracteres («e» + 4 + 4 por símbolo), se dibuja con CSS (sin imágenes) y se guarda en caché: casi no gasta batería, datos ni base de datos. */
+     Un emblema = forma + color de fondo + color de borde + diseño + hasta 5 símbolos (emoji o la inicial) puestos, girados y agrandados como quiera el jugador.
+     Se guarda como texto de 9 a 25 caracteres («e» + 4 + 4 por símbolo), se dibuja con CSS (sin imágenes) y se guarda en caché: casi no gasta batería, datos ni base de datos. */
   const AVT = (window.TIENDA && window.TIENDA.avatar) || { emojis: ['🦆'], paleta: [['#4a4a4a', '#151515', '#fff']] };
   const B64 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
   const SHAPES = [['Círculo', 'circle(50% at 50% 50%)'], ['Cuadrado', 'inset(0 round 30%)'], ['Hexágono', 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)'],
@@ -1707,13 +1708,14 @@
     ['Rayos', 'repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.24) 0 15deg, transparent 15deg 30deg)'], ['Mitad', 'linear-gradient(135deg, transparent 50%, rgba(0,0,0,.28) 50%)'],
     ['Cuadros', 'conic-gradient(rgba(0,0,0,.2) 25%, transparent 0 50%, rgba(0,0,0,.2) 0 75%, transparent 0) 0 0 / 30% 30%']];
   const ROT = [0, 15, 30, 45, -45, -30, -15, 90], SZ = [.24, .38, .54, .72];
+  const MAX_SYM = 5;                                                             // símbolos por emblema
   const DEF_AV = { shape: 0, c1: 0, c2: 0, pat: 0, layers: [{ sym: 0, x: 16, y: 16, size: 2, rot: 0 }] };
   const avCache = new Map();
   function avParse(code) {                                                       // texto → emblema (o null si no es válido)
     if (typeof code !== 'string') return null;
     if (avCache.has(code)) return avCache.get(code);
     let out = null;
-    if (/^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,3}$/.test(code)) {
+    if (/^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,5}$/.test(code)) {
       const v = [...code.slice(1)].map(ch => B64.indexOf(ch)), a = { shape: v[0], c1: v[1], c2: v[2], pat: v[3], layers: [] };
       for (let k = 4; k + 3 < v.length; k += 4) a.layers.push({ sym: v[k], x: v[k + 1], y: v[k + 2], size: v[k + 3] >> 3, rot: v[k + 3] & 7 });
       if (a.shape < SHAPES.length && a.c1 < AVT.paleta.length && a.c2 < AVT.paleta.length && a.pat < PATTERNS.length && a.layers.every(l => l.sym <= AVT.emojis.length && l.x < 32 && l.y < 32)) out = a;
@@ -1753,20 +1755,32 @@
     mount($('meEmb'), emblem(a, letter, 44)); mount($('userEmb'), emblem(a, letter, 30)); mount($('setEmb'), emblem(a, letter, 40));
     paintBotAvatar();
   }
-  // se guarda en tu cuenta (para tus otros dispositivos) y, si ya tienes puntaje, en el marcador (para que te vean los demás)
-  let avT = null;
+  // Se guarda en tu cuenta (para tus otros dispositivos) y, si ya tienes puntaje, en tu fila del marcador (para que te vean los demás).
+  // Si no se pudo (sin internet, o Firebase todavía no tiene las reglas nuevas) queda «pendiente» y se reintenta solo la próxima vez que abras el juego.
+  let avT = null, avState = '';                                                  // avState: '' | 'sync' | 'ok' | 'rules' | 'net'
+  function paintAvState() {                                                      // lo que dice Ajustes sobre si los demás ven tu emblema
+    const el = $('avSt'); if (!el) return;
+    el.textContent = !avParse(player.av) ? 'Elige cómo quieres que te vean' : !(AUTH && session) ? 'Solo se ve en este dispositivo'
+      : avState === 'rules' ? '⚠️ Firebase no lo dejó guardar: faltan publicar las reglas nuevas' : avState === 'net' ? '⏳ Sin conexión: se guardará solo al volver internet'
+      : (player.avDirty || avState === 'sync') ? '⏳ Guardando en tu cuenta…' : player.best <= 0 ? '✅ En tu cuenta · saldrá en el marcador cuando tengas puntaje' : '✅ Todos lo ven en el marcador';
+  }
   function saveAvatarCloud() {
     clearTimeout(avT);
-    if (!AUTH || !session) return;
+    if (!AUTH || !session || !avParse(player.av)) { paintAvState(); return; }
+    avState = 'sync'; paintAvState();
     avT = setTimeout(async () => {
       try {
         const code = player.av, uid = session.uid, tok = encodeURIComponent(await idToken()), url = `${DB}/.json?auth=${tok}&print=silent`;
-        if (!avParse(code)) return;
         const put = body => http(url, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+        const bad = r => { avState = r.status === 401 || r.status === 403 ? 'rules' : 'net'; paintAvState(); };
         const r = await put(walletExists ? { [`wallets/${uid}/av`]: code } : { [`wallets/${uid}/av`]: code, [`wallets/${uid}/c`]: 0, [`wallets/${uid}/sp`]: 0 });       // una cartera nueva necesita c y sp
-        if (r.ok) walletExists = true;
-        if (r.ok && player.best > 0) await put({ [`scores/${uid}/a`]: code });
-      } catch (e) {}
+        if (!r.ok) return bad(r);
+        walletExists = true;
+        if (player.best > 0) { const r2 = await put({ [`scores/${uid}/a`]: code }); if (!r2.ok) return bad(r2); }
+        if (player.av === code) { player.avDirty = false; savePlayer(); }
+        avState = 'ok';
+      } catch (e) { avState = 'net'; }
+      paintAvState();
     }, 700);
   }
   // ----- editor -----
@@ -1787,7 +1801,7 @@
     if (only === 'stage') return;
     const lay = $('edLayers'); lay.textContent = '';
     ed.layers.forEach((l, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'edchip' + (i === edSel ? ' on' : ''); b.textContent = l.sym === 0 ? letter : AVT.emojis[l.sym - 1]; b.setAttribute('aria-label', 'Símbolo ' + (i + 1)); b.onclick = () => { edSel = i; edRender(); }; lay.appendChild(b); });
-    if (ed.layers.length < 3) { const b = document.createElement('button'); b.type = 'button'; b.className = 'edchip'; b.textContent = '＋'; b.setAttribute('aria-label', 'Agregar un símbolo'); b.onclick = () => { ed.layers.push({ sym: 1 + rnd2(AVT.emojis.length), x: 16, y: 16, size: 1, rot: 0 }); edSel = ed.layers.length - 1; edRender(); }; lay.appendChild(b); }
+    if (ed.layers.length < MAX_SYM) { const b = document.createElement('button'); b.type = 'button'; b.className = 'edchip'; b.textContent = '＋'; b.setAttribute('aria-label', 'Agregar un símbolo'); b.onclick = () => { ed.layers.push({ sym: 1 + rnd2(AVT.emojis.length), x: 16, y: 16, size: 1, rot: 0 }); edSel = ed.layers.length - 1; edRender(); }; lay.appendChild(b); }
     $('edDel').disabled = ed.layers.length < 2; $('edSmaller').disabled = L.size <= 0; $('edBigger').disabled = L.size >= 3;
     $('edBack').disabled = ed.layers.length < 2 || edSel === 0; $('edFront').disabled = ed.layers.length < 2 || edSel === ed.layers.length - 1;     // el orden de los símbolos es el orden de las capas: el primero queda al fondo
     const mark = (box, i) => [...box.children].forEach((b, k) => b.classList.toggle('on', k === i));
@@ -1808,7 +1822,7 @@
   }
   function closeEmblem() { $('emblem').classList.remove('show'); if (edFrom && edFrom.focus) { try { edFrom.focus(); } catch (e) {} } edFrom = null; }
   function saveEmblem() {
-    player.av = avEncode(ed); savePlayer(); paintAvatars(); saveAvatarCloud(); closeEmblem();
+    player.av = avEncode(ed); player.avDirty = true; savePlayer(); paintAvatars(); saveAvatarCloud(); closeEmblem();
   }
   // mover el símbolo: tocar o arrastrar sobre la vista previa (libre, en una cuadrícula de 32 × 32)
   (function () {
@@ -2163,7 +2177,8 @@
       const r = await http(await wurl());
       if (!r.ok) return false;
       const v = await r.json(); walletExists = !!v;
-      if (v) { wallet.c = +v.c || 0; wallet.sp = +v.sp || 0; wallet.lr = +v.lr || 0; wallet.own = v.own || {}; if (v.eq) wallet.eq = { ...DEF, ...v.eq }; if (avParse(v.av) && v.av !== player.av) { player.av = v.av; savePlayer(); paintAvatars(); } }
+      if (v) { wallet.c = +v.c || 0; wallet.sp = +v.sp || 0; wallet.lr = +v.lr || 0; wallet.own = v.own || {}; if (v.eq) wallet.eq = { ...DEF, ...v.eq }; if (avParse(v.av) && v.av !== player.av && !player.avDirty) { player.av = v.av; savePlayer(); paintAvatars(); } }
+      if (player.avDirty && avParse(player.av)) saveAvatarCloud();                // un emblema que no llegó a subirse se reintenta aquí
       for (const k in DEF) if (!itemOf(k, wallet.eq[k]) || !owns(k, wallet.eq[k])) wallet.eq[k] = DEF[k];
       saveWallet(); return true;
     } catch (e) { return false; }
@@ -2561,6 +2576,7 @@
       const v = r.ok ? await r.json() : null;
       if (v && typeof v.s === 'number' && v.s > player.best) { player.best = v.s; savePlayer(); }
       if (v && typeof v.n === 'string' && cleanName(v.n)) { player.name = cleanName(v.n); savePlayer(); }
+      if (v && avParse(player.av) && v.a !== player.av && !player.avDirty) { player.avDirty = true; savePlayer(); saveAvatarCloud(); }       // tu fila del marcador no tiene tu emblema (por ejemplo, el récord se hizo antes): se sube
     } catch (e) {}
     leaderBest = Math.max(leaderBest, player.best); renderMenu(); renderScores(); setInitial(); syncCount();
   }
@@ -2695,7 +2711,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v36';
+  const BUILD = 'v37';
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
     out.hidden = false; const show = () => { out.textContent = lines.join('\n'); };
@@ -2806,7 +2822,7 @@
   $('soundBtn').addEventListener('click', toggleSound); $('togSound').addEventListener('click', toggleSound); $('togVib').addEventListener('click', toggleVib); paintSound();
   let setFrom = null;
   function openSettings() {
-    setFrom = document.activeElement; paintSound();
+    setFrom = document.activeElement; paintSound(); paintAvState();
     $('setVer').textContent = 'Versión ' + BUILD + (AUTH && session ? ' · ' + (cleanName(player.name || session.name) || '') : '');
     $('settings').classList.add('show'); $('setClose').focus();
   }
