@@ -6,30 +6,33 @@
 // `personajes[id]`: frases propias de cada skin (se suman a las comunes). Los que no se transforman en diablo (conejos, Simi, Tíos Patitos) nunca hablan del infierno.
 // hitos: frases que salen justo en ese rebote (si hay varias, se elige una al azar).
 // Se puede escribir: %j = tu nombre · %h = tus rebotes · %b = el récord (solo sale si ya hay uno) · %n = el nombre del personaje · %D = EL DIABLO / LA DIABLA / LOS DIABLOS.
+// Y la pelota con la que juegas (moneda, billete, lingote o diamante): {la} = la moneda / el billete / el lingote de oro / el diamante · {esa} · {esta} · {una} · {nom} = moneda / billete… · {noms} = monedas / billetes…
+// Con mayúscula inicial ({La}) o toda en mayúsculas ({LA}) el resultado se escribe igual.
+// {pago} = lo que vale ahora cada rebote en pesos (tu pelota × las «Monedas dobles»).
 window.DIALOGOS = {
   comun: {
     amable: [
       '¡Qué bien lo haces, amigo!', '¡Muy bien, campeón!', '¡Tú puedes, amigo!', '¡Wow, qué buenos reflejos!', '¡Sigue así, crack!', '¡Eres genial!',
-      '¡Qué divertido, cuac!', '¡Esa moneda va con ganas!', '¡Bien ahí, %j!', '¡Eso es, mueve esa barra!', '¡Qué buen rebote!', '¡Vas increíble!',
+      '¡Qué divertido, cuac!', '¡{Esa} va con ganas!', '¡Bien ahí, %j!', '¡Eso es, mueve esa barra!', '¡Qué buen rebote!', '¡Vas increíble!',
       'Ya van %h rebotes, ¡qué bacán!', '¡Nada mal para empezar!', '¡Te la estás ganando, %j!', '¡Cuac cuac! ¡Qué manos tienes!', '¡Esa barra obedece como un reloj!',
-      '¡Uf, qué puntería!', '¡Dale, dale, que vas bien!', '¡Qué lindo es jugar contigo!', '¡Eso, así se hace, po!', '¡Ni se te cae la moneda, qué crack!',
+      '¡Uf, qué puntería!', '¡Dale, dale, que vas bien!', '¡Qué lindo es jugar contigo!', '¡Eso, así se hace, po!', '¡Ni se te cae {la}, qué crack!',
       '¡Sigue, sigue, que esto recién parte!', '¡Estás en racha, %j!', '¡Cada rebote cuenta, amigo!', '¡Pura buena onda y puro rebote!', 'Mmm, juegas mejor de lo que pensaba…',
       '¡Tus pesos van sonando, cling cling!', '¡Casi parece que has practicado!', '¡Aplausos para %j!'
     ],
     reto: [
       '¿Seguro que puedes con esto?', 'Veamos cuánto aguantas…', '¿Eso es todo lo que tienes?', 'No te confíes tanto, amigo', 'Ahora sí empieza lo bueno', 'Se acabó lo amable…',
       'Ya van %h rebotes… ¿y ahora qué?', 'Tu barra tiembla, ¿la ves?', '¿Te sudan las manos, %j?', 'Esto recién se pone difícil', 'Mira cómo se achica tu barra…',
-      '¿Y si juegas con los ojos cerrados? Seguro te va igual', 'Qué rápido va la moneda, ¿no?', 'Todavía no has visto nada', 'A ver si aguantas lo que viene',
+      '¿Y si juegas con los ojos cerrados? Seguro te va igual', 'Qué rápido va {la}, ¿no?', 'Todavía no has visto nada', 'A ver si aguantas lo que viene',
       '¿Seguro que quieres seguir?', 'Apuesto a que no llegas a 100', 'El récord es %b rebotes. ¿Te alcanza?', 'Para el récord de %b falta bastante, ¿no?', 'Ahí viene otra… ¿la alcanzas?',
-      'Se te están acabando las ideas', 'No parpadees, que se te va la moneda', 'Cada rebote te cuesta más, ¿lo notas?', 'Un descuido y se acabó, %j', 'Hasta aquí fue fácil, ¿cachái?',
+      'Se te están acabando las ideas', 'No parpadees, que se te va {la}', 'Cada rebote te cuesta más, ¿lo notas?', 'Un descuido y se acabó, %j', 'Hasta aquí fue fácil, ¿cachái?',
       'Ese rebote fue de pura suerte, lo sé', '¿Dónde quedó tu sonrisa?', 'Te veo pensando demasiado…', 'Los buenos no se ponen nerviosos. ¿Y tú?', 'Falta mucho para ganar, %j',
-      'Vamos a ver de qué estás hecho', '¡Ja! Eso fue apenas el calentamiento', 'Respira hondo… que esto se acelera', 'Tus dedos van más lento que la moneda',
-      'Mira que ahora viene lo difícil', 'Los pesos hay que ganárselos, %j', 'Cuidado, que la barra no se cuida sola', '¡Ánimo! Lo vas a necesitar', '¿Y si la moneda se te escapa? Pásala mal, po'
+      'Vamos a ver de qué estás hecho', '¡Ja! Eso fue apenas el calentamiento', 'Respira hondo… que esto se acelera', 'Tus dedos van más lento que {la}',
+      'Mira que ahora viene lo difícil', 'Los pesos hay que ganárselos, %j', 'Cuidado, que la barra no se cuida sola', '¡Ánimo! Lo vas a necesitar', '¿Y si {la} se te escapa justo ahora?'
     ],
     enojo: [
       '¡DEJA DE REBOTAR ESO!', '¡Basta de rebotes, %j!', '¡Esto ya no tiene gracia!', '¡Qué terquedad la tuya!', '¿Quién te enseñó a jugar así?', '¡Se acabó la paciencia!',
-      '¡CUAC! ¡CUAC! ¡CUAC!', '¡No puede ser! ¡Otra vez!', '¡Ya van %h y no te caes!', '¡Suelta esa barra!', '¡Esta moneda no se rinde!', '¡Estás abusando de la suerte!',
-      '¿Cuándo vas a fallar, %j?', '¡ESTO ES UN ABUSO!', '¡Haz una pausa, por favor!', '¡Ya te pasaste, %j!', '¡Cada rebote es una ofensa!', '¡Alguien que pare esta moneda!',
+      '¡CUAC! ¡CUAC! ¡CUAC!', '¡No puede ser! ¡Otra vez!', '¡Ya van %h y no te caes!', '¡Suelta esa barra!', '¡{Esta} no se rinde!', '¡Estás abusando de la suerte!',
+      '¿Cuándo vas a fallar, %j?', '¡ESTO ES UN ABUSO!', '¡Haz una pausa, por favor!', '¡Ya te pasaste, %j!', '¡Cada rebote es una ofensa!', '¡Alguien que pare {esta}!',
       '¡Esa barra está haciendo trampa!', '¡Qué rabia, qué rabia!', '¡Increíble! ¡Sigues rebotando!', '¡Esto es una falta de respeto!', '¡Dime que ya te cansaste!',
       'Sube la presión con cada rebote…', '¡Esto va a terminar mal, %j!', '¡Vas a lamentar cada rebote!', '¡Pierde de una vez!', '¡Ya no es gracioso!',
       '¡No hay quien se crea esta racha!', '¡Hasta aquí llegaste… o eso quisiera!'
@@ -37,7 +40,7 @@ window.DIALOGOS = {
     furia: [
       '¡NO PUEDE SEGUIR ASÍ!', '¡ESTO NO TIENE SENTIDO!', '¡CUAC! ¡CUAC! ¡CUAAAC!', '¡YA VAN %h REBOTES! ¡NO ES POSIBLE!', '¡TE ESTÁS PASANDO, %j!', '¡PARA, PARA, PARA!',
       '¡NO TE VAS A SALIR CON LA TUYA!', '¡CADA REBOTE DUELE!', '¡FALLA DE UNA VEZ!', '¡NO SE PUEDE CREER!', '¡AAARGH! ¡OTRO REBOTE MÁS!', '¡DEJA ESA BARRA QUIETA!',
-      '¡Vas a quemar la barra de tanto rebotar!', '¡ESTO ES UNA LOCURA!', '¡QUE SE CAIGA YA ESA MONEDA!', '¡HASTA CUÁNDO, %j, HASTA CUÁNDO!', '¡ES IMPOSIBLE! ¡IMPOSIBLE!',
+      '¡Vas a quemar la barra de tanto rebotar!', '¡ESTO ES UNA LOCURA!', '¡QUE SE CAIGA YA {ESA}!', '¡HASTA CUÁNDO, %j, HASTA CUÁNDO!', '¡ES IMPOSIBLE! ¡IMPOSIBLE!',
       '¡CÓMO PUEDES SEGUIR AHÍ!', '¡CADA PUNTO ES UNA INJUSTICIA!', '¡DEJA ALGO PARA LOS DEMÁS!', '¡QUÉ RACHA MÁS INSOPORTABLE!', '¡ESTO TIENE QUE PARAR YA!',
       '¡SE ACABÓ EL JUEGO… PARA TI, OJALÁ!', '¡VAS POR %h Y NO TE CANSAS!', '¡TU BARRA ES DEMASIADO BUENA!', '¡NO HAY QUIEN TE PARE, %j!'
     ],
@@ -51,11 +54,39 @@ window.DIALOGOS = {
     }
   },
 
+  // Frases según la pelota con la que juegas (se suman a las comunes): moneda, billete, lingote o diamante.
+  pelota: {
+    moneda: {
+      amable: ['¡Cómo gira {la}, qué linda!', 'Cling, cling… ¡qué sonido más rico!', '¡Qué brillo tiene esa monedita!', 'Gira que gira, tu monedita va feliz', '¡Esa monedita sabe rebotar!', '¡Cara y sello, pero siempre en tu barra!'],
+      reto: ['¿Seguro que {la} no se te cae de la barra?', 'Una monedita tan chica… ¿y se te escapa?', '{La} gira y gira… ¿y tú ahí parado?', 'Cara o sello: ¡yo apuesto a que pierdes!', 'Vale poco, pero no la dejes caer', '¿Y si {la} cae de canto? Sería un drama'],
+      enojo: ['¡Qué monedita más terca!', '¡Cara, sello… y siempre cae en tu barra!', '¡Esa moneda no se cae ni a la fuerza!', '¡Monedita, cae de una vez!', '¡Esta moneda tiene suerte de principiante!', '¡No hay moneda que aguante tanto rebote!'],
+      furia: ['¡CARA, SELLO, LO QUE SEA… PERO QUE SE CAIGA!', '¡ESA MONEDITA NO SE CAE NI A PATADAS!', '¡NI UNA MONEDA RESISTE TANTO!', '¡MONEDITA TRAIDORA, CAE YA!']
+    },
+    billete: {
+      amable: ['¡Cómo revolotea {la}, parece un pajarito!', '¡Qué lindo se ve volando ese billete!', 'Ese billete aletea como si tuviera alas', '¡Billete va, billete viene!', '¡Cuidado, que ese billete se arruga de la emoción!', '¡Qué elegante vuela {la}!'],
+      reto: ['Un billete vuela distinto… ¿lo alcanzas?', 'Ojo, que {la} revolotea y se te escapa', 'Con un billete tan liviano, cualquier brisa lo desvía', '¿Seguro que puedes atrapar {una} que revolotea?', 'No dejes que el billete toque el suelo… ¡se ensucia!', 'Un billete en el aire es un billete en peligro'],
+      enojo: ['¡Este billete no se cae ni con viento!', '¡Qué billete más terco!', '¡Deja de revolotear, billete!', '¡Ese billete tiene más vidas que un gato!', '¡No hay billete que aguante tanto aleteo!', '¡Este billete está hecho de acero!'],
+      furia: ['¡BILLETE, CAE DE UNA VEZ!', '¡NI UN BILLETE ASÍ SE SALVA!', '¡ESE BILLETE NO SE ARRUGA NI CON ESTO!', '¡REVOLOTEA MENOS Y CAE MÁS, BILLETE!']
+    },
+    lingote: {
+      amable: ['¡Cómo salta {la}, qué pesado y qué ágil!', '¡Qué lingote tan brillante!', '¡Salta, lingote, salta!', 'Ese lingote vale una fortuna, ¡cuídalo!', '¡Qué rico suena un lingote al rebotar!', '¡Qué buen salto, lingote!'],
+      reto: ['Con {una} tan caro, un error te sale carísimo', '¿Seguro que sabes lo que pesa {la}?', 'Cuidado: un lingote no se recoge fácil del suelo', 'Cada salto del lingote vale una fortuna…', 'Si se cae {la}, ¡adiós fortuna!', 'Un lingote así de caro y tú ahí, temblando'],
+      enojo: ['¡Este lingote no se cae ni a martillazos!', '¡Qué lingote más terco!', '¡Tanto salto y no se cae!', '¡Ese lingote tiene resortes!', '¡Cuánto vale ese lingote y aún no se cae!', '¡No hay lingote que aguante tanto salto!'],
+      furia: ['¡LINGOTE, CAE DE UNA VEZ!', '¡NI UN LINGOTE MACIZO RESISTE TANTO SALTO!', '¡{LA} NO SE CAE NI A MARTILLAZOS!', '¡ESE LINGOTE SALTA MÁS QUE UN CANGURO!']
+    },
+    diamante: {
+      amable: ['¡Cómo brilla {la}!', '¡Un diamante rebotando, qué lujo!', '¡Qué joya de partida!', '¡Salta, diamante, salta!', '¡Cada rebote con diamante es puro lujo!', '¡Qué destellos, qué elegancia!'],
+      reto: ['Cuidado: si se cae {la}, se pierde una fortuna', '¿Tus manos son dignas de sostener una joya?', 'Un diamante es para siempre… ¿y tu partida?', 'Cada rebote vale {pago}… ¡no lo desperdicies!', '¿Y si se te rompe {la}?', 'Con {una} así, cada error duele en el bolsillo'],
+      enojo: ['¡Este diamante es indestructible!', '¡Qué diamante más terco!', '¡Tanto rebote y ni un rasguño!', '¡Ese diamante rebota como pelota de goma!', '¡Cada rebote vale una fortuna y no se cae!', '¡No hay diamante que aguante tanto rebote… menos este!'],
+      furia: ['¡DIAMANTE, CAE DE UNA VEZ!', '¡NI EL DIAMANTE MÁS DURO AGUANTA TANTO REBOTE!', '¡{LA} NO SE ROMPE NI A MARTILLAZOS!', '¡CADA REBOTE ES UNA FORTUNA Y NO SE CAE!']
+    }
+  },
+
   personajes: {
     tio: {
       amable: [
         '¡Cuac! ¡Qué buen amigo eres!', 'Soy el pato más feliz del mundo', 'Mis alas aplauden por ti', 'Con esta aureola me siento dichoso', '¡Cuac cuac! ¡Juguemos toda la tarde!',
-        'Dicen que soy buen perdedor… ¡mira cómo aprendo!', '¡Qué rico es rebotar monedas, cuac!', 'Mis plumitas se erizan de alegría', 'Hoy me levanté con ganas de jugar contigo',
+        'Dicen que soy buen perdedor… ¡mira cómo aprendo!', '¡Qué rico es rebotar {noms}, cuac!', 'Mis plumitas se erizan de alegría', 'Hoy me levanté con ganas de jugar contigo',
         '¡Soy un angelito, pero con mucha puntería!'
       ],
       reto: [
@@ -68,7 +99,7 @@ window.DIALOGOS = {
         '¡Te voy a destrozar la barra!', '¡Estoy perdiendo la paciencia!', '¡Me sale humo del pico!', '¡Mis plumas se ponen rojas de rabia!', 'Ya no soy tan amable, ¿cachái?'
       ],
       diablo: [
-        '¡MUAJAJAJA! ¡Eres mío!', '¡Arde, mortal!', '¡Bienvenido al infierno, cuac!', '¡NO ESCAPARÁS!', '¡Soy %n del infierno!', '¡Quémate!', '¡Mi tridente tiene hambre de monedas!',
+        '¡MUAJAJAJA! ¡Eres mío!', '¡Arde, mortal!', '¡Bienvenido al infierno, cuac!', '¡NO ESCAPARÁS!', '¡Soy %n del infierno!', '¡Quémate!', '¡Mi tridente tiene hambre de {noms}!',
         '¡Aquí abajo hace calorcito, ¿no?!', '¡El infierno es mío y tú eres mi invitado!', '¡Sufre, sufre, mortal!', '¡Mis llamas no se apagan con rebotes!', '¡Hasta el diablo se asombra de ti, cuac!'
       ],
       hitos: {
@@ -179,7 +210,7 @@ window.DIALOGOS = {
     tios: {
       amable: [
         '¡Nos encanta jugar contigo!', '¡Qué divertido, cuac cuac!', '¡Los dos aplaudimos por ti!', '¡Somos los patitos más felices!', 'Juntos somos invencibles… ¡bueno, casi!', '¡Cuac y recuac, qué partidón!',
-        'Uno devuelve y el otro celebra', '¡Qué lindo es jugar en pareja!', 'Mi cielo, ¿viste ese rebote?', 'Mira, mi vida, ¡cómo rebota la moneda!'
+        'Uno devuelve y el otro celebra', '¡Qué lindo es jugar en pareja!', 'Mi cielo, ¿viste ese rebote?', 'Mira, mi vida, ¡cómo rebota {la}!'
       ],
       reto: [
         '¿Crees que puedes con los dos?', 'Dos patos pueden más que uno, ¿cachái?', 'Nos estamos poniendo serios, amigo', 'Mi amor, ¿ya jugamos en serio? ¡Sí, mi vida!', 'Doble defensa, doble problema para ti',
@@ -202,7 +233,7 @@ window.DIALOGOS = {
 
     millonario: {
       amable: [
-        'Con tus rebotes me haces más rico', '¡Cada moneda suena a música!', 'Soy tan millonario que hasta mis plumas son de oro', '¡Qué buena inversión eres, %j!', 'Mi fortuna crece con cada rebote',
+        'Con tus rebotes me haces más rico', '¡Cada {nom} suena a música!', 'Soy tan millonario que hasta mis plumas son de oro', '¡Qué buena inversión eres, %j!', 'Mi fortuna crece con cada rebote',
         'Hasta mi chofer aplaude', 'El oro brilla, pero tu juego brilla más', '¡Cuac de oro, cuac de lujo!', 'Esto sí es vida de millonario', 'Después de esto, caviar para todos'
       ],
       reto: [

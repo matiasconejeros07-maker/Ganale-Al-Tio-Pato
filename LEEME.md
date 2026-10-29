@@ -47,7 +47,8 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
 - Sin cuentas (modo local) los pesos y compras quedan solo en ese celular.
 - **Lo que dicen los personajes** está en `dialogos.js`, separado de la economía (cambiarlo no obliga a tocar las reglas de Firebase). Hay frases comunes para todos y frases propias de cada skin
   (más de 160 por partida para cada personaje), en cuatro fases: amables (1-29), de reto (30-54, te provocan), de enojo (55-69) y de furia (70 en adelante). Salen al azar y sin repetirse
-  hasta que se acaban las de esa fase; la próxima frase llega a los 3-5 rebotes (2-4 desde que se enoja). Pueden usar tu nombre (`%j`), tus rebotes (`%h`) y el récord (`%b`).
+  hasta que se acaban las de esa fase; la próxima frase llega entre 4 y 10 rebotes después (al azar). Pueden usar tu nombre (`%j`), tus rebotes (`%h`) y el récord (`%b`).
+  Los textos también nombran **la pelota con la que juegas** (`{la}` = la moneda / el billete / el lingote de oro / el diamante, `{esa}`, `{esta}`, `{una}`, `{nom}`, `{noms}`, `{pago}` = lo que vale cada rebote) y hay frases propias de cada tipo de pelota (`pelota` en `dialogos.js`; 3 de cada 10 frases son de ellas). Cada pelota se nombra en `tienda.js` con `nom` y `gen`.
   Solo el Tío Pato, la Tía Patita y el Tío Pato Millonario se vuelven diablo y hablan del infierno; las skins de una imagen (conejos, Simi y Tíos Patitos) solo se enojan.
 - El catálogo y los precios están en `tienda.js`. Si cambias algo, ejecuta `node herramientas/generar-reglas.js`
   (regenera `firebase-rules.json`, porque las reglas también validan precios y pesos) y vuelve a pegar las reglas en Firebase → Realtime Database → Reglas → Publicar.
@@ -84,7 +85,7 @@ modificadas del juego; (2) **Cloud Functions** (plan Blaze) permiten registrar l
   se leen unos 500 números (~4 KB) vengan 100 o 100.000 jugadores. Cada cuenta se cuenta sola, una vez, y al mejorar pasa de casilla (`scores/<uid>/c` guarda dónde está contada; las reglas exigen que
   el contador solo se mueva de a 1 y solo para tu propia cuenta). Las cuentas que ya existían antes de que hubiera contador se cuentan la próxima vez que entran al juego; hasta entonces el puesto
   de los demás puede salir unos lugares más arriba de lo real (el Top 25 siempre es exacto).
-- Cada vez que alguien abre el marcador se descargan ~6 KB (Top 25 + contador), y se actualiza cada 30 s solo mientras sigue abierto. Eso no crece con la cantidad de jugadores.
+- Cada vez que alguien abre el marcador se descargan ~6 KB (Top 25 + contador). El **Top 25 se actualiza cada 5 s** mientras el marcador está abierto y a la vista (2 KB por vez); **tu puesto** (el contador) se vuelve a leer cada 30 s, y con la app en segundo plano no se pide nada. Eso no crece con la cantidad de jugadores, pero sí con el tiempo que tengan el marcador abierto (≈34 KB por minuto de marcador abierto); si hace falta bajar el costo, `REFRESH_MS` y `RANK_MS` están al inicio de `index.html`.
 - El plan gratuito (Spark) de Firebase (1 GB guardado, 10 GB de descarga al mes) alcanza de sobra para miles de jugadores; para una app en las tiendas con 10.000+ jugadores conviene pasar al plan Blaze (pago por uso, con alerta de presupuesto).
 
 ## El arte de los personajes
@@ -99,3 +100,10 @@ El juego las superpone y las anima según los rebotes:
 
 Para agregar otro personaje: crea su carpeta con las mismas capas y añade una entrada en `ch` dentro de `tienda.js` (con los puntos de giro de alas, tridente y cola en `css`),
 vuelve a generar las reglas y agrega la carpeta a la lista de `sw.js`.
+
+## Fluidez (celulares lentos)
+
+- Los fondos **Galaxia** y **Aurora boreal** usan texturas ya difuminadas en `fondos/*.webp` (en vez de `filter: blur` y máscaras que se recalculaban en cada cuadro). Para regenerarlas: `python3 herramientas/generar-fondos.py fondos` (necesita Pillow y numpy).
+- Las llamas del diablo y los destellos de las barras se dibujan con sprites precalculados (`drawImage`), no con un degradado nuevo por partícula en cada cuadro.
+- Las alas, cuernos y tridente del diablo se decodifican al empezar la partida, no justo cuando aparecen (rebote 55).
+- **Modo liviano automático:** si durante unos 5 segundos más del 30% de los cuadros salen lentos, el juego congela los fondos animados y los brillos del personaje (`body.lite`) hasta que se recargue la página.
