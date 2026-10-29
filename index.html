@@ -227,6 +227,10 @@
   #board::before, #board::after { display: none; }
   #board h1 { font-size: 28px; margin-top: 4px; }
   .board-note { font-size: 13px; color: #8a8658; min-height: 1.2em; max-width: 38ch; }
+  #boardLeft { font-size: 12px; margin-top: -4px; font-variant-numeric: tabular-nums; }
+  .board-btns { display: flex; gap: 10px; justify-content: center; flex: none; }
+  .board-btns .btn.ghost { padding: 10px 20px; font-size: 16px; }
+  .board-btns .btn:disabled { opacity: .55; }
   #list {
     list-style: none; margin: 0; padding: 0; width: min(100%, 440px);
     flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -766,9 +770,10 @@
     <section class="screen" id="board">
       <h1>🏆 Marcadores</h1>
       <div class="board-note" id="boardNote"></div>
+      <div class="board-note" id="boardLeft"></div>
       <ul id="list" aria-live="polite"></ul>
       <div id="myRow" hidden aria-live="polite"></div>
-      <button class="btn ghost" id="backBoard">Volver</button>
+      <div class="board-btns"><button class="btn ghost" id="refreshBoard">↻ Actualizar</button><button class="btn ghost" id="backBoard">Volver</button></div>
     </section>
   </main>
 </div>
@@ -809,8 +814,10 @@
   // En cuanto el Pato se enoja (55) pierde la aureola y las alas de ángel y pasa a su piel de diablo.
   const P_CHALLENGE = 30, P_ANGRY = 55, P_DEVIL = 60, P_HELL = 70;
   const TOP_N = 25;               // cuántos jugadores muestra el marcador; tu puesto aparece debajo aunque estés más abajo
-  const REFRESH_MS = 5000;        // el Top 25 se actualiza cada 5 s el primer minuto con el marcador abierto y a la vista; luego cada 10 s (hasta los 3 min) y cada 30 s
-  const RANK_MS = 120000;         // tu puesto (lo más pesado: el contador de 500 casillas) se vuelve a leer cada 2 min, al abrir y cuando cambia tu récord
+  const REFRESH_MS = 15000;       // el Top 25 se actualiza cada 15 s mientras el marcador está abierto y a la vista
+  const BOARD_MAX_MS = 60000;     // el marcador se puede mirar como máximo 1 minuto: después vuelve solo al inicio (así mirarlo cuesta poco aunque haya muchísimos jugadores)
+  const REFRESH_COOLDOWN_MS = 5000; // el botón «Actualizar» se puede tocar una vez cada 5 s
+  const RANK_MS = 120000;        // tu puesto (lo más pesado: el contador de 500 casillas) se vuelve a leer cada 2 min, al abrir y cuando cambia tu récord
   const STORE_KEY = 'gana-al-tio-pato-v2';
   // El fondo cambia cada 10 rebotes (el primero a los 5): del cielo amarillo al infierno, que empieza justo cuando el Pato se enoja
   const PALETTE = ['#fff6c0', '#ffec5c', '#ffb978', '#ffa64f', '#faa3fe', '#f478fd', '#c2312f', '#8a1620', '#5a0e14', '#3a070b', '#2a0508'];
@@ -909,7 +916,7 @@
   let wake = null;                                               // mantiene la pantalla encendida mientras juegas
   async function lockScreen() { try { if ('wakeLock' in navigator && !wake) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) {} }
   function unlockScreen() { try { if (wake) wake.release(); } catch (e) {} wake = null; }
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (state === 'play' || state === 'countdown')) lockScreen(); if (document.visibilityState === 'visible' && boardTimer) refreshBoard(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (state === 'play' || state === 'countdown')) lockScreen(); if (document.visibilityState === 'visible' && boardTimer) { if (boardLeftMs() <= 0) expireBoard(); else refreshBoard(); } });
 
   /* ---------- sonido (sintetizado, sin archivos) ---------- */
   function tone(freq, dur = .07, type = 'triangle', vol = .12, to = null) {
@@ -1238,7 +1245,7 @@
   }
 
   /* ---------- pantalla de marcadores ---------- */
-  let boardFrom = 'menu', boardTimer = null;
+  let boardFrom = 'menu', boardTimer = null, boardClock = null;
 
   function renderBoard(rows, me) {
     const ul = $('list'); ul.textContent = '';
@@ -1341,17 +1348,36 @@
     }
   }
 
-  const boardDelay = () => { const age = Date.now() - boardOpenAt; return age < 60000 ? REFRESH_MS : age < 180000 ? 2 * REFRESH_MS : 6 * REFRESH_MS; };   // 5 s → 10 s → 30 s
-  function boardTick() { boardTimer = setTimeout(async () => { await refreshBoard(); if (boardTimer) boardTick(); }, boardDelay()); }
+  // El marcador se mira como máximo BOARD_MAX_MS: un reloj de 1 s cuenta hacia atrás y, al llegar a 0, devuelve al inicio.
+  const boardLeftMs = () => BOARD_MAX_MS - (Date.now() - boardOpenAt);
+  function stopBoardTimers() { clearTimeout(boardTimer); boardTimer = null; clearInterval(boardClock); boardClock = null; }
+  function expireBoard() { stopBoardTimers(); backToMenu(); }
+  function paintLeft() {
+    const el = $('boardLeft'), t = `Vuelves al inicio en ${Math.max(0, Math.ceil(boardLeftMs() / 1000))} s`;
+    if (el.textContent !== t) el.textContent = t;
+  }
+  function boardClockTick() {
+    if (!screens.board.classList.contains('show')) { stopBoardTimers(); return; }   // si la pantalla ya no es el marcador, no hay nada que cerrar
+    if (boardLeftMs() <= 0) expireBoard(); else paintLeft();
+  }
+  // Cada REFRESH_MS vuelve a pedir el Top 25; no pide nada si ya casi se acaba el minuto.
+  function boardTick() { boardTimer = setTimeout(async () => { if (boardLeftMs() > 1500) await refreshBoard(); if (boardTimer) boardTick(); }, REFRESH_MS); }
   function openBoard(from) {
     boardFrom = from; delete $('list').dataset.scrolled;
     setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
     lastSig = ''; lastMe = null; lastMeAt = 0; boardOpenAt = Date.now(); show('board'); refreshBoard(true);
-    clearTimeout(boardTimer); boardTick();
+    $('refreshBoard').disabled = false; paintLeft();
+    stopBoardTimers(); boardTick(); boardClock = setInterval(boardClockTick, 1000);
   }
   function closeBoard() {
-    clearTimeout(boardTimer); boardTimer = null;
+    stopBoardTimers();
     if (boardFrom === 'result') { setEnd(true); show('result'); } else show('menu');
+  }
+  // «Actualizar»: pide el Top 25 ahora (cada 5 s como máximo) y reinicia la cuenta de los 15 s; no alarga el minuto.
+  function manualRefresh() {
+    const b = $('refreshBoard'); if (b.disabled || !boardTimer || boardLeftMs() <= 0) return;
+    b.disabled = true; setTimeout(() => { b.disabled = false; }, REFRESH_COOLDOWN_MS);
+    clearTimeout(boardTimer); boardTick(); refreshBoard();
   }
 
   /* ---------- encabezado: tus rebotes · el mejor puntaje ---------- */
@@ -1878,7 +1904,7 @@
     finally { shopBusy = false; renderShop(); }
   }
   function openShop(from) {
-    shopFrom = from; clearTimeout(boardTimer); boardTimer = null; shopMsg('');
+    shopFrom = from; stopBoardTimers(); shopMsg('');
     setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
     show('shop'); renderShop();
     if (AUTH && session) pullWallet().then(() => { applyCosmetics(); renderShop(); });
@@ -2110,7 +2136,7 @@
 
   function backToMenu() {
     clearInterval(cdTimer); cdTimer = null;
-    clearTimeout(boardTimer); boardTimer = null;
+    stopBoardTimers();
     state = 'menu';
     target.style.visibility = 'hidden'; paddle.style.visibility = 'hidden'; duck.style.visibility = 'hidden';
     document.body.classList.remove('ingame'); multEl.classList.remove('show');
@@ -2140,6 +2166,7 @@
   $('openBoard').addEventListener('click', () => openBoard('menu'));
   $('openBoard2').addEventListener('click', () => openBoard('result'));
   $('backBoard').addEventListener('click', closeBoard);
+  $('refreshBoard').addEventListener('click', manualRefresh);
   nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') startCountdown(); });
 
   /* ---------- app instalable (PWA) ---------- */
