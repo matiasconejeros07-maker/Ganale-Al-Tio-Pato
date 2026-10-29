@@ -124,6 +124,24 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     await ctx.close();
   }
 
+  console.log('Ajustes: sonido, vibración, cerrar sesión');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    await p.click('#openSettings');
+    ok('el panel de ajustes se abre', await p.evaluate(() => document.getElementById('settings').classList.contains('show')));
+    ok('sonido y vibración empiezan en SÍ', await p.evaluate(() => ['togSound', 'togVib'].every(id => document.getElementById(id).getAttribute('aria-checked') === 'true')));
+    await p.click('#togSound'); await p.click('#togVib');
+    const r = await p.evaluate(() => ({ s: document.getElementById('togSound').getAttribute('aria-checked'), v: document.getElementById('togVib').getAttribute('aria-checked'), ls: [localStorage.getItem('gana-al-tio-pato-sonido'), localStorage.getItem('gana-al-tio-pato-vibracion')], txt: document.getElementById('togSound').textContent.trim(), btn: document.getElementById('soundBtn').getAttribute('aria-pressed') }));
+    ok('los interruptores se apagan, dicen NO y se recuerdan', r.s === 'false' && r.v === 'false' && r.ls.join() === '0,0' && r.txt === 'NO' && r.btn === 'false', JSON.stringify(r));
+    ok('«Cerrar sesión» no aparece sin cuenta', await p.evaluate(() => document.getElementById('logout').hidden));
+    await p.click('#setClose');
+    ok('la X cierra los ajustes', await p.evaluate(() => !document.getElementById('settings').classList.contains('show')));
+    await p.reload(); await p.waitForTimeout(500); await p.click('#openSettings');
+    ok('tras recargar siguen apagados', await p.evaluate(() => document.getElementById('togSound').classList.contains('off') && document.getElementById('togVib').classList.contains('off')));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
   console.log('Tienda y personajes (modo local)');
   {
     const ids = ['tio', 'tia', 'conejo', 'conejita', 'bigotes', 'tios', 'galactico', 'millonario'];
