@@ -130,7 +130,7 @@
   #duck .rig.swing { animation: swing .26s ease-out; }
   #bubble {
     position: absolute; top: 100%; left: 50%; transform: translateX(calc(-50% + var(--bx, 0px))); scale: .85; transform-origin: top center;
-    white-space: nowrap; font-size: clamp(12px, 3.6vw, 14px); font-weight: 800; color: #111; background: #fff; padding: 6px 12px;
+    width: max-content; max-width: min(80vw, 300px); text-align: center; line-height: 1.25; font-size: clamp(12px, 3.6vw, 14px); font-weight: 800; color: #111; background: #fff; padding: 6px 12px;
     border-radius: 14px; box-shadow: 0 3px 10px rgba(0,0,0,.18); opacity: 0; transition: opacity .2s, scale .2s;
   }
   #bubble::before { content: ""; position: absolute; left: calc(50% - var(--bx, 0px)); top: -5px; width: 10px; height: 10px; background: #fff; transform: translateX(-50%) rotate(45deg); }
@@ -775,6 +775,7 @@
 
 <script src="config.js"></script>
 <script src="tienda.js"></script>
+<script src="dialogos.js"></script>
 <script>
 (() => {
   // Medidas de referencia (celular de 390×790 útiles). Todo se escala con K para que el juego se vea igual en cualquier celular.
@@ -833,7 +834,13 @@
   const angerK = () => clamp((hits - P_ANGRY) / 25, 0, 1);                     // se enoja de forma progresiva desde el rebote 55
   const fireK = () => clamp((hits - 58) / 22, 0, 1);                           // el fuego crece desde el 58
   const faceIdx = () => hits < P_CHALLENGE ? 0 : hits < P_ANGRY ? 1 : hits < P_HELL - 2 ? 2 : 3;
-  const phaseName = () => hits < P_CHALLENGE ? 'ángel 😇' : hits < P_ANGRY ? 'desafiante 😏' : hits < P_DEVIL ? 'enojado 😡' : 'diablo 😈';
+  const phaseName = () => {                                      // hasta dónde llegó el personaje (las skins de una imagen se enojan, no se vuelven diablo)
+    const ch = curCh(), g = ch.g, o = g === 'f' ? 'a' : 'o', pl = g === 'p' ? 's' : '';
+    if (hits < P_CHALLENGE) return ch.stat ? 'amable' + pl + ' 😊' : 'ángel 😇';
+    if (hits < P_ANGRY) return 'desafiante' + pl + ' 😏';
+    if (ch.stat) return hits < P_HELL ? 'enojad' + o + pl + ' 😡' : 'furios' + o + pl + ' 🤬';
+    return hits < P_DEVIL ? 'enojad' + o + ' 😡' : g === 'f' ? 'diabla 😈' : 'diablo 😈';
+  };
   const level = () => Math.floor(hits / 20);                                   // afina la puntería del Pato
   const paddleTop = () => H - PADDLE_BOTTOM - PADDLE_H;
   const shrink = () => hits <= TIER ? 1 - hits * SHRINK_LO : Math.max(SHRINK_MIN, 1 - TIER * SHRINK_LO - (hits - TIER) * SHRINK_HI);   // factor sobre el ancho inicial
@@ -1389,32 +1396,42 @@
     }
     lastFace = f;
   }
-  const tpl = t => t.replace('%n', curCh().name).replace('%D', ({ f: 'LA DIABLA', p: 'LOS DIABLOS' })[curCh().g] || 'EL DIABLO');
-  function say(text, ms = 2400) {
-    const b = $('bubble'); b.textContent = tpl(text); b.classList.add('on'); lastSay = text; bubbleW = b.offsetWidth;
-    clearTimeout(bubbleTimer); bubbleTimer = setTimeout(() => b.classList.remove('on'), ms);
+  const tpl = t => t.replace(/%n/g, curCh().name).replace(/%D/g, ({ f: 'LA DIABLA', p: 'LOS DIABLOS' })[curCh().g] || 'EL DIABLO')
+    .replace(/%h/g, hits).replace(/%b/g, leaderBest).replace(/%j/g, player.name || (session && session.name) || 'amigo');
+  function say(text, ms) {
+    const b = $('bubble'), t = tpl(text); b.textContent = t; b.classList.add('on'); lastSay = text; bubbleW = b.offsetWidth;
+    clearTimeout(bubbleTimer); bubbleTimer = setTimeout(() => b.classList.remove('on'), ms || Math.min(4200, 1500 + t.length * 55));
   }
-  // Frases según la fase: amistosas al comienzo, desafiantes desde el 30, enojadas desde el 55 y de diablo desde el 80.
-  const SAY_FRIEND = ['¡Qué bien lo haces, amigo!', '¡Muy bien, campeón!', '¡Me encanta jugar contigo!', '¡Tú puedes, amigo!', '¡Wow, qué buenos reflejos!', '¡Sigue así, crack!', '¡Eres genial!', '¡Qué divertido, cuac!'];
-  const SAY_CHALLENGE = ['¿Seguro que puedes con esto?', 'Veamos cuánto aguantas…', '¿Eso es todo lo que tienes?', 'No te confíes tanto, amigo', 'Ahora sí empieza lo bueno', 'Se acabó lo amable…', '¿Crees que puedes ganarme?'];
-  const SAY_ANGRY = ['¡CUAC! ¡Ya me estás molestando!', '¡Nadie me gana, nadie!', '¡Te voy a destrozar la barra!', '¡Estoy perdiendo la paciencia!', '¡DEJA DE REBOTAR ESO!', '¡Me sacas de quicio!'];
-  const SAY_DEVIL = ['¡MUAJAJAJA! ¡Eres mío!', '¡Arde, mortal!', '¡Bienvenido al infierno, cuac!', '¡NO ESCAPARÁS!', '¡Soy %n del infierno!', '¡Quémate!'];
-  const SPECIAL = { 1: '¡Muy bien, amigo!', 30: 'Mmm… ya me cansé de ser amable', 55: '¡Se me acabó la paciencia! ¡AAARGH! 😡', 60: '¡AHORA SOY %D! 😈', 100: '¡Monedas dobles! Pero ahora va en serio… 😏', 200: '¡Monedas triples! ¿Hasta dónde llegas? 😈' };
-  // La pareja habla en plural.
-  const SAY_PL = {
-    friend: ['¡Qué bien lo haces, amigo!', '¡Muy bien, campeón!', '¡Nos encanta jugar contigo!', '¡Tú puedes, amigo!', '¡Wow, qué buenos reflejos!', '¡Sigue así, crack!', '¡Eres genial!', '¡Qué divertido, cuac cuac!'],
-    challenge: ['¿Seguro que puedes con esto?', 'Veamos cuánto aguantas…', '¿Eso es todo lo que tienes?', 'No te confíes tanto, amigo', 'Ahora sí empieza lo bueno', 'Se acabó lo amable…', '¿Crees que puedes ganarnos?'],
-    angry: ['¡CUAC! ¡Ya nos estás molestando!', '¡Nadie nos gana, nadie!', '¡Te vamos a destrozar la barra!', '¡Estamos perdiendo la paciencia!', '¡DEJA DE REBOTAR ESO!', '¡Nos sacas de quicio!'],
-    devil: ['¡MUAJAJAJA! ¡Eres nuestro!', '¡Arde, mortal!', '¡Bienvenido al infierno, cuac!', '¡NO ESCAPARÁS!', '¡Somos %n del infierno!', '¡Quémate!'],
-    special: { 30: 'Mmm… ya nos cansamos de ser amables', 55: '¡Se nos acabó la paciencia! ¡AAARGH! 😡', 60: '¡AHORA SOMOS %D! 😈' }
-  };
-  const pick = list => { let t; do { t = list[Math.floor(Math.random() * list.length)]; } while (t === lastSay && list.length > 1); return t; };
+  // Frases: salen de dialogos.js. Cada personaje y cada fase tiene su "bolsa" barajada: se sacan al azar sin repetir hasta que se acaba (y se baraja de nuevo).
+  const DLG = window.DIALOGOS || { comun: {}, personajes: {} };
+  const bag = {}; let talkAt = 3;
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const rnd = n => Math.floor(Math.random() * n);
+  // amable (1-29) → reto (30-54) → enojo (55-69) → diablo (70+) solo para los que se transforman (el rig del Tío Pato); las skins de una imagen pasan a furia
+  const phaseKey = () => hits < P_CHALLENGE ? 'amable' : hits < P_ANGRY ? 'reto' : hits < P_HELL ? 'enojo' : curCh().stat ? 'furia' : 'diablo';
+  function poolOf(ph) {
+    const mine = (DLG.personajes || {})[curCh().id] || {};
+    return [...((DLG.comun || {})[ph === 'diablo' ? 'furia' : ph] || []), ...(mine[ph] || [])].filter(t => leaderBest > 0 || !t.includes('%b'));
+  }
+  function nextLine() {
+    const ph = phaseKey(), key = curCh().id + ':' + ph;
+    if (!bag[key] || !bag[key].length) {
+      bag[key] = shuffle(poolOf(ph));
+      if (bag[key].length > 1 && bag[key][bag[key].length - 1] === lastSay) bag[key].unshift(bag[key].pop());   // que no repita la última al volver a barajar
+    }
+    return bag[key].pop();
+  }
+  function hito() {                                                // frase de un rebote especial (30, 55, 60, 100…): propia del personaje o, si no tiene, común
+    const mine = ((DLG.personajes || {})[curCh().id] || {}).hitos || {}, l = mine[hits] || ((DLG.comun || {}).hitos || {})[hits];
+    return l && l[rnd(l.length)];
+  }
+  function resetTalk() { for (const k in bag) delete bag[k]; lastSay = ''; talkAt = 2 + rnd(3); }
   function talk() {
-    const pl = curCh().g === 'p', L = pl ? SAY_PL : { friend: SAY_FRIEND, challenge: SAY_CHALLENGE, angry: SAY_ANGRY, devil: SAY_DEVIL }, sp = (pl && SAY_PL.special[hits]) || SPECIAL[hits];
-    if (sp) { say(sp, 2800); if (hits >= 30) tone(hits >= P_ANGRY ? 110 : 660, .3, hits >= P_ANGRY ? 'sawtooth' : 'triangle', .1, hits >= P_ANGRY ? 55 : 880); return; }
-    const every = hits < P_ANGRY ? 4 : 3;
-    if (hits % every !== 0) return;
-    say(pick(hits < P_CHALLENGE ? L.friend : hits < P_ANGRY ? L.challenge : hits < P_HELL ? L.angry : L.devil));
+    const sp = hito();
+    if (sp) { say(sp, 3000); talkAt = hits + 3; if (hits >= 30) tone(hits >= P_ANGRY ? 110 : 660, .3, hits >= P_ANGRY ? 'sawtooth' : 'triangle', .1, hits >= P_ANGRY ? 55 : 880); return; }
+    if (hits < talkAt) return;
+    const t = nextLine(); if (!t) return;
+    say(t); talkAt = hits + (hits < P_ANGRY ? 3 + rnd(3) : 2 + rnd(3));       // la próxima frase sale en 3-5 rebotes (2-4 desde que se enoja)
   }
 
   // Dónde llegará el billete a la altura del Tío Pato (con rebotes en las paredes), para que salga a recibirlo.
@@ -1860,7 +1877,7 @@
     nameInput.value = name; nameInput.blur(); setInitial();
 
     measure();
-    hits = 0; elapsed = 0; keyDir = 0; dragX = null; lastFace = -1;
+    hits = 0; elapsed = 0; keyDir = 0; dragX = null; lastFace = -1; resetTalk();
     gameRate = (itemOf('ball', wallet.eq.ball) || CAT.ball[0]).rate || 1;
     clearFx(); $('rain').textContent = ''; setEnd(false); setThemeActive(true); applyCosmetics(); setBg();
     document.body.classList.add('ingame'); runP = beginRun();    // el servidor anota la hora de inicio de la partida
@@ -1958,7 +1975,7 @@
     const hp = Math.min(hits, H_MAX), p = gameRate * pesosFor(hp), record = hp > player.best;
     $('finalScore').textContent = hits;
     $('finalLabel').textContent = hits === 1 ? 'rebote' : 'rebotes';
-    $('finalSub').textContent = `Aguantaste ${fmtClock(elapsed)} · ${curCh().name} llegó a ${phaseName()}\n${(itemOf('ball', wallet.eq.ball) || CAT.ball[0]).n} · ${money(gameRate)} por punto`;
+    $('finalSub').textContent = `Aguantaste ${fmtClock(elapsed)} · ${curCh().name} ${curCh().g === 'p' ? 'llegaron' : 'llegó'} a ${phaseName()}\n${(itemOf('ball', wallet.eq.ball) || CAT.ball[0]).n} · ${money(gameRate)} por punto`;
     $('bestResult').textContent = record ? '🎉 ¡Nuevo récord personal!' : `Tu mejor puntaje: ${player.best}`;
     renderScores(); setHero(); makeRain(hits >= P_DEVIL); setEnd(true); setThemeActive(false); document.body.classList.remove('hell', 'dark');
     const cl = $('coinsLine'), st = $('saveStatus'); st.className = 'status'; st.textContent = ''; cl.textContent = '';

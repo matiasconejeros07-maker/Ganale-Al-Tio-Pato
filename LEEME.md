@@ -45,6 +45,10 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
   - **Para millonarios** (aparecen en una sección aparte, marcadas con `vip: true` en `tienda.js`): fondos **Bóveda de oro** ($2.000.000), **Palacio de diamante** ($5.000.000) y **Agujero negro** ($10.000.000); barras **Rey Midas** ($3.000.000, lanza monedas), **Diamante** ($6.000.000, destellos con arcoíris) y **Tormenta eléctrica** ($12.000.000, rayos en cada rebote).
   - **Pelotas:** empiezas con la **moneda de $1** (que gira en el sentido del reloj y brilla). Se compran las monedas de $5, $10, $50, $100 y $500 (giran igual), los billetes de $1.000, $2.000, $5.000, $10.000 y $20.000 (que revolotean) y los lingotes de plata y de oro y el diamante (no giran: saltan, y brillan). Precio = su valor en pesos; cada una muestra cuánto paga por punto.
 - Sin cuentas (modo local) los pesos y compras quedan solo en ese celular.
+- **Lo que dicen los personajes** está en `dialogos.js`, separado de la economía (cambiarlo no obliga a tocar las reglas de Firebase). Hay frases comunes para todos y frases propias de cada skin
+  (más de 160 por partida para cada personaje), en cuatro fases: amables (1-29), de reto (30-54, te provocan), de enojo (55-69) y de furia (70 en adelante). Salen al azar y sin repetirse
+  hasta que se acaban las de esa fase; la próxima frase llega a los 3-5 rebotes (2-4 desde que se enoja). Pueden usar tu nombre (`%j`), tus rebotes (`%h`) y el récord (`%b`).
+  Solo el Tío Pato, la Tía Patita y el Tío Pato Millonario se vuelven diablo y hablan del infierno; las skins de una imagen (conejos, Simi y Tíos Patitos) solo se enojan.
 - El catálogo y los precios están en `tienda.js`. Si cambias algo, ejecuta `node herramientas/generar-reglas.js`
   (regenera `firebase-rules.json`, porque las reglas también validan precios y pesos) y vuelve a pegar las reglas en Firebase → Realtime Database → Reglas → Publicar.
 
