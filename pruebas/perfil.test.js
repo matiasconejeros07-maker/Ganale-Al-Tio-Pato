@@ -24,10 +24,11 @@ const ok = (n, c, x = '') => { if (c) { pass++; console.log('  ok  ', n); } else
   ok('arrastrar sobre la vista previa mueve el símbolo', antes !== despues, antes + ' → ' + despues);
   await p.evaluate(() => { document.querySelectorAll('#edSyms button')[6].click(); document.querySelectorAll('#edShapes button')[4].click(); document.querySelectorAll('#edC1 button')[7].click(); document.querySelectorAll('#edC2 button')[10].click(); document.querySelectorAll('#edPats button')[3].click(); document.getElementById('edBigger').click(); });
   await p.evaluate(() => document.getElementById('edLayers').lastElementChild.click());
-  ok('se pueden agregar símbolos (hasta 3)', await p.evaluate(() => document.querySelectorAll('#edLayers .edchip').length === 3));
+  for (let i = 0; i < 6; i++) await p.evaluate(() => { const l = document.getElementById('edLayers').lastElementChild; if (l && l.textContent === '＋') l.click(); });
+  ok('se pueden agregar símbolos hasta un máximo de 5 (luego desaparece el «＋»)', await p.evaluate(() => document.querySelectorAll('#edLayers .edchip').length === 5 && ![...document.querySelectorAll('#edLayers .edchip')].some(b => b.textContent === '＋')));
   await p.evaluate(() => document.getElementById('edSave').click()); await p.waitForTimeout(1500);
   const av = st.db.wallets && st.db.wallets[uid] && st.db.wallets[uid].av;
-  ok('el emblema queda en la cuenta (9 a 17 caracteres)', typeof av === 'string' && /^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,3}$/.test(av) && av.length <= 17, String(av));
+  ok('el emblema queda en la cuenta (9 a 25 caracteres, con 5 símbolos son 25)', typeof av === 'string' && /^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,5}$/.test(av) && av.length === 25, String(av));
   ok('el encabezado y el chip muestran el 💎', await p.evaluate(() => document.getElementById('meEmb').textContent.includes('💎') && document.getElementById('userEmb').textContent.includes('💎')));
   console.log('Marcador');
   await playHits(p, 3, async () => {}); await p.waitForTimeout(3500);
@@ -39,6 +40,32 @@ const ok = (n, c, x = '') => { if (c) { pass++; console.log('  ok  ', n); } else
   await p.evaluate(() => { const o = JSON.parse(localStorage.getItem('gana-al-tio-pato-v2')); delete o.av; localStorage.setItem('gana-al-tio-pato-v2', JSON.stringify(o)); });
   await p.reload(); await p.waitForTimeout(2500);
   ok('con los datos locales borrados, el emblema vuelve desde la cuenta', await p.evaluate(() => document.getElementById('meEmb').textContent.includes('💎')));
+  console.log('Si las reglas todavía no están publicadas');
+  {
+    const os = require('os'), path = require('path');
+    const nuevas = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'firebase-rules.json'), 'utf8'));
+    const viejas = JSON.parse(JSON.stringify(nuevas)); delete viejas.rules.wallets.$uid.av; delete viejas.rules.scores.$uid.a;               // las reglas de antes del emblema
+    const arch = path.join(os.tmpdir(), 'reglas-viejas-' + process.pid + '.json'); fs.writeFileSync(arch, JSON.stringify(viejas));
+    st.denied.length = 0; st.rulesFile = arch;
+    const { ctx: c2, p: p2, errs: e2 } = await newPage(b);
+    await p2.tap('#tabUp'); await p2.fill('#acct', 'Sin Reglas'); await p2.fill('#pass', 'secreto123'); await p2.tap('#authGo'); await p2.waitForTimeout(2500);
+    const uid2 = Object.values(st.users).find(u => /sin\.reglas/.test(u.email || '') || true && u.uid !== uid).uid;
+    st.db.scores = { ...(st.db.scores || {}), [uid2]: { n: 'Sin Reglas', k: 'sin.reglas', s: 40, t: Date.now() - 5000 } };               // ya tiene puntaje, así que debería salir en el marcador
+    await p2.reload(); await p2.waitForTimeout(2500); await p2.tap('#dailyClose').catch(() => {});
+    await p2.click('#openSettings'); await p2.click('#openEmblem'); await p2.waitForTimeout(200);
+    await p2.evaluate(() => { document.querySelectorAll('#edSyms button')[9].click(); document.getElementById('edSave').click(); }); await p2.waitForTimeout(2000);
+    await p2.click('#openSettings'); await p2.waitForTimeout(200);
+    const t1 = await p2.textContent('#avSt');
+    ok('con las reglas viejas, Ajustes avisa que faltan publicar las reglas nuevas', /reglas/i.test(t1), t1);
+    ok('y en la base de datos todavía no hay emblema', !(st.db.wallets && st.db.wallets[uid2] && st.db.wallets[uid2].av) && !st.db.scores[uid2].a);
+    st.rulesFile = null; st.denied.length = 0;                                                                                            // el dueño publica las reglas nuevas
+    await p2.reload(); await p2.waitForTimeout(3500); await p2.evaluate(() => document.getElementById('dailyClose').click());      // con las reglas nuevas también aparece la racha del día
+    ok('al abrir de nuevo, el emblema pendiente se sube solo a la cuenta y al marcador', st.db.wallets[uid2].av && st.db.scores[uid2].a === st.db.wallets[uid2].av, JSON.stringify([st.db.wallets[uid2], st.db.scores[uid2]]));
+    await p2.click('#openSettings'); await p2.waitForTimeout(200);
+    ok('Ajustes dice «Todos lo ven en el marcador»', /Todos lo ven/.test(await p2.textContent('#avSt')), await p2.textContent('#avSt'));
+    ok('sin errores de página en esa prueba', e2.length === 0, e2.join('|'));
+    await c2.close(); try { fs.unlinkSync(arch); } catch (e) {}
+  }
   ok('sin denegados ni errores de página', st.denied.length === 0 && errs.length === 0, st.denied.join(' || ') + errs.join('|'));
   console.log(`\n${pass} correctas, ${fail} fallas`);
   await b.close(); process.exit(fail ? 1 : 0);
