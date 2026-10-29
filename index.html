@@ -23,7 +23,7 @@
   :root {
     --bg: #fff7c2;
     --ink: #111;
-    --score: #a3a07a;
+    --score: #6f6a3a;
     --ghost: rgba(140, 130, 50, .38);
     --lose: #c0392b;
     --card: #fffdf0;
@@ -53,15 +53,15 @@
   body:not(.ingame) header { display: none; }
   #close {
     position: absolute; left: max(10px, env(safe-area-inset-left)); top: calc(env(safe-area-inset-top) + 16px); pointer-events: auto;
-    width: 40px; height: 40px; border: 0; background: none; cursor: pointer; padding: 9px;
+    width: 44px; height: 44px; border: 0; background: none; cursor: pointer; padding: 10px;
   }
   #close svg { width: 100%; height: 100%; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
   .num {
     min-width: 3ch; font-size: 24px; font-weight: 800; letter-spacing: .02em;
-    color: var(--score); font-variant-numeric: tabular-nums; text-align: center;
+    color: var(--score); font-variant-numeric: tabular-nums; text-align: center; text-shadow: 0 1px 0 rgba(255,255,255,.45);
     transition: color .2s, transform .15s;
   }
-  .num.bump { transform: scale(1.22); color: #6d6a3d; }
+  .num.bump { transform: scale(1.22); color: #3a3711; }
   .avatars { display: flex; position: relative; }
   .avatar {
     position: relative; width: 44px; height: 44px; border-radius: 50%;
@@ -160,6 +160,25 @@
   body.hell .pop { color: #ffb199; }
   @keyframes pop { from { opacity: 1; transform: translate(-50%, -10px); } to { opacity: 0; transform: translate(-50%, -64px); } }
 
+  /* ---------- pulido: foco de teclado, entrada suave de las pantallas, botón de sonido y ayuda de la primera partida ---------- */
+  :focus-visible { outline: 3px solid #1a73e8; outline-offset: 2px; }
+  #name:focus-visible, .field:focus-visible { outline: none; }
+  body.end :focus-visible, body.hell :focus-visible, body.dark :focus-visible { outline-color: #fff; }
+  button, .tile { touch-action: manipulation; }
+  .btn, .tile, .seg button, .link { transition: transform .12s, background-color .15s, opacity .15s; }
+  @keyframes screenIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  #soundBtn {
+    position: absolute; right: max(10px, env(safe-area-inset-right)); top: calc(env(safe-area-inset-top) + 16px); pointer-events: auto;
+    width: 44px; height: 44px; border: 0; background: none; cursor: pointer; font-size: 22px; line-height: 1; padding: 0; opacity: .75;
+  }
+  #soundBtn[aria-pressed="false"] { opacity: .45; }
+  #hint {
+    position: absolute; left: 50%; bottom: calc(112px * var(--k, 1)); z-index: 3; transform: translateX(-50%); pointer-events: none; opacity: 0; transition: opacity .3s;
+    background: rgba(17, 17, 17, .8); color: #fff; padding: 8px 16px; border-radius: 999px; font-weight: 800; font-size: max(13px, calc(15px * var(--k, 1))); white-space: nowrap; box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  }
+  #hint.on { opacity: 1; animation: hintNudge 1.5s ease-in-out infinite; }
+  @keyframes hintNudge { 50% { transform: translateX(calc(-50% + 16px)); } }
+
   /* ---------- pantallas (inicio / final / marcadores) ---------- */
   .screen {
     position: absolute; inset: 0; z-index: 5; display: none; flex-direction: column;
@@ -169,7 +188,7 @@
   }
   .screen > * { flex-shrink: 0; }
   .screen::before, .screen::after { content: ""; margin: auto; }
-  .screen.show { display: flex; }
+  .screen.show { display: flex; animation: screenIn .24s ease-out; }
   .screen h1 { margin: 0; font-size: 32px; font-weight: 800; line-height: 1.1; }
   .screen p { margin: 0; color: #6b6840; font-size: 16px; max-width: 30ch; line-height: 1.4; }
   .hero { display: inline-block; height: clamp(96px, 19vh, 150px); animation: float 2.2s ease-in-out infinite; filter: drop-shadow(0 8px 8px rgba(0,0,0,.15)); }
@@ -197,7 +216,7 @@
   .authbox { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
   .authbox[hidden], #userBox[hidden], #logout[hidden], #name[hidden], #play[hidden] { display: none; }
   .seg { display: flex; width: min(100%, 300px); background: rgba(0,0,0,.07); border-radius: 999px; padding: 3px; }
-  .seg button { flex: 1; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 700; color: var(--ink); padding: 9px 6px; border-radius: 999px; cursor: pointer; }
+  .seg button { flex: 1; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 700; color: var(--ink); padding: 12px 6px; min-height: 44px; border-radius: 999px; cursor: pointer; }
   .seg button.on { background: #111; color: #fff; }
   .pw { position: relative; width: min(100%, 300px); }
   .pw .field { width: 100%; padding-right: 52px; }
@@ -206,7 +225,7 @@
   .authbox .btn:disabled { opacity: .55; }
   #authMsg { min-height: 1.3em; max-width: 32ch; text-align: center; }
   .hello { font-size: 20px; font-weight: 800; }
-  .link { background: none; border: 0; font: inherit; font-size: 14px; font-weight: 600; color: #6b6840; cursor: pointer; padding: 6px; text-decoration: underline; }
+  .link { background: none; border: 0; font: inherit; font-size: 14px; font-weight: 600; color: #6b6840; cursor: pointer; padding: 12px 14px; min-height: 44px; text-decoration: underline; }
   @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
   /* final: pantalla morada con lluvia de billetes */
@@ -597,8 +616,8 @@
   .shophead { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: min(100%, 460px); }
   .shophead h1 { font-size: 26px; margin: 0; }
   #shop .seg { width: min(100%, 460px); }
-  #shop .seg button { font-size: 13px; padding: 9px 2px; }
-  #shopGrid { width: min(100%, 460px); flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; padding: 4px 3px 10px; }
+  #shop .seg button { font-size: 13px; padding: 12px 2px; }
+  #shopGrid { width: min(100%, 460px); flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; padding: 4px 3px 26px; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent); }
   .item { background: #fffdf0; border: 1px solid var(--line); border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 6px; text-align: left; }
   .item.on { border-color: #111; box-shadow: 0 0 0 2px #111; }
   .item .pv { position: relative; height: 96px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; }
@@ -691,6 +710,8 @@
     .bgx, .bgx i, .bgx i::before, .bgx::before, .bgx::after, #paddle, #paddle::before, #paddle::after, .pvbar, .pvbar::before, .pvbar::after { animation: none !important; }
     #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .item .pv.mystery b, .item .pv.mystery i, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .ball.jump::before, .ball.jump::after, .hero, .rain span, #rotate .ico, #mult.show, .item .pv.chpv img { animation: none; }
     #arena.jolt { animation: none; }
+    .screen.show, #hint.on { animation: none; }
+    .btn, .tile, .seg button, .link { transition: none; }
   }
 </style>
 </head>
@@ -699,6 +720,7 @@
 <div id="hellfx" aria-hidden="true"></div>
 <div id="app">
   <header>
+    <button id="soundBtn" type="button" aria-label="Sonido" aria-pressed="true">🔊</button>
     <button id="close" aria-label="Salir">
       <svg viewBox="0 0 24 24" fill="none"><path d="M4 4 20 20M20 4 4 20"/></svg>
     </button>
@@ -718,6 +740,7 @@
       <div id="target"><div class="ball"></div></div>
       <div id="mult" aria-hidden="true"><b></b><span></span><small></small></div>
       <div id="paddle" aria-hidden="true"></div>
+      <div id="hint" aria-hidden="true">👆 Arrastra el dedo para mover la barra</div>
     </div>
 
     <!-- inicio -->
@@ -747,7 +770,7 @@
           <div class="duo"><button class="tile" id="openShop"><span>🛍️</span>Tienda</button><button class="tile" id="openBoard"><span>🏆</span>Marcadores</button></div>
         </div>
       </div>
-      <div class="foot"><button class="link" id="install" hidden>📲 Instalar app</button><button class="link" id="logout" hidden>Cerrar sesión</button></div>
+      <div class="foot"><button class="link" id="soundMenu" type="button" aria-pressed="true">🔊 Sonido: sí</button><button class="link" id="install" hidden>📲 Instalar app</button><button class="link" id="logout" hidden>Cerrar sesión</button></div>
     </section>
 
     <!-- final de partida -->
@@ -771,7 +794,7 @@
     <!-- tienda -->
     <section class="screen" id="shop">
       <div class="shophead"><h1>🛍️ Tienda</h1><div class="coins"><img class="ci" src="skins/peso1.webp" alt=""><span id="shopBal">$0</span></div></div>
-      <div class="seg" role="tablist"><button type="button" id="tabCh" class="on">Personajes</button><button type="button" id="tabBg">Fondos</button><button type="button" id="tabPad">Barras</button><button type="button" id="tabBall">Pelotas</button></div>
+      <div class="seg" role="tablist" aria-label="Categorías de la tienda"><button type="button" id="tabCh" class="on" role="tab">Personajes</button><button type="button" id="tabBg">Fondos</button><button type="button" id="tabPad">Barras</button><button type="button" id="tabBall">Pelotas</button></div>
       <div class="status" id="shopMsg" role="status"></div>
       <div id="shopGrid"></div>
       <button class="btn ghost" id="shopBack">Volver</button>
@@ -990,7 +1013,16 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (state === 'play' || state === 'countdown')) lockScreen(); if (document.visibilityState === 'visible' && boardTimer) { if (boardLeftMs() <= 0) expireBoard(); else refreshBoard(); } });
 
   /* ---------- sonido (sintetizado, sin archivos) ---------- */
+  // Sonido: se puede silenciar (botón en la partida y en el inicio) y la elección queda guardada en este dispositivo.
+  const SND_KEY = 'gana-al-tio-pato-sonido';
+  let soundOn = true; try { soundOn = localStorage.getItem(SND_KEY) !== '0'; } catch (e) {}
+  function paintSound() {
+    $('soundBtn').textContent = soundOn ? '🔊' : '🔇'; $('soundBtn').setAttribute('aria-pressed', String(soundOn)); $('soundBtn').setAttribute('aria-label', soundOn ? 'Silenciar el sonido' : 'Activar el sonido');
+    $('soundMenu').textContent = soundOn ? '🔊 Sonido: sí' : '🔇 Sonido: no'; $('soundMenu').setAttribute('aria-pressed', String(soundOn));
+  }
+  function toggleSound() { soundOn = !soundOn; try { localStorage.setItem(SND_KEY, soundOn ? '1' : '0'); } catch (e) {} paintSound(); if (soundOn) tone(660, .08); }
   function tone(freq, dur = .07, type = 'triangle', vol = .12, to = null) {
+    if (!soundOn) return;
     try {
       audio = audio || new (window.AudioContext || window.webkitAudioContext)();
       if (audio.state === 'suspended') audio.resume();
@@ -1730,7 +1762,7 @@
   }
   arena.addEventListener('pointerdown', e => {
     if (state !== 'play' && state !== 'countdown') return;       // en los menús los botones reciben el toque con normalidad
-    dragX = e.clientX; dragId = e.pointerId; try { arena.setPointerCapture(e.pointerId); } catch (_) {}   // si apoyas otro dedo, la barra sigue al último
+    hideHint(); dragX = e.clientX; dragId = e.pointerId; try { arena.setPointerCapture(e.pointerId); } catch (_) {}   // si apoyas otro dedo, la barra sigue al último
     movePaddle(e);
   });
   arena.addEventListener('pointermove', movePaddle);
@@ -1942,7 +1974,7 @@
   }
   function renderShop() {
     renderCoins();
-    for (const [id, k] of TABS) $(id).classList.toggle('on', shopTab === k);
+    for (const [id, k] of TABS) { const t = $(id); t.classList.toggle('on', shopTab === k); t.setAttribute('role', 'tab'); t.setAttribute('aria-selected', String(shopTab === k)); }
     const grid = $('shopGrid'); grid.textContent = '';
     let vipHead = false;
     for (const it of CAT[shopTab]) {
@@ -2015,7 +2047,7 @@
     $('bestMenu').textContent = player.best ? `🏆 Tu récord: ${player.best}` : '';
   }
   function setAuthMode(m) {
-    authMode = m; $('tabIn').classList.toggle('on', m === 'in'); $('tabUp').classList.toggle('on', m === 'up');
+    authMode = m; $('tabIn').classList.toggle('on', m === 'in'); $('tabUp').classList.toggle('on', m === 'up'); $('tabIn').setAttribute('aria-selected', String(m === 'in')); $('tabUp').setAttribute('aria-selected', String(m === 'up'));
     $('authGo').textContent = m === 'in' ? 'Entrar' : 'Crear cuenta'; $('authMsg').textContent = '';
     $('pass').autocomplete = m === 'in' ? 'current-password' : 'new-password'; $('pass').minLength = m === 'in' ? 6 : 8;
   }
@@ -2053,6 +2085,15 @@
     finally { go.disabled = false; go.textContent = authMode === 'in' ? 'Entrar' : 'Crear cuenta'; }
   }
 
+  const HELP_KEY = 'gana-al-tio-pato-ayuda', hint = $('hint');
+  let helpN = 0; try { helpN = +localStorage.getItem(HELP_KEY) || 0; } catch (e) {}
+  let hintT = null;
+  const hideHint = () => { clearTimeout(hintT); hint.classList.remove('on'); };
+  function showHint() {
+    if (helpN >= 3) return;
+    helpN++; try { localStorage.setItem(HELP_KEY, String(helpN)); } catch (e) {}
+    hint.classList.add('on'); hintT = setTimeout(hideHint, 6500);
+  }
   function startCountdown() {
     if (state === 'countdown' || state === 'play') return;
     if (AUTH && !session) { renderMenu(); return; }
@@ -2078,7 +2119,7 @@
     state = 'countdown'; renderScores(); show(null); lockScreen();
     target.style.visibility = 'hidden';
     paddle.style.visibility = 'visible'; duck.style.visibility = 'visible';
-    duckLook(); draw(); say('¡Hola, amigo! ¡Vamos a jugar!', 2800);
+    duckLook(); draw(); say('¡Hola, amigo! ¡Vamos a jugar!', 2800); showHint();
     last = performance.now(); requestAnimationFrame(cdLoop);
     let n = 3; setBig(n); blip(440, .1);
     clearInterval(cdTimer);
@@ -2172,7 +2213,7 @@
   }
 
   async function endGame() {
-    state = 'over';
+    state = 'over'; hideHint();
     target.style.visibility = 'hidden'; paddle.style.visibility = 'hidden'; duck.style.visibility = 'hidden'; unlockScreen();
     document.body.classList.remove('ingame');
     $('bubble').classList.remove('on'); big.textContent = ''; clearFx(); multEl.classList.remove('show');
@@ -2229,7 +2270,7 @@
   }
 
   function backToMenu() {
-    clearInterval(cdTimer); cdTimer = null;
+    clearInterval(cdTimer); cdTimer = null; hideHint();
     stopBoardTimers();
     state = 'menu';
     target.style.visibility = 'hidden'; paddle.style.visibility = 'hidden'; duck.style.visibility = 'hidden';
@@ -2256,6 +2297,7 @@
   $('play').addEventListener('click', startCountdown);
   $('again').addEventListener('click', startCountdown);
   $('close').addEventListener('click', backToMenu);
+  $('soundBtn').addEventListener('click', toggleSound); $('soundMenu').addEventListener('click', toggleSound); paintSound();
   $('backResult').addEventListener('click', backToMenu);
   $('openBoard').addEventListener('click', () => openBoard('menu'));
   $('openBoard2').addEventListener('click', () => openBoard('result'));
