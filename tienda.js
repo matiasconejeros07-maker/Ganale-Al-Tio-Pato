@@ -62,20 +62,21 @@ window.TIENDA = {
   // Pelotas: monedas y billetes chilenos. rate = pesos que paga cada punto (se multiplica por «Monedas dobles» desde el rebote 100).
   // nom/gen = cómo los nombran los textos del juego («la moneda», «el billete», «el lingote de oro», «el diamante»).
   // fx = cómo se mueve (spin: la moneda gira en el sentido del reloj · flutter: el billete revolotea · jump: el lingote y el diamante saltan). w = ancho relativo.
+  // asp = alto/ancho del dibujo (medido de la imagen): con w dice cuánto mide la pelota en pantalla, y el juego hace chocar la pelota con las paredes, la barra y el Pato exactamente donde se ve (si cambias una imagen, el juego mide la nueva solo).
   ball: [
-    { id: 'peso1',   n: 'Moneda $1',       price: 0,     rate: 1,  img: 'skins/peso1.webp',   fx: 'spin',    w: 1,    trail: '#d5dbe8', nom: 'moneda', gen: 'f', note: 'La moneda de inicio' },
-    { id: 'peso5',   n: 'Moneda $5',       price: 5,     rate: 2,  img: 'skins/peso5.webp',   fx: 'spin',    w: 1,    trail: '#f2b830', nom: 'moneda', gen: 'f' },
-    { id: 'peso10',  n: 'Moneda $10',      price: 10,    rate: 3,  img: 'skins/peso10.webp',  fx: 'spin',    w: 1,    trail: '#f2c66a', nom: 'moneda', gen: 'f' },
-    { id: 'peso50',  n: 'Moneda $50',      price: 50,    rate: 4,  img: 'skins/peso50.webp',  fx: 'spin',    w: 1,    trail: '#e0b060', nom: 'moneda', gen: 'f' },
-    { id: 'peso100', n: 'Moneda $100',     price: 100,   rate: 5,  img: 'skins/peso100.webp', fx: 'spin',    w: 1,    trail: '#ffe08a', nom: 'moneda', gen: 'f' },
-    { id: 'peso500', n: 'Moneda $500',     price: 500,   rate: 6,  img: 'skins/peso500.webp', fx: 'spin',    w: 1.05, trail: '#f5f0d0', nom: 'moneda', gen: 'f' },
-    { id: 'b1000',   n: 'Billete $1.000',  price: 1000,  rate: 7,  img: 'skins/b1000.webp',   fx: 'flutter', w: 1.6,  trail: '#8fe08f', nom: 'billete', gen: 'm' },
-    { id: 'b2000',   n: 'Billete $2.000',  price: 2000,  rate: 8,  img: 'skins/b2000.webp',   fx: 'flutter', w: 1.6,  trail: '#c9a6ee', nom: 'billete', gen: 'm' },
-    { id: 'b5000',   n: 'Billete $5.000',  price: 5000,  rate: 9,  img: 'skins/b5000.webp',   fx: 'flutter', w: 1.6,  trail: '#f08a94', nom: 'billete', gen: 'm' },
-    { id: 'b10000',  n: 'Billete $10.000', price: 10000, rate: 10, img: 'skins/b10000.webp',  fx: 'flutter', w: 1.6,  trail: '#7cc4f0', nom: 'billete', gen: 'm' },
-    { id: 'b20000',  n: 'Billete $20.000', price: 20000, rate: 20, img: 'skins/b20000.webp',  fx: 'flutter', w: 1.6,  trail: '#f0a070', nom: 'billete', gen: 'm' },
-    { id: 'plata',   n: 'Lingote de plata', price: 50000,   rate: 100,   img: 'skins/plata.webp',    fx: 'jump', w: 1.7, trail: '#cfd6e2', nom: 'lingote de plata', gen: 'm', note: 'Un lingote de verdad' },
-    { id: 'oro',     n: 'Lingote de oro',   price: 500000,  rate: 200,   img: 'skins/oro.webp',     fx: 'jump', w: 1.7, trail: '#ffd54a', nom: 'lingote de oro', gen: 'm' },
-    { id: 'diamante', n: 'Diamante',        price: 1000000, rate: 500,   img: 'skins/diamante.webp', fx: 'jump', w: 1.15, trail: '#8fd3ff', nom: 'diamante', gen: 'm', note: 'La joya de la corona' }
+    { id: 'peso1',   n: 'Moneda $1',       price: 0,     rate: 1,  img: 'skins/peso1.webp',   fx: 'spin',    w: 1, asp: 0.975,    trail: '#d5dbe8', nom: 'moneda', gen: 'f', note: 'La moneda de inicio' },
+    { id: 'peso5',   n: 'Moneda $5',       price: 5,     rate: 2,  img: 'skins/peso5.webp',   fx: 'spin',    w: 1, asp: 0.98,    trail: '#f2b830', nom: 'moneda', gen: 'f' },
+    { id: 'peso10',  n: 'Moneda $10',      price: 10,    rate: 3,  img: 'skins/peso10.webp',  fx: 'spin',    w: 1, asp: 0.997,    trail: '#f2c66a', nom: 'moneda', gen: 'f' },
+    { id: 'peso50',  n: 'Moneda $50',      price: 50,    rate: 4,  img: 'skins/peso50.webp',  fx: 'spin',    w: 1, asp: 1.003,    trail: '#e0b060', nom: 'moneda', gen: 'f' },
+    { id: 'peso100', n: 'Moneda $100',     price: 100,   rate: 5,  img: 'skins/peso100.webp', fx: 'spin',    w: 1, asp: 1.0,    trail: '#ffe08a', nom: 'moneda', gen: 'f' },
+    { id: 'peso500', n: 'Moneda $500',     price: 500,   rate: 6,  img: 'skins/peso500.webp', fx: 'spin',    w: 1.05, asp: 1.0, trail: '#f5f0d0', nom: 'moneda', gen: 'f' },
+    { id: 'b1000',   n: 'Billete $1.000',  price: 1000,  rate: 7,  img: 'skins/b1000.webp',   fx: 'flutter', w: 1.6, asp: 0.571,  trail: '#8fe08f', nom: 'billete', gen: 'm' },
+    { id: 'b2000',   n: 'Billete $2.000',  price: 2000,  rate: 8,  img: 'skins/b2000.webp',   fx: 'flutter', w: 1.6, asp: 0.509,  trail: '#c9a6ee', nom: 'billete', gen: 'm' },
+    { id: 'b5000',   n: 'Billete $5.000',  price: 5000,  rate: 9,  img: 'skins/b5000.webp',   fx: 'flutter', w: 1.6, asp: 0.495,  trail: '#f08a94', nom: 'billete', gen: 'm' },
+    { id: 'b10000',  n: 'Billete $10.000', price: 10000, rate: 10, img: 'skins/b10000.webp',  fx: 'flutter', w: 1.6, asp: 0.476,  trail: '#7cc4f0', nom: 'billete', gen: 'm' },
+    { id: 'b20000',  n: 'Billete $20.000', price: 20000, rate: 20, img: 'skins/b20000.webp',  fx: 'flutter', w: 1.6, asp: 0.486,  trail: '#f0a070', nom: 'billete', gen: 'm' },
+    { id: 'plata',   n: 'Lingote de plata', price: 50000,   rate: 100,   img: 'skins/plata.webp',    fx: 'jump', w: 1.7, asp: 0.594, trail: '#cfd6e2', nom: 'lingote de plata', gen: 'm', note: 'Un lingote de verdad' },
+    { id: 'oro',     n: 'Lingote de oro',   price: 500000,  rate: 200,   img: 'skins/oro.webp',     fx: 'jump', w: 1.7, asp: 0.594, trail: '#ffd54a', nom: 'lingote de oro', gen: 'm' },
+    { id: 'diamante', n: 'Diamante',        price: 1000000, rate: 500,   img: 'skins/diamante.webp', fx: 'jump', w: 1.15, asp: 1.04, trail: '#8fd3ff', nom: 'diamante', gen: 'm', note: 'La joya de la corona' }
   ]
 };
