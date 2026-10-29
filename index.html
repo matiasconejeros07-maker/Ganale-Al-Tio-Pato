@@ -243,6 +243,16 @@
   #list li.top .rk { font-size: 22px; }
   #list li.mine { background: #fff0a0; }
   #list .empty { display: block; text-align: center; color: #8a8658; padding: 28px 16px; }
+  #list { flex: 0 1 auto; }                                       /* el Top 25 se encoge si hace falta; tu fila queda siempre a la vista debajo */
+  #myRow { width: min(100%, 440px); display: flex; flex-direction: column; align-items: center; flex: none; }
+  #myRow .dots { display: flex; flex-direction: column; gap: 4px; padding: 2px 0 6px; }
+  #myRow .dots i { width: 5px; height: 5px; border-radius: 50%; background: #b9b585; }
+  #myRow ul { list-style: none; margin: 0; padding: 0; width: 100%; background: var(--card); border: 2px solid #111; border-radius: 18px; overflow: hidden; }
+  #myRow li { text-align: left; display: grid; grid-template-columns: minmax(56px, auto) 1fr auto; align-items: center; gap: 8px; padding: 12px 16px; font-size: 17px; background: #fff0a0; }
+  #myRow .rk { font-weight: 800; color: #5b5320; font-variant-numeric: tabular-nums; text-align: center; }
+  #myRow .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #myRow .nm small { font-weight: 700; color: #8a8658; margin-left: 4px; }
+  #myRow .sc { font-weight: 800; font-variant-numeric: tabular-nums; }
   #backBoard { margin-top: 4px; }
 
   /* celulares bajitos (iPhone SE, Android compactos) */
@@ -758,7 +768,7 @@
       <h1>🏆 Marcadores</h1>
       <div class="board-note" id="boardNote"></div>
       <ul id="list" aria-live="polite"></ul>
-      <button class="btn ghost" id="moreBoard" hidden>Ver más jugadores</button>
+      <div id="myRow" hidden aria-live="polite"></div>
       <button class="btn ghost" id="backBoard">Volver</button>
     </section>
   </main>
@@ -799,8 +809,8 @@
   // Fases del Tío Pato, según los rebotes: ángel amistoso → desafiante → se enoja y se vuelve diablo
   // En cuanto el Pato se enoja (55) pierde la aureola y las alas de ángel y pasa a su piel de diablo.
   const P_CHALLENGE = 30, P_ANGRY = 55, P_DEVIL = 60, P_HELL = 70;
-  const TOP_N = 100;              // cuántos jugadores muestra el marcador
-  const REFRESH_MS = 15000;       // el marcador se actualiza solo mientras está abierto
+  const TOP_N = 25;               // cuántos jugadores muestra el marcador; tu puesto aparece debajo aunque estés más abajo
+  const REFRESH_MS = 30000;       // el marcador se actualiza solo mientras está abierto
   const STORE_KEY = 'gana-al-tio-pato-v2';
   // El fondo cambia cada 10 rebotes (el primero a los 5): del cielo amarillo al infierno, que empieza justo cuando el Pato se enoja
   const PALETTE = ['#fff6c0', '#ffec5c', '#ffb978', '#ffa64f', '#faa3fe', '#f478fd', '#c2312f', '#8a1620', '#5a0e14', '#3a070b', '#2a0508'];
@@ -1225,12 +1235,12 @@
   /* ---------- pantalla de marcadores ---------- */
   let boardFrom = 'menu', boardTimer = null;
 
-  function renderBoard(rows) {
+  function renderBoard(rows, me) {
     const ul = $('list'); ul.textContent = '';
     if (!rows.length) {
       const li = document.createElement('li'); li.className = 'empty';
       li.textContent = 'Todavía nadie le gana al Tío Pato. ¡Sé el primero!';
-      ul.appendChild(li); return;
+      ul.appendChild(li);
     }
     const medals = ['🥇', '🥈', '🥉'];
     const frag = document.createDocumentFragment();
@@ -1244,38 +1254,74 @@
       li.append(rk, nm, sc); frag.appendChild(li);
     });
     ul.appendChild(frag);
+    // Si no estás entre los 25 primeros: tres puntos y, debajo, tu puesto en el mundo y tu puntaje.
+    const box = $('myRow'); box.textContent = '';
+    box.hidden = !(me && player.best > 0 && !rows.some(r => r.id === player.id));
+    if (!box.hidden) {
+      const dots = document.createElement('div'); dots.className = 'dots'; dots.setAttribute('aria-hidden', 'true'); dots.innerHTML = '<i></i><i></i><i></i>';
+      const list = document.createElement('ul'), li = document.createElement('li');
+      const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = '#' + me.rank.toLocaleString('es-CL');
+      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = player.name || (session && session.name) || 'Tú';
+      const you = document.createElement('small'); you.textContent = '(tú)'; nm.appendChild(you);
+      const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = player.best;
+      li.append(rk, nm, sc); list.appendChild(li); box.append(dots, list);
+    }
     const mine = ul.querySelector('.mine');
     if (mine && !ul.dataset.scrolled) { mine.scrollIntoView({ block: 'center' }); ul.dataset.scrolled = '1'; }
   }
 
-  // Tu puesto entre TODOS los jugadores (aunque estés fuera del Top): cuenta cuántos tienen más rebotes que tú.
-  async function myRank(rows) {
-    if (!ONLINE || player.best <= 0) return null;
-    let rank; const pos = rows ? rows.findIndex(r => r.id === player.id) : -1;
-    if (pos >= 0) rank = rows.filter(r => r.s > player.best).length + 1;
-    else {
-      const r = await http(`${DB}/scores.json?orderBy=%22s%22&startAt=${player.best + 1}`);
-      if (!r.ok) return null;
-      rank = Object.keys((await r.json()) || {}).length + 1;
-    }
-    let total = null;
-    try { const t = await http(`${DB}/scores.json?shallow=true`); if (t.ok) total = Object.keys((await t.json()) || {}).length; } catch (e) {}
-    return { rank, total };
+  // Cuántas cuentas hay en cada puntaje (el contador `hist` de Firebase): ~500 números, unos 4 KB, vengan 100 o 100.000 jugadores.
+  async function fetchCounts() {
+    const r = await http(`${DB}/hist.json`);
+    if (!r.ok) return null;
+    const d = (await r.json()) || {}, c = new Array(H_MAX + 1).fill(0);
+    if (Array.isArray(d)) d.forEach((v, i) => { if (v > 0 && i <= H_MAX) c[i] = v; });       // Firebase devuelve una lista cuando las claves son 0, 1, 2…
+    else for (const k in d) { const i = +k; if (d[k] > 0 && i >= 0 && i <= H_MAX) c[i] = d[k]; }
+    return c;
   }
-  let boardLimit = TOP_N;
+  // Tu puesto entre TODOS los jugadores: 1 + las cuentas con más rebotes que tú (se suman las casillas de arriba). null si no se puede saber.
+  async function myRank() {
+    if (!ONLINE || player.best <= 0) return null;
+    const c = await fetchCounts(); if (!c) return null;
+    let above = 0, total = 0; c.forEach((v, i) => { total += v; if (i > player.best) above += v; });
+    return { rank: above + 1, total: Math.max(total, above + 1) };
+  }
+  // Tu puntaje se cuenta una sola vez en `hist` y, al mejorar, tu cuenta pasa de una casilla a otra (las reglas lo exigen así). Se hace aparte del cobro
+  // (si falla, el cobro no se ve afectado) y se reintenta solo. También cuenta las cuentas que ya existían antes de que hubiera contador.
+  let counting = false, countedFor = '', countFailAt = 0;
+  async function syncCount() {
+    if (!AUTH || !session || counting || Date.now() - countFailAt < 60000) return;
+    const uid = session.uid; counting = true;
+    try {
+      for (let i = 0; i < 4; i++) {
+        const r = await http(`${DB}/scores/${uid}.json`); if (!r.ok) return;
+        const e = await r.json(); if (!e || typeof e.s !== 'number') return;
+        if (e.c === e.s) { countedFor = uid + ':' + e.s; return; }                       // ya está contado
+        const rn = await http(`${DB}/hist/${e.s}.json`); if (!rn.ok) return;
+        const upd = { [`scores/${uid}/c`]: e.s, [`hist/${e.s}`]: (+(await rn.json()) || 0) + 1 };
+        if (typeof e.c === 'number' && e.c !== e.s) {                                     // salir de la casilla vieja
+          const ro = await http(`${DB}/hist/${e.c}.json`), old = ro.ok ? (+(await ro.json()) || 0) : 0;
+          if (old > 0) upd[`hist/${e.c}`] = old - 1;
+        }
+        const w = await http(`${DB}/.json?auth=${encodeURIComponent(await idToken())}`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(upd) });
+        if (w.ok) { countedFor = uid + ':' + e.s; return; }
+        if (w.status !== 401 && w.status !== 403) return;                                 // sin conexión u otro error: se reintenta en otra ocasión
+        await new Promise(res => setTimeout(res, 150 + Math.random() * 350));            // otra cuenta movió la misma casilla a la vez: se lee de nuevo y se reintenta
+      }
+      countFailAt = Date.now();                                                           // (también pasa si aún no se publicaron las reglas nuevas)
+    } catch (e) {} finally { counting = false; }
+  }
   async function refreshBoard() {
-    const note = $('boardNote'), more = $('moreBoard');
+    const note = $('boardNote');
     note.textContent = ONLINE ? 'Actualizando…' : 'Modo local: aquí solo aparece tu mejor puntaje en este dispositivo.';
     try {
       if (player.dirty) await syncBest();
-      const rows = await fetchTop(boardLimit);
-      renderBoard(rows);
-      more.hidden = !(ONLINE && rows.length >= boardLimit && boardLimit < 1000);
+      if (countedFor !== (session ? session.uid : '') + ':' + player.best) syncCount();
+      const [rows, me] = await Promise.all([fetchTop(TOP_N), ONLINE ? myRank().catch(() => null) : null]);
+      renderBoard(rows, me);
       if (ONLINE) {
-        const me = await myRank(rows);
-        const total = me && me.total ? ` de ${me.total.toLocaleString('es')} jugadores` : '';
-        note.textContent = me ? `Tu puesto: ${me.rank.toLocaleString('es')}${total} · gana quien más rebotes aguante`
-          : `Top ${rows.length} · gana quien más rebotes aguante`;
+        const tot = me && me.total > TOP_N ? ` de ${me.total.toLocaleString('es-CL')} jugadores` : '';
+        note.textContent = `Top ${Math.min(rows.length, TOP_N)}${tot} · gana quien más rebotes aguante`;
       }
     } catch (e) {
       note.textContent = 'No se pudo cargar. Reintentando…';
@@ -1285,7 +1331,7 @@
   function openBoard(from) {
     boardFrom = from; delete $('list').dataset.scrolled;
     setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
-    boardLimit = 100; show('board'); refreshBoard();
+    show('board'); refreshBoard();
     clearInterval(boardTimer); boardTimer = setInterval(refreshBoard, REFRESH_MS);
   }
   function closeBoard() {
@@ -1657,12 +1703,12 @@
       const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h), body = {};
       body[`runs/${uid}/e`] = SV; body[`runs/${uid}/h`] = pr.h; body[`runs/${uid}/p`] = p;
       body[`wallets/${uid}/c`] = c0 + p; body[`wallets/${uid}/sp`] = sp0; body[`wallets/${uid}/lr`] = pr.s;
-      if (pr.h > best) body[`scores/${uid}`] = { n: player.name || session.name, k: session.key, s: pr.h, t: SV };
+      if (pr.h > best) { body[`scores/${uid}/n`] = player.name || session.name; body[`scores/${uid}/k`] = session.key; body[`scores/${uid}/s`] = pr.h; body[`scores/${uid}/t`] = SV; }   // por campos: así no se borra `c` (el contador de puestos)
       const r = await http(`${DB}/.json?auth=${tok}`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
       if (r.ok) {
         wallet.c = c0 + p; wallet.sp = sp0; wallet.lr = pr.s; saveWallet();
         if (pr.h > player.best) { player.best = pr.h; savePlayer(); }
-        pending = null; savePending(); return 'ok';
+        pending = null; savePending(); if (pr.h > best) syncCount(); return 'ok';
       }
       if (r.status === 401 || r.status === 403) {
         const g = await http(`${DB}/wallets/${uid}/lr.json?auth=${tok}`); const lr = g.ok ? await g.json() : null;
@@ -1840,7 +1886,7 @@
       if (v && typeof v.s === 'number' && v.s > player.best) { player.best = v.s; savePlayer(); }
       if (v && typeof v.n === 'string' && v.n) { player.name = v.n; savePlayer(); }
     } catch (e) {}
-    leaderBest = Math.max(leaderBest, player.best); renderMenu(); renderScores(); setInitial();
+    leaderBest = Math.max(leaderBest, player.best); renderMenu(); renderScores(); setInitial(); syncCount();
   }
   function logout() {
     session = null; saveSession(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
@@ -1954,7 +2000,8 @@
     lines.push('Probando…'); show();
     try {
       lines.pop();
-      await add('Leer marcadores', await http(`${DB}/scores.json?shallow=true`));
+      await add('Leer marcadores', await http(`${DB}/scores.json?orderBy=%22s%22&limitToLast=1`));
+      await add('Leer el contador de puestos (hist)', await http(`${DB}/hist.json`));
       if (!session) { lines.push('❌ No has iniciado sesión'); show(); return; }
       const tok = encodeURIComponent(await idToken()), uid = session.uid;
       await add('Leer tu billetera', await http(`${DB}/wallets/${uid}.json?auth=${tok}`));
@@ -2009,7 +2056,7 @@
       if (res === 'ok') {
         cl.textContent = `+${money(p)} · ahora tienes ${money(balance())}`;
         st.className = 'status'; st.textContent = '✅ Partida guardada'; fetchLeader();
-        try { const me = await myRank(await fetchTop()); if (state === 'over' && me) st.textContent = `✅ Guardado · puesto ${me.rank.toLocaleString('es')}${me.total ? ' de ' + me.total.toLocaleString('es') : ''}`; } catch (e) {}
+        try { const me = await myRank(); if (state === 'over' && me) st.textContent = `✅ Guardado · puesto ${me.rank.toLocaleString('es-CL')}${me.total > 1 ? ' de ' + me.total.toLocaleString('es-CL') : ''}`; } catch (e) {}
         return;
       }
       if (res === 'denied') {
@@ -2055,7 +2102,6 @@
   $('openBoard').addEventListener('click', () => openBoard('menu'));
   $('openBoard2').addEventListener('click', () => openBoard('result'));
   $('backBoard').addEventListener('click', closeBoard);
-  $('moreBoard').addEventListener('click', () => { boardLimit = Math.min(1000, boardLimit + 100); refreshBoard(); });
   nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') startCountdown(); });
 
   /* ---------- app instalable (PWA) ---------- */

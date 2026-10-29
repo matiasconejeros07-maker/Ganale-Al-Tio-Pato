@@ -17,7 +17,11 @@ const rateExp = b => '(' + T.ball.map(i => `${b} === '${i.id}' ? ${i.rate}`).joi
 const tExp = h => `((${h} - ${h} % ${E}) / ${E})`;
 const pesosExp = h => `(${h} + ${E} * ${tExp(h)} * (${tExp(h)} - 1) / 2 + ${tExp(h)} * (${h} - ${E} * ${tExp(h)} + 1))`;
 
-const RUN = "newData.parent().parent().parent().child('runs').child($uid)";          // desde wallets/$uid/<campo> o scores/$uid/<campo>
+const RUN = "newData.parent().parent().parent().child('runs').child($uid)";
+// contador de puestos (hist): SC = tu fila de scores antes de la escritura · NS = tu fila de scores después
+const SC = "root.child('scores').child(auth.uid)", NS = "newData.parent().parent().child('scores').child(auth.uid)";
+const HIST_INC = `newData.val() === (data.exists() ? data.val() : 0) + 1 && ${NS}.child('c').val() + '' === $b && (!${SC}.child('c').exists() || ${SC}.child('c').val() + '' !== $b)`;
+const HIST_DEC = `data.exists() && newData.val() === data.val() - 1 && ${SC}.child('c').exists() && ${SC}.child('c').val() + '' === $b && ${NS}.child('c').exists() && ${NS}.child('c').val() + '' !== $b`;          // desde wallets/$uid/<campo> o scores/$uid/<campo>
 const defaults = {}; for (const c of CATS) defaults[c] = T[c][0].id;
 
 const own = {};
@@ -59,7 +63,20 @@ const rules = { rules: {
       k: { '.validate': `newData.isString() && newData.val().matches(/^[a-z0-9.]{3,24}$/) && auth.token.email === newData.val() + '${MAIL}'` },
       s: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && ${RUN}.child('e').exists() && newData.val() <= ${RUN}.child('h').val()` },
       t: { '.validate': 'newData.val() === now' },
+      // c = el puntaje que ya está contado en `hist` (así cada cuenta cuenta una sola vez y se puede mover de casilla al mejorar). Solo sube y siempre es igual al puntaje de ese momento.
+      c: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && newData.val() === ${P}.child('s').val() && (!data.exists() || newData.val() > data.val())` },
       $other: { '.validate': false }
+    }
+  },
+
+  // ---- contador de puestos: hist/<puntaje> = cuántas cuentas tienen ese puntaje. Con esto el puesto de cualquiera se calcula leyendo ~500 números
+  //      (unos 4 KB) sea cual sea la cantidad de jugadores, en vez de bajar toda la lista. Cada casilla solo se mueve de a 1 y solo si la misma cuenta
+  //      que escribe acaba de pasar a (o salir de) esa casilla en `scores/<su uid>/c`. ----
+  hist: {
+    '.read': true,
+    $b: {
+      '.validate': 'newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && $b.matches(/^([0-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)$/)',
+      '.write': `auth != null && (${HIST_INC} || ${HIST_DEC})`
     }
   },
 

@@ -14,7 +14,7 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
 6. Abre `config.js` y completa las dos líneas (la dirección de la base de datos está en la pestaña **Datos**):
    `window.DINERO_DB_URL = 'https://mi-proyecto-default-rtdb.firebaseio.com';`
    `window.FIREBASE_API_KEY = 'AIza...';`
-7. Sube el cambio al repositorio. Listo: para jugar hay que crear una cuenta o iniciar sesión, y el marcador muestra el Top 100.
+7. Sube el cambio al repositorio. Listo: para jugar hay que crear una cuenta o iniciar sesión, y el marcador muestra el Top 25.
 
 ## Cuentas (nombre y contraseña)
 
@@ -79,8 +79,13 @@ modificadas del juego; (2) **Cloud Functions** (plan Blaze) permiten registrar l
 
 - Cada cuenta guarda **solo su mejor puntaje** (si rebota más veces, se actualiza; si rebota menos, no baja). El puntaje son los rebotes: cada vez que la barra toca la pelota suma uno.
   Gana quien más rebotes aguante contra el personaje. Se guarda junto con los pesos al terminar cada partida.
-- Muestra el Top 100 ordenado por rebotes (en empate, quien llegó primero).
-- El plan gratuito (Spark) de Firebase alcanza de sobra para 1.000+ jugadores: cada partida son unos pocos bytes y el marcador se descarga solo mientras alguien lo tiene abierto.
+- Muestra el **Top 25** ordenado por rebotes. Si no estás entre ellos, debajo aparecen tres puntos y tu fila fija con **tu puesto en el mundo** (`#4.321`) y tu puntaje.
+- **Cómo calcula el puesto sin bajar la lista de jugadores:** Firebase guarda un contador `hist` con cuántas cuentas hay en cada puntaje (0 a 500). Tu puesto es 1 + la suma de las casillas de arriba de tu puntaje:
+  se leen unos 500 números (~4 KB) vengan 100 o 100.000 jugadores. Cada cuenta se cuenta sola, una vez, y al mejorar pasa de casilla (`scores/<uid>/c` guarda dónde está contada; las reglas exigen que
+  el contador solo se mueva de a 1 y solo para tu propia cuenta). Las cuentas que ya existían antes de que hubiera contador se cuentan la próxima vez que entran al juego; hasta entonces el puesto
+  de los demás puede salir unos lugares más arriba de lo real (el Top 25 siempre es exacto).
+- Cada vez que alguien abre el marcador se descargan ~6 KB (Top 25 + contador), y se actualiza cada 30 s solo mientras sigue abierto. Eso no crece con la cantidad de jugadores.
+- El plan gratuito (Spark) de Firebase (1 GB guardado, 10 GB de descarga al mes) alcanza de sobra para miles de jugadores; para una app en las tiendas con 10.000+ jugadores conviene pasar al plan Blaze (pago por uso, con alerta de presupuesto).
 
 ## El arte de los personajes
 
