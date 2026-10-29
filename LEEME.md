@@ -150,7 +150,9 @@ Con cuenta, al entrar cada día aparece la **Racha diaria** (también desde el c
 
 ## Interfaz y accesibilidad
 
-- **Sonido:** botón 🔊/🔇 arriba a la derecha durante la partida y «Sonido: sí/no» al pie del inicio; la elección se guarda en el dispositivo.
+- **Ajustes** (⚙️ al pie del inicio): interruptores de **Sonido** y **Vibración** (SÍ/NO, se recuerdan en el dispositivo), **Cerrar sesión** y la versión del juego. Además, el botón 🔊/🔇 arriba a la derecha durante la partida silencia rápido.
+- **Cobro de la racha animado:** las monedas del premio salen de la tarjeta del día, vuelan al «bolsillo» (con sonido y vibración suave) y cada una que llega suma al contador; sale un «+$500» grande. Con «reducir movimiento» el total se actualiza sin animación.
+- **Logo de la app** (`icons/`): se genera desde el dibujo de los Tíos Patitos con `python3 herramientas/generar-iconos.py logo.png` (íconos de 192 y 512, versión *maskable* para Android, ícono de iOS y favicons). Los celulares que ya instalaron la app pueden tardar en cambiar el ícono; para verlo de inmediato hay que desinstalar y volver a instalar.
 - **Ayuda de la primera partida:** «👆 Arrastra el dedo para mover la barra» durante la cuenta regresiva en las 3 primeras partidas de cada dispositivo (desaparece al tocar).
 - **Legibilidad:** el marcador de rebotes tiene contraste de más de 4,5:1 sobre el fondo amarillo; todos los botones, pestañas y enlaces miden al menos 44 px de alto; las pantallas entran con un desvanecido suave (se desactiva con «reducir movimiento»); la tienda se desvanece abajo para mostrar que se puede seguir bajando.
 - **Teclado y lectores de pantalla:** anillo de foco visible, pestañas con `role="tab"` y `aria-selected`, botones con `aria-label` y avisos con `role="alert"`/`aria-live`.

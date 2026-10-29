@@ -189,7 +189,7 @@
   .modal { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(12, 10, 40, .6); }
   .modal.show { display: flex; animation: fadeIn .2s ease-out; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .mcard { position: relative; width: min(100%, 380px); max-height: calc(100% - 8px); overflow-y: auto; background: #fffdf0; border-radius: 26px; padding: 22px 16px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); animation: cardIn .3s cubic-bezier(.2, 1.2, .3, 1); }
+  .mcard { position: relative; width: min(100%, 380px); max-height: calc(100% - 8px); overflow-y: auto; background: #fffdf0; border-radius: 26px; padding: 22px 16px 24px; text-align: center; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); animation: cardIn .3s cubic-bezier(.2, 1.2, .3, 1); }
   @keyframes cardIn { from { transform: translateY(24px) scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
   .mcard h2 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -.01em; }
   .mcard .msub { margin: 6px 0 0; font-size: 14px; font-weight: 700; color: #6b6840; min-height: 1.3em; }
@@ -224,6 +224,40 @@
   #dailyGo:disabled { background: #cfcbb0; box-shadow: 0 5px 0 #a8a483; color: #fff; cursor: default; }
   .cf { position: absolute; left: 50%; top: 40%; font-size: 22px; pointer-events: none; animation: cf 1.1s ease-out forwards; }
   @keyframes cf { to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
+
+  /* ---------- ajustes (sonido, vibración, cerrar sesión) ---------- */
+  .mcard.set { padding: 0; overflow: visible; width: min(100%, 360px); }
+  .sethead { background: linear-gradient(#303030, #111); border-radius: 26px 26px 0 0; padding: 22px 16px 16px; border-bottom: 5px solid #ffc928; }
+  .sethead h2 { color: #fff; font-size: 30px; text-shadow: 0 3px 0 rgba(0, 0, 0, .5); }
+  .setx { position: absolute; top: -14px; right: -10px; width: 46px; height: 46px; border-radius: 50%; border: 3px solid #fff; cursor: pointer; color: #fff; font-size: 20px; font-weight: 900; line-height: 1;
+    background: radial-gradient(circle at 35% 30%, #ff7a6b, #d1281c); box-shadow: 0 5px 12px rgba(0, 0, 0, .4); }
+  .setbody { padding: 6px 22px 20px; }
+  .setrow { display: flex; align-items: center; gap: 14px; padding: 15px 0; border-bottom: 2px solid var(--line); }
+  .seti { width: 32px; height: 32px; flex: none; color: #111; }
+  .seti svg { display: block; width: 100%; height: 100%; fill: currentColor; }
+  .setl { flex: 1; text-align: left; font-size: 20px; font-weight: 900; }
+  .tog { position: relative; flex: none; width: 98px; height: 44px; border: 0; border-radius: 999px; cursor: pointer; padding: 0 0 0 16px; text-align: left; font: inherit; font-size: 16px; font-weight: 900; color: #fff;
+    background: linear-gradient(#3fcb52, #25a038); box-shadow: inset 0 3px 6px rgba(0, 0, 0, .28); transition: background .2s; }
+  .tog i { position: absolute; top: 3px; right: 3px; width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fffaf0, #eadfc8); box-shadow: 0 3px 7px rgba(0, 0, 0, .4); transition: transform .2s cubic-bezier(.3, 1.4, .5, 1); }
+  .tog.off { background: linear-gradient(#bdb9a2, #a29e86); padding: 0 16px 0 0; text-align: right; }
+  .tog.off i { transform: translateX(-54px); }
+  .btn.out { width: 100%; margin-top: 20px; background: transparent; color: #c0392b; border: 3px solid #c0392b; font-size: 17px; padding: 13px 20px; }
+  .btn.out[hidden] { display: none; }
+  .setver { margin-top: 14px; font-size: 13px; font-weight: 800; color: #9b977a; }
+
+  /* ---------- cobro de la racha: monedas que vuelan al bolsillo ---------- */
+  .pocket { display: inline-flex; align-items: center; gap: 8px; margin: 10px auto 0; background: #fff; border: 2px solid var(--line); border-radius: 999px; padding: 4px 16px 4px 6px; font-weight: 800; font-size: 15px; color: #6b6840; box-shadow: 0 2px 8px rgba(0, 0, 0, .08); transition: box-shadow .3s; }
+  .pocket img { height: 26px; width: auto; max-width: 40px; object-fit: contain; display: block; }
+  .pocket b { color: var(--ink); font-size: 19px; font-variant-numeric: tabular-nums; min-width: 4ch; text-align: left; }
+  .pocket.bump { animation: pocketBump .22s ease-out; }
+  @keyframes pocketBump { 40% { transform: scale(1.15); } }
+  .pocket.glow { box-shadow: 0 0 0 3px rgba(123, 63, 242, .5), 0 0 20px rgba(123, 63, 242, .6); }
+  .fly { position: fixed; z-index: 80; pointer-events: none; height: 34px; width: auto; will-change: transform, opacity; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .35)); }
+  .fly.bolt { height: auto; font-size: 30px; line-height: 1; }
+  .gain { position: fixed; z-index: 81; pointer-events: none; white-space: nowrap; font-size: 46px; font-weight: 900; color: #ffd23a; -webkit-text-stroke: 2px #7a4a00; paint-order: stroke fill; text-shadow: 0 4px 0 #7a4a00, 0 0 22px rgba(255, 200, 40, .95); }
+  #dailyMsg { min-height: 0; margin-top: 12px; }
+  #dailyMsg.ok:not(:empty) { display: inline-block; background: #eaf7e6; color: #1f7a2b; padding: 6px 14px; border-radius: 999px; font-weight: 800; }
+  #dailyMsg.err:not(:empty) { display: block; }
 
   /* ---------- pantallas (inicio / final / marcadores) ---------- */
   .screen {
@@ -756,7 +790,8 @@
     .bgx, .bgx i, .bgx i::before, .bgx::before, .bgx::after, #paddle, #paddle::before, #paddle::after, .pvbar, .pvbar::before, .pvbar::after { animation: none !important; }
     #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .item .pv.mystery b, .item .pv.mystery i, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .ball.jump::before, .ball.jump::after, .hero, .rain span, #rotate .ico, #mult.show, .item .pv.chpv img { animation: none; }
     #arena.jolt { animation: none; }
-    .screen.show, #hint.on, .chip.streak.go, .dcard.today, .mcard, .modal.show { animation: none; }
+    .screen.show, #hint.on, .chip.streak.go, .dcard.today, .mcard, .modal.show, .pocket.bump { animation: none; }
+    .tog, .tog i { transition: none; }
     .btn, .tile, .seg button, .link { transition: none; }
   }
 </style>
@@ -818,7 +853,7 @@
           <div class="duo"><button class="tile" id="openShop"><span>🛍️</span>Tienda</button><button class="tile" id="openBoard"><span>🏆</span>Marcadores</button></div>
         </div>
       </div>
-      <div class="foot"><button class="link" id="soundMenu" type="button" aria-pressed="true">🔊 Sonido: sí</button><button class="link" id="install" hidden>📲 Instalar app</button><button class="link" id="logout" hidden>Cerrar sesión</button></div>
+      <div class="foot"><button class="link" id="openSettings" type="button">⚙️ Ajustes</button><button class="link" id="install" hidden>📲 Instalar app</button></div>
     </section>
 
     <!-- final de partida -->
@@ -861,11 +896,24 @@
 </div>
 
 <div id="rotate" hidden><span class="ico">📱</span><span>Gira tu celular a vertical para jugar</span></div>
+<div class="modal" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <div class="mcard set">
+    <div class="sethead"><h2 id="setTitle">Ajustes</h2></div>
+    <button class="setx" id="setClose" type="button" aria-label="Cerrar">✕</button>
+    <div class="setbody">
+      <div class="setrow"><span class="seti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.2 5.8a8.6 8.6 0 0 1 0 12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="setl" id="lblSound">Sonido</span><button class="tog" id="togSound" type="button" role="switch" aria-checked="true" aria-labelledby="lblSound"><span class="tt">SÍ</span><i></i></button></div>
+      <div class="setrow"><span class="seti"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="18" rx="2.2"/><path d="M4.5 8v8M2 10.5v3M19.5 8v8M22 10.5v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="setl" id="lblVib">Vibración</span><button class="tog" id="togVib" type="button" role="switch" aria-checked="true" aria-labelledby="lblVib"><span class="tt">SÍ</span><i></i></button></div>
+      <button class="btn out" id="logout" type="button" hidden>Cerrar sesión</button>
+      <div class="setver" id="setVer">Versión</div>
+    </div>
+  </div>
+</div>
 <div class="modal" id="daily" role="dialog" aria-modal="true" aria-labelledby="dailyTitle">
   <div class="mcard" id="dailyCard">
     <button class="mclose" id="dailyClose" type="button" aria-label="Cerrar">✕</button>
     <h2 id="dailyTitle">Racha diaria 🔥</h2>
     <p class="msub" id="dailySub">Entra cada día y gana premios.</p>
+    <div class="pocket" id="pocket" aria-live="polite"><img id="pocketImg" src="skins/peso1.webp" alt=""><span>Tu bolsillo</span><b id="pocketNum">$0</b></div>
     <div class="dgrid" id="dailyGrid"></div>
     <button class="btn" id="dailyGo" type="button">Reclamar</button>
     <div class="status" id="dailyMsg" role="status"></div>
@@ -1078,10 +1126,15 @@
   // Sonido: se puede silenciar (botón en la partida y en el inicio) y la elección queda guardada en este dispositivo.
   const SND_KEY = 'gana-al-tio-pato-sonido';
   let soundOn = true; try { soundOn = localStorage.getItem(SND_KEY) !== '0'; } catch (e) {}
+  const VIB_KEY = 'gana-al-tio-pato-vibracion';
+  let vibOn = true; try { vibOn = localStorage.getItem(VIB_KEY) !== '0'; } catch (e) {}
+  const vib = pat => { if (vibOn && navigator.vibrate) { try { navigator.vibrate(pat); } catch (e) {} } };         // todas las vibraciones pasan por aquí (se pueden apagar en Ajustes)
+  function paintTog(btn, on) { btn.classList.toggle('off', !on); btn.setAttribute('aria-checked', String(on)); btn.querySelector('.tt').textContent = on ? 'SÍ' : 'NO'; }
   function paintSound() {
     $('soundBtn').textContent = soundOn ? '🔊' : '🔇'; $('soundBtn').setAttribute('aria-pressed', String(soundOn)); $('soundBtn').setAttribute('aria-label', soundOn ? 'Silenciar el sonido' : 'Activar el sonido');
-    $('soundMenu').textContent = soundOn ? '🔊 Sonido: sí' : '🔇 Sonido: no'; $('soundMenu').setAttribute('aria-pressed', String(soundOn));
+    paintTog($('togSound'), soundOn); paintTog($('togVib'), vibOn);
   }
+  function toggleVib() { vibOn = !vibOn; try { localStorage.setItem(VIB_KEY, vibOn ? '1' : '0'); } catch (e) {} paintSound(); vib(40); }
   function toggleSound() { soundOn = !soundOn; try { localStorage.setItem(SND_KEY, soundOn ? '1' : '0'); } catch (e) {} paintSound(); if (soundOn) tone(660, .08); }
   function tone(freq, dur = .07, type = 'triangle', vol = .12, to = null) {
     if (!soundOn) return;
@@ -1778,7 +1831,7 @@
       if (hits % TIER === 0) bonusBanner(rt, val);
       paddle.classList.add('hit'); setTimeout(() => paddle.classList.remove('hit'), 90);
       tone(480 + Math.min(hits, 60) * 10, .07);
-      if (navigator.vibrate) navigator.vibrate(8);
+      vib(8);
     }
     // La barra también es sólida por las puntas: si la pelota ya está a la altura de la barra (no la tocó por arriba) y se mete por un costado, rebota contra la punta en vez de atravesarla.
     if (y + BY > top + 2 && y - BY < top + PADDLE_H) {
@@ -1801,7 +1854,7 @@
     multEl.classList.remove('show'); void multEl.offsetWidth; multEl.classList.add('show');
     for (let i = 0; i < 5; i++) burst(W * (.1 + i * .2), H * .5, 14, ['#ffd54a', '#fff2a0', '#ffb300', '#ff8a1f'], 380 + Math.random() * 160, true);
     [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, .16, 'triangle', .13), i * 80));
-    if (navigator.vibrate) navigator.vibrate([30, 40, 30, 40, 60]);
+    vib([30, 40, 30, 40, 60]);
     const b = $('mbadge'); b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse');
   }
   function spawn(cls, sx, sy, text) {
@@ -1988,6 +2041,7 @@
     $('streakNum').textContent = info.broken ? 0 : info.n;
     chip.setAttribute('aria-label', on ? `Racha diaria: ${info.broken ? 0 : info.n} días${info.claimable ? '. Tienes un premio para reclamar' : ''}` : 'Racha diaria');
     $('boostBar').hidden = !(on && info.boostLeft > 0); if (info.boostLeft > 0) $('boostLeft').textContent = fmtLeft(info.boostLeft);
+    $('pocket').classList.toggle('glow', on && info.boostLeft > 0);
     if ($('daily').classList.contains('show')) paintDailyButton();                      // cada segundo solo se actualiza el texto del botón (la cuadrícula no se redibuja)
   }
   // Los dibujos de cada día son los pesos que regalan: $100 = una moneda de $100 · $200 = dos monedas de $100 · $300 = tres · $400 = cuatro · $500 = la moneda de $500 · $1.000 = el billete de $1.000.
@@ -2021,6 +2075,8 @@
       grid.appendChild(c);
     });
     paintDailyButton();
+    if (!pocketBusy) setPocket(balance());
+    const pi = document.querySelector('#coinChip .ci'); if (pi && pi.getAttribute('src')) $('pocketImg').src = pi.getAttribute('src');   // en el bolsillo se ve la pelota que llevas puesta
     if (msg !== undefined) { $('dailyMsg').textContent = msg.t; $('dailyMsg').className = 'status' + (msg.ok ? ' ok' : ' err'); }
   }
   function paintDailyButton() {
@@ -2044,13 +2100,36 @@
     const info = streakInfo();
     if (AUTH && session && streakOk && state === 'menu' && info.claimable && streakDayShown !== info.today) { streakDayShown = info.today; openDaily(); }
   }
-  function confetti() {
-    const card = $('dailyCard'), E = ['🪙', '✨', '💰', '⭐', '🔥'];
-    for (let i = 0; i < 16; i++) {
-      const el = document.createElement('span'), a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 130;
-      el.className = 'cf'; el.textContent = E[i % E.length];
-      el.style.setProperty('--dx', Math.cos(a) * d + 'px'); el.style.setProperty('--dy', Math.sin(a) * d - 40 + 'px'); el.style.setProperty('--rot', (Math.random() * 360 - 180) + 'deg');
-      card.appendChild(el); setTimeout(() => el.remove(), 1200);
+  /* Cobro animado: las monedas del premio salen de la tarjeta de hoy y vuelan al «bolsillo»; cada una que llega suma al contador. */
+  let pocketBusy = false;
+  const setPocket = n => { $('pocketNum').textContent = money(n); };
+  const bumpPocket = () => { const e = $('pocket'); e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); };
+  const reduced = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function celebrate(rect, v, bal0, bal1) {
+    const pocket = $('pocket');
+    if (!rect || reduced() || !pocket.animate) { pocketBusy = false; setPocket(bal1); bumpPocket(); return; }
+    pocketBusy = true; setPocket(bal0);
+    const pr = pocket.getBoundingClientRect(), tx = pr.left + 26, ty = pr.top + pr.height / 2, cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    const rayo = v <= 0, N = rayo ? 8 : Math.min(14, Math.max(6, Math.round(v / 60))), srcs = rayo ? [] : coinsFor(v);
+    let shown = bal0, llegadas = 0;
+    // «+$300» grande que sube desde la tarjeta
+    const g = document.createElement('div'); g.className = 'gain'; g.textContent = rayo ? '⚡ ¡Pesos dobles!' : '+' + money(v); document.body.appendChild(g);
+    g.style.left = cx - g.offsetWidth / 2 + 'px'; g.style.top = cy - 26 + 'px';
+    g.animate([{ transform: 'translateY(10px) scale(.3)', opacity: 0 }, { transform: 'translateY(-6px) scale(1.25)', opacity: 1, offset: .22 }, { transform: 'translateY(-14px) scale(1)', opacity: 1, offset: .6 }, { transform: 'translateY(-90px) scale(.9)', opacity: 0 }], { duration: 1500, easing: 'ease-out' }).onfinish = () => g.remove();
+    for (let i = 0; i < N; i++) {
+      const el = rayo ? document.createElement('span') : new Image();
+      if (rayo) { el.textContent = '⚡'; el.className = 'fly bolt'; } else { el.src = srcs[i % srcs.length]; el.alt = ''; el.className = 'fly'; }
+      const sx = cx + (Math.random() - .5) * rect.width * .6, sy = cy + (Math.random() - .5) * rect.height * .3;
+      el.style.left = sx - 17 + 'px'; el.style.top = sy - 17 + 'px'; document.body.appendChild(el);
+      const dx = tx - sx, dy = ty - sy;
+      el.animate([{ transform: 'translate(0,0) scale(.4)', opacity: 0 },
+        { transform: `translate(${(Math.random() - .5) * 90}px, ${-40 - Math.random() * 50}px) scale(1.2)`, opacity: 1, offset: .28 },
+        { transform: `translate(${dx}px, ${dy}px) scale(.55)`, opacity: 1 }], { duration: 800, delay: 250 + i * 85, easing: 'cubic-bezier(.45,.05,.55,.95)', fill: 'both' }).onfinish = () => {
+        el.remove(); llegadas++;
+        shown = llegadas === N ? bal1 : Math.min(bal1, shown + Math.round((bal1 - bal0) / N)); setPocket(shown); bumpPocket();
+        tone(760 + llegadas * 45, .05, 'triangle', .08); vib(6);
+        if (llegadas === N) { pocketBusy = false; if (rayo) pocket.classList.add('glow'); }
+      };
     }
   }
   async function claimStreak() {                                               // 'ok' | 'ya' | 'denied' | 'error'
@@ -2079,10 +2158,13 @@
   }
   async function onDailyGo() {
     const before = streakInfo(), n = before.nextN, v = RACHA.dias[(n - 1) % RLEN];
+    const todayEl = $('dailyGrid').querySelector('.dcard.today'), rect = todayEl ? todayEl.getBoundingClientRect() : null, bal0 = balance();
     const res = await claimStreak();
     if (res === 'ok') {
+      pocketBusy = true;                                                          // el bolsillo no salta al total nuevo: lo suben las monedas al llegar
       renderStreak(); renderDaily({ t: v > 0 ? `¡Listo! +${money(v)} · racha de ${n} día${n === 1 ? '' : 's'} 🔥` : '¡Listo! Pesos dobles durante 10 minutos ⚡', ok: true });
-      confetti(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .12), i * 90)); if (navigator.vibrate) navigator.vibrate([20, 30, 20, 30, 50]);
+      celebrate(rect, v, bal0, balance());
+      [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .12), 900 + i * 90)); vib([20, 30, 20, 30, 50]);
     } else if (res === 'ya') { renderStreak(); renderDaily({ t: 'Ya reclamaste el premio de hoy.', ok: true }); }
     else renderDaily({ t: res === 'denied' ? 'Firebase no permitió reclamar. Revisa la fecha y la hora de tu celular y que estén publicadas las reglas nuevas.' : 'Sin conexión. Inténtalo de nuevo.', ok: false });
   }
@@ -2266,7 +2348,7 @@
     leaderBest = Math.max(leaderBest, player.best); renderMenu(); renderScores(); setInitial(); syncCount();
   }
   function logout() {
-    session = null; saveSession(); streak = null; streakOk = false; closeDaily(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
+    closeSettings(); session = null; saveSession(); streak = null; streakOk = false; closeDaily(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
     leaderBest = 0; loadWallet(); applyCosmetics(); setInitial(); renderScores(); renderMenu(); fetchLeader();
   }
   async function submitAuth(e) {
@@ -2396,7 +2478,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v32';
+  const BUILD = 'v33';
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
     out.hidden = false; const show = () => { out.textContent = lines.join('\n'); };
@@ -2504,7 +2586,17 @@
   $('play').addEventListener('click', startCountdown);
   $('again').addEventListener('click', startCountdown);
   $('close').addEventListener('click', backToMenu);
-  $('soundBtn').addEventListener('click', toggleSound); $('soundMenu').addEventListener('click', toggleSound); paintSound();
+  $('soundBtn').addEventListener('click', toggleSound); $('togSound').addEventListener('click', toggleSound); $('togVib').addEventListener('click', toggleVib); paintSound();
+  let setFrom = null;
+  function openSettings() {
+    setFrom = document.activeElement; paintSound();
+    $('setVer').textContent = 'Versión ' + BUILD + (AUTH && session ? ' · ' + (cleanName(player.name || session.name) || '') : '');
+    $('settings').classList.add('show'); $('setClose').focus();
+  }
+  function closeSettings() { $('settings').classList.remove('show'); if (setFrom && setFrom.focus) { try { setFrom.focus(); } catch (e) {} } setFrom = null; }
+  $('openSettings').addEventListener('click', openSettings); $('setClose').addEventListener('click', closeSettings);
+  $('settings').addEventListener('click', e => { if (e.target === $('settings')) closeSettings(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && $('settings').classList.contains('show')) closeSettings(); });
   $('backResult').addEventListener('click', backToMenu);
   $('openBoard').addEventListener('click', () => openBoard('menu'));
   $('openBoard2').addEventListener('click', () => openBoard('result'));

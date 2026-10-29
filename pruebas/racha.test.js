@@ -21,6 +21,10 @@ const pesosFor = h => h;   // hasta 99 rebotes: $1 por rebote
     JSON.stringify(iconos) === JSON.stringify([['peso100'], ['peso100', 'peso100'], ['peso100', 'peso100', 'peso100'], ['peso100', 'peso100', 'peso100', 'peso100'], ['peso500'], ['b1000']]), JSON.stringify(iconos));
   await p.screenshot({ path: process.env.SHOT || '/tmp/racha_iconos.png' });
   await p.tap('#dailyGo'); await p.waitForTimeout(1200);
+  await p.waitForTimeout(250);
+  ok('al reclamar salen monedas volando hacia el bolsillo y el «+$100» grande', await p.evaluate(() => document.querySelectorAll('.fly').length > 0 && !!document.querySelector('.gain')));
+  await p.waitForTimeout(2600);
+  ok('el bolsillo termina en $100 y no quedan monedas volando', (await txt('#pocketNum')) === '$100' && await p.evaluate(() => document.querySelectorAll('.fly, .gain').length === 0), await txt('#pocketNum'));
   ok('la cartera subió $100 en el servidor', st.db.wallets[uid].c === 100, JSON.stringify(st.db.wallets[uid]));
   ok('racha guardada n=1', st.db.streaks[uid].n === 1, JSON.stringify(st.db.streaks[uid]));
   ok('el mensaje confirma el cobro', /\+\$100/.test(await txt('#dailyMsg')), await txt('#dailyMsg'));
