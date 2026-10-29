@@ -78,12 +78,16 @@
   .avatar.lead .crown { transform: translateX(-50%) scale(1); }
 
   /* ---------- zona de juego ---------- */
-  #arena { position: absolute; inset: 0; z-index: 1; touch-action: none; }
+  #arena { position: absolute; inset: 0; z-index: 1; touch-action: none; overflow: hidden; }
+  /* El campo de juego mide siempre lo mismo (390 × 844 unidades) y solo cambia de escala: en una ventana chica, corta o ancha el juego es igual de difícil. Si sobra espacio se ve como marco. */
+  #field { position: absolute; left: 0; top: 0; }
+  #field.boxed { box-shadow: 0 0 0 1px rgba(255, 255, 255, .4), 0 0 0 100vmax rgba(0, 0, 0, .2); }
+  body.end #field.boxed, body:not(.ingame) #field.boxed { box-shadow: none; }                /* el marco solo se ve mientras juegas */
   #arena.jolt { animation: jolt .16s linear; }
   @keyframes jolt { 20% { transform: translate(4px, -3px); } 40% { transform: translate(-4px, 3px); } 60% { transform: translate(3px, 2px); } 80% { transform: translate(-2px, -2px); } }
   #big {
     position: absolute; inset: 0; display: grid; place-items: center;
-    font-size: min(46vw, 24vh, 260px); font-weight: 400; color: var(--ghost);
+    font-size: calc(179px * var(--k, 1)); font-weight: 400; color: var(--ghost);
     pointer-events: none; z-index: 0; transform: translateY(-4%);
   }
   #big.tick { animation: tick .9s ease-out; }
@@ -130,7 +134,7 @@
   #duck .rig.swing { animation: swing .26s ease-out; }
   #bubble {
     position: absolute; top: 100%; left: 50%; transform: translateX(calc(-50% + var(--bx, 0px))); scale: .85; transform-origin: top center;
-    width: max-content; max-width: min(80vw, 300px); text-align: center; line-height: 1.25; font-size: clamp(12px, 3.6vw, 14px); font-weight: 800; color: #111; background: #fff; padding: 6px 12px;
+    width: max-content; max-width: calc(300px * var(--k, 1)); text-align: center; line-height: 1.25; font-size: max(11px, calc(14px * var(--k, 1))); font-weight: 800; color: #111; background: #fff; padding: 6px 12px;
     border-radius: 14px; box-shadow: 0 3px 10px rgba(0,0,0,.18); opacity: 0; transition: opacity .2s, scale .2s;
   }
   #bubble::before { content: ""; position: absolute; left: calc(50% - var(--bx, 0px)); top: -5px; width: 10px; height: 10px; background: #fff; transform: translateX(-50%) rotate(45deg); }
@@ -146,7 +150,7 @@
   #paddle.hit { height: calc(11px * var(--k, 1)); margin-top: calc(3px * var(--k, 1)); }
 
   .pop {
-    position: absolute; z-index: 4; font-weight: 800; font-size: 22px; color: #6d6a3d;
+    position: absolute; z-index: 4; font-weight: 800; font-size: max(14px, calc(22px * var(--k, 1))); color: #6d6a3d;
     pointer-events: none; animation: pop .6s ease-out forwards;
   }
   body.hell .pop { color: #ffb199; }
@@ -273,7 +277,7 @@
 
   /* instalar la app */
   .sheet { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.45); }
-  .sheet[hidden], #rotate[hidden] { display: none; }
+  .sheet[hidden], #rotate[hidden], #tiny[hidden] { display: none; }
   .sheet .card {
     width: min(100%, 460px); background: #fffdf0; color: var(--ink); border-radius: 22px 22px 0 0; text-align: left;
     padding: 22px 22px calc(env(safe-area-inset-bottom) + 22px); box-shadow: 0 -10px 40px rgba(0,0,0,.25);
@@ -282,8 +286,9 @@
   .sheet ol { margin: 0 0 14px; padding-left: 22px; font-size: 16px; line-height: 1.5; }
   .sheet .btn { width: 100%; margin: 0; }
   /* el juego es vertical: en horizontal se pausa y pide girar el celular */
-  #rotate { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: #fff7c2; color: #111; text-align: center; padding: 24px; font-weight: 700; }
-  #rotate .ico { font-size: 48px; animation: turn 2.4s ease-in-out infinite; }
+  #rotate, #tiny { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: #fff7c2; color: #111; text-align: center; padding: 24px; font-weight: 700; }
+  #rotate .ico, #tiny .ico { font-size: 48px; animation: turn 2.4s ease-in-out infinite; }
+  body.tiny #tiny { display: flex; }
   @keyframes turn { 0%, 30% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0); } }
   @media (orientation: landscape) and (max-height: 520px) { #rotate { display: flex; } #rotate[hidden] { display: flex; } }
 
@@ -566,9 +571,9 @@
   /* ---------- aviso «Monedas dobles» ---------- */
   #mult { position: absolute; left: 50%; top: 36%; z-index: 4; transform: translate(-50%, -50%) scale(.3); opacity: 0; pointer-events: none; text-align: center; font-weight: 900; line-height: 1; white-space: nowrap; }
   #mult.show { animation: multIn 2.6s cubic-bezier(.2, 1.15, .3, 1) forwards; }
-  #mult b { display: block; font-size: min(30vw, 130px); letter-spacing: -.02em; background: linear-gradient(180deg, #fff7a8, #ffc928 48%, #ff7a18); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 0 rgba(120,50,0,.65)) drop-shadow(0 0 22px rgba(255,190,40,.9)); }
-  #mult span { display: block; margin-top: 4px; font-size: clamp(15px, 4.6vw, 22px); letter-spacing: .14em; text-transform: uppercase; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.55), 0 0 14px rgba(255,170,30,.8); }
-  #mult small { display: block; margin-top: 6px; font-size: clamp(12px, 3.6vw, 15px); font-weight: 800; color: #fff; opacity: .95; text-shadow: 0 1px 8px rgba(0,0,0,.6); letter-spacing: .02em; }
+  #mult b { display: block; font-size: calc(117px * var(--k, 1)); letter-spacing: -.02em; background: linear-gradient(180deg, #fff7a8, #ffc928 48%, #ff7a18); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 0 rgba(120,50,0,.65)) drop-shadow(0 0 22px rgba(255,190,40,.9)); }
+  #mult span { display: block; margin-top: 4px; font-size: calc(18px * var(--k, 1)); letter-spacing: .14em; text-transform: uppercase; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.55), 0 0 14px rgba(255,170,30,.8); }
+  #mult small { display: block; margin-top: 6px; font-size: max(11px, calc(14px * var(--k, 1))); font-weight: 800; color: #fff; opacity: .95; text-shadow: 0 1px 8px rgba(0,0,0,.6); letter-spacing: .02em; }
   @keyframes multIn { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(-8deg); } 13% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(3deg); } 22% { transform: translate(-50%, -50%) scale(1) rotate(0); } 76% { opacity: 1; transform: translate(-50%, -53%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -75%) scale(1.12); } }
   .meWrap { position: relative; }
   .mbadge { position: absolute; left: 50%; top: calc(100% - 2px); transform: translateX(-50%); font-size: 11px; font-weight: 900; letter-spacing: .04em; color: #5a3200; padding: 1px 7px; border-radius: 999px; background: linear-gradient(180deg, #fff3a0, #ffc928); box-shadow: 0 1px 4px rgba(0,0,0,.25); pointer-events: none; white-space: nowrap; }
@@ -702,12 +707,14 @@
   </header>
 
   <main id="arena">
-    <div id="big"></div>
-    <canvas id="fx"></canvas>
-    <div id="duck" aria-hidden="true" data-face="0"><div class="rig" id="rig"></div><div id="bubble"></div></div>
-    <div id="target"><div class="ball"></div></div>
-    <div id="mult" aria-hidden="true"><b></b><span></span><small></small></div>
-    <div id="paddle" aria-hidden="true"></div>
+    <div id="field">
+      <div id="big"></div>
+      <canvas id="fx"></canvas>
+      <div id="duck" aria-hidden="true" data-face="0"><div class="rig" id="rig"></div><div id="bubble"></div></div>
+      <div id="target"><div class="ball"></div></div>
+      <div id="mult" aria-hidden="true"><b></b><span></span><small></small></div>
+      <div id="paddle" aria-hidden="true"></div>
+    </div>
 
     <!-- inicio -->
     <section class="screen show" id="menu">
@@ -779,6 +786,7 @@
 </div>
 
 <div id="rotate" hidden><span class="ico">📱</span><span>Gira tu celular a vertical para jugar</span></div>
+<div id="tiny" hidden><span class="ico">↔️</span><span>La ventana es muy chica para jugar parejo.<br>Agrándala (o usa pantalla completa) para jugar.</span></div>
 <div class="sheet" id="sheet" hidden>
   <div class="card" role="dialog" aria-labelledby="sheetTitle">
     <h2 id="sheetTitle">Instala la app</h2>
@@ -833,7 +841,7 @@
   const HAS_ART = ART !== '';
 
   const $ = id => document.getElementById(id);
-  const app = $('app'), arena = $('arena'), target = $('target'), big = $('big'), paddle = $('paddle'), duck = $('duck'), rig = $('rig');
+  const app = $('app'), arena = $('arena'), field = $('field'), target = $('target'), big = $('big'), paddle = $('paddle'), duck = $('duck'), rig = $('rig');
   const meNum = $('meNum'), botNum = $('botNum'), meAv = $('meAv'), botAv = $('botAv');
   const nameInput = $('name');
   const screens = { menu: $('menu'), result: $('result'), board: $('board'), shop: $('shop') };
@@ -900,18 +908,34 @@
   probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
   document.body.appendChild(probe);
   let paused = false;                                            // el juego es vertical: en horizontal se pausa
+  // El campo de juego es SIEMPRE de FW × FH unidades (un celular de hoy, 390 × 844): lo único que cambia de una pantalla a otra es la escala K.
+  // Si la ventana no tiene esa proporción, el campo se centra y sobra un marco; así una ventana emergente, corta o ancha no da ventaja ni quita.
+  const FW = 390, FH = 844, S_MIN = .6;                       // por debajo de S_MIN la ventana es demasiado chica para jugar parejo
+  let tiny = false, tinyTries = 0;
   function measure() {
-    W = arena.clientWidth; H = arena.clientHeight;
+    const AW = arena.clientWidth, AH = arena.clientHeight;
     const cs = getComputedStyle(probe);
     SAFE_T = parseFloat(cs.paddingTop) || 0; SAFE_B = parseFloat(cs.paddingBottom) || 0;
-    const usable = Math.max(300, H - SAFE_T - SAFE_B);
-    K = clamp(Math.min(W / 390, usable / 790), .6, 1.3);
-    VS = clamp((usable - 280 * K) / 510, .5, 1.5);          // la pelota tarda lo mismo en cruzar la pantalla en cualquier celular
-    SIZE = 56 * K; R = 24 * K; PADDLE_H = 16 * K; PADDLE_BOTTOM = 40 * K + SAFE_B;
-    DUCK_TOP = SAFE_T + 26 * K; DUCK_BOTTOM = DUCK_TOP + 150 * K; DUCK_CY = DUCK_TOP + 99 * K;
+    const usable = Math.max(1, AH - SAFE_T - SAFE_B);
+    const S = Math.min(AW / FW, usable / FH), oldK = K;
+    tiny = S < S_MIN;
+    K = Math.max(S, .3);
+    W = FW * K; H = FH * K;
+    if ((state === 'play' || state === 'countdown') && oldK > 0 && Math.abs(K / oldK - 1) > 1e-6) {   // si cambian el tamaño de la ventana en plena partida, todo se reescala junto
+      const r = K / oldK; x *= r; y *= r; vx *= r; vy *= r; px *= r; duckX *= r; duckShow *= r;
+      for (const t of trail) { t[0] *= r; t[1] *= r; }
+    }
+    const fl = (AW - W) / 2, ft = SAFE_T + (usable - H) / 2;
+    field.style.cssText = `left:${fl.toFixed(2)}px;top:${ft.toFixed(2)}px;width:${W.toFixed(2)}px;height:${H.toFixed(2)}px`;
+    field.classList.toggle('boxed', fl > 1.5 || ft - SAFE_T > 1.5);
+    VS = K * (FH - 280) / 510;                                 // la pelota tarda lo mismo en cruzar el campo en cualquier pantalla
+    SIZE = 56 * K; R = 24 * K; PADDLE_H = 16 * K; PADDLE_BOTTOM = 40 * K;
+    DUCK_TOP = 26 * K; DUCK_BOTTOM = DUCK_TOP + 150 * K; DUCK_CY = DUCK_TOP + 99 * K;
     fitBall();
-    app.style.setProperty('--k', K.toFixed(3)); duck.style.setProperty('--duck-top', DUCK_TOP.toFixed(1) + 'px');
-    paused = innerWidth > innerHeight && innerHeight < 520;
+    field.style.setProperty('--k', K.toFixed(3)); duck.style.setProperty('--duck-top', DUCK_TOP.toFixed(1) + 'px');
+    app.style.setProperty('--k', clamp(Math.min(AW / 390, Math.max(300, usable) / 790), .6, 1.3).toFixed(3));   // los menús usan su propia escala
+    paused = (innerWidth > innerHeight && innerHeight < 520) || tiny;
+    document.body.classList.toggle('tiny', tiny && (state === 'play' || state === 'countdown'));
     sizeFx();
   }
   // «Tocar» es lo que se ve: la pelota choca con las paredes, la barra y el Pato según lo que mide en pantalla. El billete es 1,6 veces más ancho que la moneda y los lingotes 1,7:
@@ -941,6 +965,7 @@
     BX = bx + K; BY = by;                                                       // BX lleva 1 px más por la sombra y el suavizado
   }
   const refit = () => { measure(); layout(); draw(); };
+  $('tiny').addEventListener('click', () => { if (state !== 'play' && state !== 'countdown') document.body.classList.remove('tiny'); });
   addEventListener('resize', refit);
   addEventListener('orientationchange', () => setTimeout(refit, 250));
   const setTheme = c => { try { $('themeColor').setAttribute('content', c); } catch (e) {} };   // color de la barra del navegador
@@ -1572,7 +1597,7 @@
   }
   function duckTrack(dt) {
     const want = vy < 0 ? predictX() : W / 2 + (x - W / 2) * .5;
-    const maxMove = (520 + Math.min(level(), 10) * 140) * dt;
+    const maxMove = (520 + Math.min(level(), 10) * 140) * K * dt;
     duckX = clamp(duckX + clamp(want - duckX, -maxMove, maxMove), 40 * K, W - 40 * K);
     duckShow += (duckX - duckShow) * Math.min(1, dt * 28);
   }
@@ -1608,7 +1633,7 @@
     setVel(Math.sin(a), Math.cos(a), .1);
   }
   function layout() {
-    basePw = clamp(W * PADDLE_START, 100, 200); pw = padWidth();
+    basePw = W * PADDLE_START; pw = padWidth();
     paddle.style.width = pw + 'px';
     paddle.style.top = paddleTop() + 'px';
     px = clamp(px || W / 2, pw / 2, W - pw / 2);
@@ -1674,14 +1699,14 @@
     const el = document.createElement('div');
     el.className = cls; el.style.left = sx + 'px'; el.style.top = sy + 'px';
     if (text) el.textContent = text;
-    arena.appendChild(el);
+    field.appendChild(el);
     setTimeout(() => el.remove(), 650);
   }
 
   /* ---------- control: arrastrar (en el celular, relativo: el dedo no tapa la barra) · mouse · flechas ---------- */
   function movePaddle(e) {
     if (state !== 'play' && state !== 'countdown') return;
-    const r = arena.getBoundingClientRect();
+    const r = field.getBoundingClientRect();
     if (e.pointerType === 'mouse') px = e.clientX - r.left;
     else if (dragX !== null) px += (e.clientX - dragX) * 1.25;
     dragX = e.clientX;
@@ -2018,6 +2043,11 @@
     nameInput.value = name; nameInput.blur(); setInitial();
 
     measure();
+    if (tiny) {                                                  // ventana demasiado chica (o el teclado aún tapa la pantalla): se mide otra vez y, si sigue chica, se avisa
+      if (tinyTries++ < 1) { setTimeout(startCountdown, 450); return; }
+      tinyTries = 0; document.body.classList.add('tiny'); return;
+    }
+    tinyTries = 0;
     hits = 0; elapsed = 0; keyDir = 0; dragX = null; lastFace = -1; resetTalk();
     gameRate = (itemOf('ball', wallet.eq.ball) || CAT.ball[0]).rate || 1;
     clearFx(); $('rain').textContent = ''; setEnd(false); setThemeActive(true); applyCosmetics(); setBg();
@@ -2069,7 +2099,7 @@
     perfWatch(now - last);
     const dt = Math.min((now - last) / 1000, .034); last = now;   // si la pestaña se oculta, el juego se pausa solo
     elapsed += dt;
-    if (keyDir) px = clamp(px + keyDir * 760 * dt, pw / 2, W - pw / 2);
+    if (keyDir) px = clamp(px + keyDir * 760 * K * dt, pw / 2, W - pw / 2);
     const wantPw = padWidth();                                     // la barra se achica suavemente con cada rebote
     if (Math.abs(pw - wantPw) > .3) { pw += (wantPw - pw) * Math.min(1, dt * 5); paddle.style.width = pw + 'px'; px = clamp(px, pw / 2, W - pw / 2); }
     duckTrack(dt);
