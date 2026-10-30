@@ -49,6 +49,7 @@ async function mocks(ctx) {
       }
       return J(r, sub(st.db, parts));
     }
+    if (st.busyRuns > 0 && parts[0] === 'runs' && (m === 'PUT' || m === 'GET')) { st.busyRuns--; st.log.push('503 simulado en ' + m + ' ' + path); return J(r, { error: 'busy' }, 503); }   // st.busyRuns: las próximas N peticiones a /runs responden «ocupado»
     if (m === 'PATCH' && st.failRoot > 0 && path === '/') { st.failRoot--; st.log.push('500 simulado en ' + path); return J(r, {}, 500); }
     const body = JSON.parse(req.postData() || 'null');
     const res = m === 'PUT' ? db().write(path, body) : db().update(path, body);

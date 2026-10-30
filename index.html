@@ -1030,7 +1030,7 @@
   // En cuanto el Pato se enoja (55) pierde la aureola y las alas de ángel y pasa a su piel de diablo.
   const P_CHALLENGE = 30, P_ANGRY = 55, P_DEVIL = 60, P_HELL = 70;
   const TOP_N = 25;               // cuántos jugadores muestra el marcador; tu puesto aparece debajo aunque estés más abajo
-  const REFRESH_MS = 15000;       // el Top 25 se actualiza cada 15 s mientras el marcador está abierto y a la vista
+  const REFRESH_MS = 30000;       // el Top 25 se actualiza cada 30 s mientras el marcador está abierto y a la vista
   const BOARD_MAX_MS = 60000;     // el marcador se puede mirar como máximo 1 minuto: después vuelve solo al inicio (así mirarlo cuesta poco aunque haya muchísimos jugadores)
   const REFRESH_COOLDOWN_MS = 5000; // el botón «Actualizar» se puede tocar una vez cada 5 s
   const RANK_MS = 120000;        // tu puesto (lo más pesado: el contador de 500 casillas) se vuelve a leer cada 2 min, al abrir y cuando cambia tu récord
@@ -2210,6 +2210,17 @@
     } catch (e) { return 'net'; }
     return 'rules';
   }
+  // Reintenta hasta 2 veces, con pausas al azar (así miles de jugadores no insisten a la vez), solo si Firebase está ocupado (429, 5xx) o no contestó:
+  // un tropiezo de un instante no debe dejar sin pesos una partida entera. Un rechazo de las reglas (401/403) no se reintenta.
+  async function retrying(fn) {
+    let r = null;
+    for (let i = 0; i < 3; i++) {
+      try { r = await fn(); if (r.status !== 429 && r.status !== 408 && r.status < 500) return r; } catch (e) { r = null; }
+      if (i < 2) await new Promise(res => setTimeout(res, 500 + i * 600 + Math.random() * 900));
+    }
+    if (!r) throw new Error('RED');
+    return r;
+  }
   async function beginRun() {
     run = null; runFail = '';
     if (!AUTH || !session) return null;
@@ -2217,10 +2228,10 @@
       if (pending) await claimRun();                               // primero cobra la partida anterior si quedó pendiente
       let tok = encodeURIComponent(await idToken());
       const uid = session.uid, ball = itemOf('ball', wallet.eq.ball) || CAT.ball[0], rate = ball.rate || 1;      // la pelota y lo que paga quedan anotados al empezar (las reglas los comprueban)
-      const r = await http(`${DB}/runs/${uid}.json?auth=${tok}&print=silent`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: ball.id, r: rate }) });
+      const r = await retrying(() => http(`${DB}/runs/${uid}.json?auth=${tok}&print=silent`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: ball.id, r: rate }) }));
       if (!r.ok) { runFail = r.status === 401 || r.status === 403 ? await whyDenied(uid, ball) : 'net'; return null; }
       tok = encodeURIComponent(await idToken());                    // (si el token se renovó en el intento, se usa el nuevo)
-      const g = await http(`${DB}/runs/${uid}/s.json?auth=${tok}`);
+      const g = await retrying(() => http(`${DB}/runs/${uid}/s.json?auth=${tok}`));
       const s = g.ok ? await g.json() : null;
       if (typeof s !== 'number') return null;
       run = { s, r: rate }; return run;
@@ -2735,7 +2746,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v40';
+  const BUILD = 'v41';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
