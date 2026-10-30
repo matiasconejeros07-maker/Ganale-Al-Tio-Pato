@@ -82,6 +82,17 @@ si los rebotes los dio una persona. Lo máximo que logra es ganar a un ritmo aco
 Para un juego entre conocidos o un evento es más que suficiente. Si algún día necesitas más: (1) **Firebase App Check** con reCAPTCHA (gratis) bloquea la mayoría de los bots y las copias
 modificadas del juego; (2) **Cloud Functions** (plan Blaze) permiten registrar los movimientos de la partida y repetirla en el servidor para validarla.
 
+## Si los pesos no se suman: «Ver detalle técnico»
+
+Al final de una partida que no se pudo guardar aparece **Ver detalle técnico**. Prueba paso a paso lo que Firebase deja hacer a esa cuenta y termina con una frase que dice qué hacer:
+
+- **«Firebase no reconoce tu sesión»**: la sesión guardada en el teléfono ya no vale (el token venció o la hora del teléfono está mal). El juego renueva el token solo ante cualquier rechazo; si sigue igual: Ajustes → Cerrar sesión y volver a entrar, con la hora del teléfono en automático.
+- **«Firebase rechaza incluso leer tu billetera»**: las reglas publicadas en Firebase no son las de `firebase-rules.json` (falta el bloque `wallets`). Pega el archivo completo en Realtime Database → Reglas y pulsa **Publicar**; si Firebase marca un error rojo, no se guardan. Mira también que la base elegida arriba del editor sea la que dice «Base de datos» en el detalle.
+- **«Rechaza empezar la partida»**: falta el bloque `runs` en las reglas publicadas (mismo arreglo).
+- **«La pelota que llevas puesta no está registrada en tu cuenta»**: cámbiala en la tienda y vuelve a jugar.
+
+Los pesos no tienen tope práctico: una cuenta puede llegar hasta $1.000.000.000.000 (las reglas lo comprueban) y cada partida suma lo que calculan las reglas, sin importar el saldo.
+
 ## Publicar con otro link (Cloudflare Pages, sin tu usuario de GitHub en la dirección)
 
 `herramientas/publicar.js` arma la carpeta `dist/` con **solo lo que el juego necesita** (la página, el service worker, las imágenes y las cabeceras de seguridad en `_headers`): nada de pruebas, herramientas, documentación, reglas ni archivos ocultos. Una prueba (`pruebas/dist.test.js`) comprueba que esté completa y que **ningún archivo publicado nombre GitHub, tu usuario ni tu correo**.

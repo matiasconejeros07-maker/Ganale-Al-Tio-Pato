@@ -1463,11 +1463,19 @@
   function clearFx() { trail.length = 0; parts.length = 0; flames.length = 0; mainFx.clear(); fireAcc = 0; cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, fx.width, fx.height); }
 
   /* ---------- marcadores: servidor (Firebase Realtime Database por REST) ---------- */
-  async function http(url, opts) {
+  async function rawHttp(url, opts) {
     const ctl = new AbortController();
     const to = setTimeout(() => ctl.abort(), 8000);
     try { return await fetch(url, { ...opts, signal: ctl.signal }); }
     finally { clearTimeout(to); }
+  }
+  let forcedAt = 0;
+  async function http(url, opts) {
+    const r = await rawHttp(url, opts);
+    const m = r.status === 401 && session && /[?&]auth=([^&]+)/.exec(url);
+    if (!m || Date.now() - forcedAt < 30000) return r;
+    forcedAt = Date.now();                                         // Firebase no reconoció el token (vencido, o el reloj del teléfono está mal): se renueva una vez y se reintenta
+    try { const t = encodeURIComponent(await idToken(true)); return t === m[1] ? r : await rawHttp(url.replace(m[0], m[0].replace(m[1], t)), opts); } catch (e) { return r; }
   }
 
   const authErr = m => ({
@@ -1489,7 +1497,7 @@
   // Token vigente (se renueva solo con la sesión guardada: no tienes que volver a escribir la contraseña).
   async function idToken(force = false) {
     if (!session) throw new Error('SIN_SESION');
-    if (!force && Date.now() < session.exp - 60000) return session.id;
+    if (!force && Date.now() < session.exp - 300000) return session.id;     // se renueva 5 min antes de vencer (así un reloj algo desfasado no deja usar un token ya vencido)
     const r = await http(`https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(API_KEY)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(session.refresh)
@@ -1500,6 +1508,7 @@
       if (/TOKEN_EXPIRED|USER_NOT_FOUND|USER_DISABLED|INVALID_REFRESH_TOKEN|CREDENTIAL_TOO_OLD/.test(m)) logout();   // la cuenta ya no es válida
       throw new Error(m);
     }
+    if (typeof j.user_id === 'string' && j.user_id) session.uid = j.user_id;           // el uid siempre es el de la cuenta que firmó el token
     session.id = j.id_token; session.refresh = j.refresh_token || session.refresh; session.exp = Date.now() + (+j.expires_in || 3600) * 1000; saveSession();
     return session.id;
   }
@@ -2189,18 +2198,26 @@
 
   /* Partidas verificadas por el servidor (anti-trampas): al empezar se anota la hora del servidor y, al terminar, el servidor comprueba que
      los rebotes caben en el tiempo transcurrido y fija los pesos. Pesos y marcador se cobran de una sola vez, una vez por partida. */
-  let run = null, runP = Promise.resolve(null), runFail = '';          // runFail: 'net' (sin internet) o 'rules' (Firebase no tiene las reglas nuevas)
+  let run = null, runP = Promise.resolve(null), runFail = '';          // runFail: 'net' (sin internet) · 'rules' (Firebase no tiene las reglas nuevas) · 'session' (no reconoce la sesión) · 'ball' (la pelota puesta no está en la cuenta)
+  // Firebase rechazó empezar la partida: ¿no reconoce tu sesión, la pelota que llevas no está en tu cuenta, o faltan las reglas nuevas?
+  async function whyDenied(uid, ball) {
+    try {
+      const tok = encodeURIComponent(await idToken());
+      if ((await http(`${DB}/hist.json?auth=${tok}`)).status === 401) return 'session';          // una lectura pública que falla solo con tu sesión puesta: Firebase no la reconoce
+      if (ball.id !== 'peso1') { const o = await http(`${DB}/wallets/${uid}/own/ball_${ball.id}.json?auth=${tok}`); if (o.ok && (await o.json()) !== true) return 'ball'; }
+    } catch (e) { return 'net'; }
+    return 'rules';
+  }
   async function beginRun() {
     run = null; runFail = '';
     if (!AUTH || !session) return null;
     try {
       if (pending) await claimRun();                               // primero cobra la partida anterior si quedó pendiente
-      const tok = encodeURIComponent(await idToken()), uid = session.uid;
-      const ball = itemOf('ball', wallet.eq.ball) || CAT.ball[0], rate = ball.rate || 1;                       // la pelota y lo que paga quedan anotados al empezar (las reglas los comprueban)
-      const put = t => http(`${DB}/runs/${uid}.json?auth=${t}&print=silent`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: ball.id, r: rate }) });
-      let r = await put(tok);
-      if (r.status === 401 && /token/i.test(await r.clone().text().catch(() => '')) && !/permission/i.test(await r.clone().text().catch(() => ''))) r = await put(encodeURIComponent(await idToken(true)));   // token vencido: se renueva y se reintenta una vez
-      if (!r.ok) { runFail = r.status === 401 || r.status === 403 ? 'rules' : 'net'; return null; }
+      let tok = encodeURIComponent(await idToken());
+      const uid = session.uid, ball = itemOf('ball', wallet.eq.ball) || CAT.ball[0], rate = ball.rate || 1;      // la pelota y lo que paga quedan anotados al empezar (las reglas los comprueban)
+      const r = await http(`${DB}/runs/${uid}.json?auth=${tok}&print=silent`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: ball.id, r: rate }) });
+      if (!r.ok) { runFail = r.status === 401 || r.status === 403 ? await whyDenied(uid, ball) : 'net'; return null; }
+      tok = encodeURIComponent(await idToken());                    // (si el token se renovó en el intento, se usa el nuevo)
       const g = await http(`${DB}/runs/${uid}/s.json?auth=${tok}`);
       const s = g.ok ? await g.json() : null;
       if (typeof s !== 'number') return null;
@@ -2550,9 +2567,11 @@
     if (AUTH && session) pullWallet().then(() => { applyCosmetics(); renderShop(); });
   }
   function closeShop() { if (shopFrom === 'result') { setEnd(true); show('result'); } else { setTheme('#fff7c2'); document.body.style.backgroundColor = ''; show('menu'); renderMenu(); } }
+  let countStop = () => {};                                        // detiene la cuenta animada (si la partida no se pudo cobrar, no debe seguir mostrando «+$»)
   function countUp(el, n, fmt) {
+    countStop(); let live = true; countStop = () => { live = false; };
     const t0 = performance.now(), dur = Math.min(1100, 300 + n * 8);
-    (function tick(now) { const k = clamp((now - t0) / dur, 0, 1); el.textContent = fmt(Math.round(n * (1 - Math.pow(1 - k, 3)))); if (k < 1 && state === 'over') requestAnimationFrame(tick); })(t0);
+    (function tick(now) { if (!live) return; const k = clamp((now - t0) / dur, 0, 1); el.textContent = fmt(Math.round(n * (1 - Math.pow(1 - k, 3)))); if (k < 1 && state === 'over') requestAnimationFrame(tick); })(t0);
   }
 
   /* ---------- inicio de sesión ---------- */
@@ -2714,7 +2733,8 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v38';
+  const BUILD = 'v39';
+  const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
     out.hidden = false; const show = () => { out.textContent = lines.join('\n'); };
@@ -2725,12 +2745,25 @@
       await add('Leer marcadores', await http(`${DB}/scores.json?orderBy=%22s%22&limitToLast=1`));
       await add('Leer el contador de puestos (hist)', await http(`${DB}/hist.json`));
       if (!session) { lines.push('❌ No has iniciado sesión'); show(); return; }
-      const tok = encodeURIComponent(await idToken()), uid = session.uid;
-      await add('Leer tu billetera', await http(`${DB}/wallets/${uid}.json?auth=${tok}`));
+      const jwt = await idToken(true), body = jwtBody(jwt), uid = session.uid, tok = encodeURIComponent(jwt);          // se prueba con un token recién pedido a Google
+      if (body) {
+        const tu = body.user_id || body.sub, proj = DB.replace(/^https?:\/\//, '').split('.')[0].replace(/-default-rtdb$/, ''), skew = Math.round((Date.now() - body.iat * 1000) / 1000);
+        lines.push(`${tu === uid ? '✅' : '❌'} Cuenta del token: ${tu === uid ? 'coincide con tu sesión' : tu + ' ≠ ' + uid}`);
+        lines.push(`${body.aud === proj ? '✅' : '⚠️'} Proyecto del token: ${body.aud}`);
+        lines.push(`${Math.abs(skew) < 300 ? '✅' : '❌'} Hora del teléfono: ${skew >= 0 ? '+' : ''}${skew} s respecto a Google`);
+      }
+      const ses = await http(`${DB}/hist.json?auth=${tok}`);
+      await add('Firebase reconoce tu sesión', ses);
+      const wr = await http(`${DB}/wallets/${uid}.json?auth=${tok}`);
+      await add('Leer tu billetera', wr);
       const w = await http(`${DB}/runs/${uid}.json?auth=${tok}`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: CAT.ball[0].id, r: CAT.ball[0].rate || 1 }) });
       await add('Empezar una partida (reglas nuevas)', w);
-      if (w.ok) { const g = await http(`${DB}/runs/${uid}/s.json?auth=${tok}`); await add('Leer la hora del servidor', g, g.ok ? ' ' + (await g.clone().text()) : ''); lines.push('Las reglas nuevas están activas. Juega otra partida.'); }
-      else lines.push(w.status === 401 || w.status === 403 ? '→ Firebase rechazó la escritura: en la base de arriba todavía no están las reglas nuevas. En Firebase → Realtime Database → Reglas debe haber un bloque "runs"; pega firebase-rules.json completo y publica.' : '→ No se pudo hablar con Firebase. Revisa tu conexión.');
+      const denied = r => r.status === 401 || r.status === 403;
+      if (ses.status === 401) lines.push('→ Firebase no reconoce tu sesión. Cierra sesión (Ajustes) y vuelve a entrar; si sigue igual, pon la hora del teléfono en automático.');
+      else if (denied(wr)) lines.push('→ Firebase rechaza incluso leer tu billetera con una sesión válida: las reglas publicadas no son las de firebase-rules.json (falta el bloque "wallets"). Pega el archivo completo en Realtime Database → Reglas, pulsa Publicar y mira que la base elegida arriba del editor sea la de "Base de datos" de más arriba.');
+      else if (denied(w)) lines.push('→ Tu billetera se lee bien, pero Firebase rechaza empezar la partida: en Realtime Database → Reglas debe haber un bloque "runs". Pega firebase-rules.json completo y publica (si Firebase marca un error rojo al publicar, las reglas no se guardan).');
+      else if (!w.ok || !wr.ok) lines.push('→ No se pudo hablar con Firebase. Revisa tu conexión.');
+      else { const g = await http(`${DB}/runs/${uid}/s.json?auth=${tok}`); await add('Leer la hora del servidor', g, g.ok ? ' ' + (await g.clone().text()) : ''); lines.push('Las reglas nuevas están activas. Juega otra partida.'); }
     } catch (e) { lines.push('❌ Sin conexión (' + e.message + ')'); }
     show();
   }
@@ -2763,9 +2796,12 @@
     const rn = await runP;
     if (state !== 'over') return;
     if (!rn) {
-      const rules = runFail === 'rules';
-      cl.textContent = rules ? 'Esta partida no se pudo guardar.' : 'Sin conexión: esta partida no sumó pesos.'; st.className = 'status err';
-      st.textContent = rules ? 'Firebase no permitió registrar la partida: hay que publicar las reglas nuevas (firebase-rules.json).' : 'Hace falta internet al empezar la partida para sumar pesos y puntaje.';
+      const net = runFail === 'net' || !runFail;
+      cl.textContent = net ? 'Sin conexión: esta partida no sumó pesos.' : 'Esta partida no se pudo guardar.'; st.className = 'status err';
+      st.textContent = net ? 'Hace falta internet al empezar la partida para sumar pesos y puntaje.'
+        : runFail === 'session' ? 'Firebase no reconoce tu sesión: cierra sesión (Ajustes) y vuelve a entrar.'
+        : runFail === 'ball' ? 'La pelota que llevas puesta no está registrada en tu cuenta: cámbiala en la tienda y vuelve a jugar.'
+        : 'Firebase no permitió registrar la partida: hay que publicar las reglas nuevas (firebase-rules.json).';
       $('bestResult').textContent = `Tu mejor puntaje: ${player.best}`; $('diagBtn').hidden = false; return;
     }
     const mult = boostMult(rn.s, streak && streak.bx), pp = p * mult;                              // «pesos dobles» de la racha: vale si la partida empezó dentro de los 10 minutos
@@ -2784,14 +2820,14 @@
         return;
       }
       if (res === 'denied') {
-        cl.textContent = 'Esta partida no se pudo cobrar.'; st.className = 'status err'; $('bestResult').textContent = `Tu mejor puntaje: ${player.best}`;
+        countStop(); cl.textContent = 'Esta partida no se pudo cobrar.'; st.className = 'status err'; $('bestResult').textContent = `Tu mejor puntaje: ${player.best}`;
         st.textContent = 'Firebase no permitió guardar la partida (revisa que las reglas nuevas estén publicadas).'; $('diagBtn').hidden = false; return;
       }
       st.className = 'status err'; st.textContent = 'No se pudo guardar. Reintentando…';
       await new Promise(r => setTimeout(r, 4000));
       if (state !== 'over') return;
     }
-    st.textContent = 'Sin conexión: tus pesos se cobrarán solos cuando vuelva internet.'; $('diagBtn').hidden = false;
+    countStop(); cl.textContent = `${money(pp)} por cobrar`; st.textContent = 'Sin conexión: tus pesos se cobrarán solos cuando vuelva internet.'; $('diagBtn').hidden = false;
   }
 
   function backToMenu() {
