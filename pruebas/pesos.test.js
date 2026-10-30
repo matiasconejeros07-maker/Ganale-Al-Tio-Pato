@@ -54,6 +54,27 @@ const sinBloque = (bloque, arch) => {
     st.minTokenTs = 0; st.denied.length = 0; await ctx.close();
   }
 
+  console.log('Firebase ocupado justo al empezar la partida');
+  {
+    const { ctx, p, errs } = await newPage(b);
+    const uid = await registrar(p, 'Pesos Ocup');
+    st.busyRuns = 2;                                                                                   // las 2 primeras peticiones fallan con 503
+    await playHits(p, 4, async () => {}); await p.waitForTimeout(3500);
+    const h = st.db.runs && st.db.runs[uid] && st.db.runs[uid].h;
+    ok(`dos 503 seguidos al empezar se reintentan y la partida se cobra igual (${h} rebotes = $${h})`, st.busyRuns === 0 && h >= 4 && st.db.wallets[uid].c === h, JSON.stringify(st.db.wallets && st.db.wallets[uid]) + ' busy=' + st.busyRuns);
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+  {
+    const { ctx, p } = await newPage(b);
+    const uid = await registrar(p, 'Pesos Caido');
+    st.busyRuns = 50;                                                                                  // Firebase no se recupera: se agotan los 3 intentos
+    await playHits(p, 3, async () => {}); await p.waitForTimeout(2500);
+    ok('si Firebase sigue caído, avisa «sin conexión» y no inventa pesos', /Sin conexión/.test(await p.textContent('#coinsLine')) && !(st.db.wallets && st.db.wallets[uid] && st.db.wallets[uid].c), await p.textContent('#coinsLine'));
+    ok('hizo exactamente 3 intentos (1 + 2 reintentos)', 50 - st.busyRuns === 3, String(50 - st.busyRuns));
+    st.busyRuns = 0; await ctx.close();
+  }
+
   console.log('Diagnóstico cuando faltan reglas en Firebase');
   {
     st.rulesFile = sinBloque('wallets', 'sin-wallets-');                                               // la base solo tiene reglas viejas: no existe «wallets»
