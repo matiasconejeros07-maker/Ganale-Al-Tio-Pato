@@ -9,7 +9,9 @@ const DBURL = 'https://juegotiopato-default-rtdb.firebaseio.com';
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
 const rules = () => JSON.parse(fs.readFileSync(st.rulesFile || (JUEGO + 'firebase-rules.json'), 'utf8'));
 const st = { rulesFile: null, db: {}, users: {}, log: [], denied: [], failRoot: 0, down: false, htmlPatch: null, cfg: fs.readFileSync(JUEGO + 'config.js', 'utf8'), tienda: null };
-const authOf = tok => { const [, uid, email] = (tok || '').split('|'); return uid ? { uid, token: { email } } : null; };
+const b64 = o => Buffer.from(JSON.stringify(o)).toString('base64url');
+const mkTok = (uid, email) => { const iat = Math.floor(Date.now() / 1000); return 'e30.' + b64({ user_id: uid, sub: uid, email, aud: 'juegotiopato', iat, exp: iat + 3600, ms: Date.now() }) + '.firma'; };   // un token con forma de JWT, como los de Google
+const authOf = tok => { let p; try { p = JSON.parse(Buffer.from(String(tok || '').split('.')[1] || '', 'base64url').toString()); } catch (e) { return null; } return p && p.user_id && !(st.minTokenTs && p.ms < st.minTokenTs) ? { uid: p.user_id, token: { email: p.email } } : null; };   // st.minTokenTs: los tokens emitidos antes de esa hora ya no valen (Firebase los trata como sin sesión)
 const sub = (obj, parts) => parts.reduce((o, k) => (o == null ? null : o[k] === undefined ? null : o[k]), obj);
 async function mocks(ctx) {
   await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: st.cfg }));
@@ -22,12 +24,12 @@ async function mocks(ctx) {
     const kind = req.url().includes('signUp') ? 'up' : 'in'; const b = JSON.parse(req.postData());
     if (kind === 'up') { if (st.users[b.email]) return J(r, { error: { message: 'EMAIL_EXISTS' } }, 400); st.users[b.email] = { uid: 'UID' + Object.keys(st.users).length + 'abcdefghijklmnopqrst', pass: b.password }; }
     else if (!st.users[b.email] || st.users[b.email].pass !== b.password) return J(r, { error: { message: 'INVALID_LOGIN_CREDENTIALS' } }, 400);
-    const u = st.users[b.email]; return J(r, { localId: u.uid, idToken: 'tok|' + u.uid + '|' + b.email + '|' + Date.now(), refreshToken: 'rt|' + u.uid, expiresIn: '3600' });
+    const u = st.users[b.email]; return J(r, { localId: u.uid, idToken: mkTok(u.uid, b.email), refreshToken: 'rt|' + u.uid, expiresIn: '3600' });
   });
   await ctx.route('https://securetoken.googleapis.com/**', async r => {
     const req = r.request(); if (req.method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors });
     const uid = new URLSearchParams(req.postData()).get('refresh_token').split('|')[1]; const email = Object.keys(st.users).find(e => st.users[e].uid === uid);
-    return J(r, { id_token: 'tok|' + uid + '|' + email + '|' + Date.now(), refresh_token: 'rt|' + uid, expires_in: '3600', user_id: uid });
+    return J(r, { id_token: mkTok(uid, email), refresh_token: 'rt|' + uid, expires_in: '3600', user_id: uid });
   });
   await ctx.route(DBURL + '/**', async r => {
     const req = r.request(), u = new URL(req.url()); if (req.method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors });
