@@ -1019,6 +1019,8 @@
   const TIER = ECO.tier, H_MAX = ECO.hMax;                  // cada TIER rebotes sube lo que vale cada rebote · tope de rebotes que cuentan por partida
   // Del rebote 1 al 99 el juego es amable y ágil; desde el 100 sube de verdad: la pelota acelera más y la barra se achica más rápido.
   const SPEED0 = 800, STEP_LO = 4, STEP_HI = 16, SPEED_MAX = 1800;           // px/s
+  const EASE_1 = 55, EASE_2 = 100, EASE_K1 = .90, EASE_K2 = .95;            // alivio de dificultad: la pelota va un 10% más lenta hasta el rebote 55 y un 5% más lenta hasta el 100 (desde el 101 va a toda velocidad)
+  const ease = h => h <= EASE_1 ? EASE_K1 : h <= EASE_2 ? EASE_K2 : 1;
   const PADDLE_START = .42, SHRINK_LO = .003, SHRINK_HI = .0095, SHRINK_MIN = .28;   // la barra: 100% → 70% en el rebote 100 → 28%
   const rateAt = n => Math.floor(n / TIER) + 1;             // pesos que vale el rebote número n ($1 hasta el 99, $2 del 100 al 199…)
   const pesosFor = h => { const t = Math.floor(h / TIER); return h + TIER * t * (t - 1) / 2 + t * (h - TIER * t + 1); };   // pesos de una partida de h rebotes
@@ -1076,7 +1078,7 @@
   const level = () => Math.floor(hits / 20);                                   // afina la puntería del Pato
   const paddleTop = () => H - PADDLE_BOTTOM - PADDLE_H;
   const shrink = () => hits <= TIER ? 1 - hits * SHRINK_LO : Math.max(SHRINK_MIN, 1 - TIER * SHRINK_LO - (hits - TIER) * SHRINK_HI);   // factor sobre el ancho inicial
-  const ballSpeed = () => Math.min(hits <= TIER ? SPEED0 + hits * STEP_LO : SPEED0 + TIER * STEP_LO + (hits - TIER) * STEP_HI, SPEED_MAX) * VS;
+  const ballSpeed = () => Math.min(hits <= TIER ? SPEED0 + hits * STEP_LO : SPEED0 + TIER * STEP_LO + (hits - TIER) * STEP_HI, SPEED_MAX) * ease(hits) * VS;
 
   /* ---------- datos del jugador (solo en este dispositivo) ---------- */
   function newId() {
@@ -2733,7 +2735,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v39';
+  const BUILD = 'v40';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
