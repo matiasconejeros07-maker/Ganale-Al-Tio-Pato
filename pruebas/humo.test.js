@@ -12,7 +12,7 @@ const ok = (nombre, cond, extra = '') => { if (cond) { pass++; console.log('  ok
 async function abrir(browser, w, h, extra = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...extra });
   await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: LOCAL }));
-  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, tiny, keyDir }) };\n  fetchLeader();\n})();') }));
+  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir }), sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; } };\n  fetchLeader();\n})();') }));
   const p = await ctx.newPage(); const errs = [], csp = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (/Content.Security.Policy|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140)); });
@@ -45,6 +45,21 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     const f = await p.evaluate(() => { const r = document.getElementById('field').getBoundingClientRect(); return { l: r.left, t: r.top, w: r.width, h: r.height, ...window.__g.st() }; });
     ok(`${w}×${h}: el campo llena la pantalla`, Math.abs(f.w - w) < 1 && Math.abs(f.h - h) < 1 && f.l < 1 && f.t < 1, JSON.stringify(f));
     ok(`${w}×${h}: K = ancho/390 y sin errores`, Math.abs(f.K - w / 390) < 1e-3 && (f.state === 'play' || f.state === 'over') && errs.length === 0, `K=${f.K} errs=${errs}`);
+    await ctx.close();
+  }
+
+  console.log('Alivio de dificultad: pelota 10% más lenta hasta el rebote 55 y 5% más lenta hasta el 100');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    const r = await p.evaluate(() => [0, 1, 30, 55, 56, 80, 100, 101, 150, 300].map(n => {
+      const base = Math.min(n <= 100 ? 800 + n * 4 : 800 + 400 + (n - 100) * 16, 1800);     // la velocidad de antes (sin alivio)
+      return [n, +(window.__g.sp(n) / (base * window.__g.st().VS)).toFixed(4)];
+    }));
+    const k = n => r.find(x => x[0] === n)[1];
+    ok('rebotes 0 a 55: la pelota va al 90% de la velocidad de antes', [0, 1, 30, 55].every(n => k(n) === 0.9), JSON.stringify(r));
+    ok('rebotes 56 a 100: va al 95%', [56, 80, 100].every(n => k(n) === 0.95), JSON.stringify(r));
+    ok('desde el 101: velocidad completa (100%)', [101, 150, 300].every(n => k(n) === 1), JSON.stringify(r));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
     await ctx.close();
   }
 
