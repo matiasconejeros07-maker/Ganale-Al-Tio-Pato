@@ -8,7 +8,7 @@ const good = res => !!res && res.ok && res.status === 200 && (res.type === 'basi
 const withTimeout = (p, ms) => new Promise((ok, no) => { const t = setTimeout(() => no(new Error('timeout')), ms); p.then(v => { clearTimeout(t); ok(v); }, err => { clearTimeout(t); no(err); }); });
 
 self.addEventListener('install', e => {
-  // cache: 'reload' → nunca toma una copia vieja del caché del navegador (GitHub Pages guarda los archivos 10 min)
+  // cache: 'reload' → nunca toma una copia vieja del caché del navegador (algunos hostings guardan los archivos varios minutos)
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS.map(a => new Request(a, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 

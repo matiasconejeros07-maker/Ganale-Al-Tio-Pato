@@ -28,6 +28,11 @@ jobs:
       - name: Emblema de perfil de punta a punta
         working-directory: pruebas
         run: node perfil.test.js
+      - name: La carpeta que se publica (dist/) está completa y limpia
+        run: node pruebas/dist.test.js
+      - name: El juego funciona desde dist/ (prueba de humo)
+        working-directory: pruebas
+        run: JUEGO=../dist/ node humo.test.js
       - name: Las reglas coinciden con el catálogo (tienda.js)
         run: |
           cp firebase-rules.json /tmp/reglas-antes.json

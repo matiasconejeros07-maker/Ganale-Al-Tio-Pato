@@ -4,7 +4,7 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
-const JUEGO = process.env.JUEGO || path.join(__dirname, '..') + '/';
+const JUEGO = path.resolve(process.env.JUEGO || path.join(__dirname, '..')) + '/';          // siempre ruta completa (con una relativa, el navegador no encuentra tienda.js)
 const LOCAL = "window.DINERO_DB_URL=''; window.FIREBASE_API_KEY=''; window.PATO_DIR='pato/';";   // modo local: sin Firebase
 let pass = 0, fail = 0;
 const ok = (nombre, cond, extra = '') => { if (cond) { pass++; console.log('  ok  ', nombre); } else { fail++; console.log('  FALLA', nombre, extra); } };
@@ -28,6 +28,7 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
   {
     const { ctx, p, errs, csp } = await abrir(b, 390, 844);
     ok('el menú carga con el botón Jugar', await p.isVisible('#play'));
+    ok('el catálogo (tienda.js) y los diálogos cargaron', await p.evaluate(() => !!(window.TIENDA && window.TIENDA.ch && window.DIALOGOS)));
     await jugar(p); await p.waitForTimeout(3800);
     const s = await p.evaluate(() => window.__g.st());
     ok('la partida empieza (juega o ya terminó: nadie mueve la barra)', s.state === 'play' || s.state === 'over', s.state);

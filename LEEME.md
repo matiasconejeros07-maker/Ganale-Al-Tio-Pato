@@ -82,12 +82,28 @@ si los rebotes los dio una persona. Lo máximo que logra es ganar a un ritmo aco
 Para un juego entre conocidos o un evento es más que suficiente. Si algún día necesitas más: (1) **Firebase App Check** con reCAPTCHA (gratis) bloquea la mayoría de los bots y las copias
 modificadas del juego; (2) **Cloud Functions** (plan Blaze) permiten registrar los movimientos de la partida y repetirla en el servidor para validarla.
 
+## Publicar con otro link (Cloudflare Pages, sin tu usuario de GitHub en la dirección)
+
+`herramientas/publicar.js` arma la carpeta `dist/` con **solo lo que el juego necesita** (la página, el service worker, las imágenes y las cabeceras de seguridad en `_headers`): nada de pruebas, herramientas, documentación, reglas ni archivos ocultos. Una prueba (`pruebas/dist.test.js`) comprueba que esté completa y que **ningún archivo publicado nombre GitHub, tu usuario ni tu correo**.
+
+**Cómo conectarlo (una sola vez, lo haces tú en tu cuenta de Cloudflare):**
+1. Cloudflare → *Workers & Pages* → *Create* → *Pages* → *Connect to Git* → autoriza solo este repositorio.
+2. *Production branch*: `main` · *Build command*: `node herramientas/publicar.js` · *Build output directory*: `dist`.
+3. El nombre del proyecto es tu link: `https://<nombre>.pages.dev`. **Elígelo bien: si lo renombras, el link cambia.** Con un dominio propio (se conecta en *Custom domains*) el link no cambia nunca más aunque cambies de hosting.
+4. Desde ese momento cada vez que se une un cambio a `main`, Cloudflare publica la versión nueva sola (en ~1 minuto).
+
+**Si hay gente en el link de GitHub y gente en el de Cloudflare:**
+- **Los dos se actualizan juntos**: ambos publican el mismo `main`. (Si pasas el repositorio a privado, GitHub Pages gratis deja de publicar y queda solo Cloudflare.)
+- **Los marcadores, billeteras, rachas, emblemas y cuentas son los mismos en los dos**, porque viven en Firebase, no en el link. Quien juegue en uno aparece en el marcador del otro. Lo único separado es la **sesión** del celular (en cada link hay que iniciar sesión una vez con la misma cuenta) y la app instalada.
+- Si restringiste la clave de API de Google por referente, agrega **los dos** dominios.
+- Para llevar a todos al link nuevo cuando quieras: pon el link en `window.ENLACE_NUEVO` de `config.js` (viene vacío = apagado); quien entre por cualquier otra dirección será llevado al nuevo.
+
 ## Seguridad al publicar el juego (GitHub Pages) y pruebas
 
 Revisión hecha con las skills de seguridad y calidad de jeffallan (escaneo estático con ESLint + `eslint-plugin-security` y `no-unsanitized`, revisión manual y pruebas):
 
 - **No hay claves secretas en el código.** La «clave de API web» de `config.js` es pública por diseño (la protegen las reglas); no hay librerías ni scripts de terceros (nada de CDN), y todo texto que viene de otros jugadores se muestra con `textContent` (nunca como HTML).
-- **Política de contenido (CSP) dentro de `index.html`** (GitHub Pages no deja poner cabeceras propias): solo carga lo del mismo sitio y solo habla con Firebase (`*.firebaseio.com`, `identitytoolkit`, `securetoken`). Si cambias de dominio de base de datos, ajusta `connect-src`. Un pequeño script impide que otro sitio meta el juego en un marco (clickjacking). En Firebase Hosting `firebase.json` ya manda las cabeceras reales.
+- **Política de contenido (CSP) dentro de `index.html`** (por si el hosting no deja poner cabeceras propias; en Cloudflare, `_headers` la manda además como cabecera real): solo carga lo del mismo sitio y solo habla con Firebase (`*.firebaseio.com`, `identitytoolkit`, `securetoken`). Si cambias de dominio de base de datos, ajusta `connect-src`. Un pequeño script impide que otro sitio meta el juego en un marco (clickjacking). En Firebase Hosting `firebase.json` ya manda las cabeceras reales.
 - **Nombres:** máximo **12 caracteres** al crear la cuenta (las cuentas antiguas de hasta 16 siguen entrando con su nombre completo y se ven cortadas a 12). Se les quitan caracteres de control, invisibles y de dirección de texto (alguien podía disfrazar su nombre escribiendo directo en la base de datos).
 - **Contraseña:** al crear la cuenta se piden 8 caracteres o más (los nombres del marcador son públicos, y con ellos el nombre de usuario).
 - **Service worker:** nunca guarda respuestas con error, espera como máximo 4 s a internet antes de usar la copia guardada y al instalarse ignora el caché del navegador (GitHub Pages guarda los archivos 10 minutos).
