@@ -12,7 +12,7 @@ const ok = (nombre, cond, extra = '') => { if (cond) { pass++; console.log('  ok
 async function abrir(browser, w, h, extra = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...extra });
   await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: LOCAL }));
-  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir }), sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  fetchLeader();\n})();') }));
+  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length }), set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
   const p = await ctx.newPage(); const errs = [], csp = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (/Content.Security.Policy|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140)); });
@@ -45,6 +45,20 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     const f = await p.evaluate(() => { const r = document.getElementById('field').getBoundingClientRect(); return { l: r.left, t: r.top, w: r.width, h: r.height, ...window.__g.st() }; });
     ok(`${w}×${h}: el campo llena la pantalla`, Math.abs(f.w - w) < 1 && Math.abs(f.h - h) < 1 && f.l < 1 && f.t < 1, JSON.stringify(f));
     ok(`${w}×${h}: K = ancho/390 y sin errores`, Math.abs(f.K - w / 390) < 1e-3 && (f.state === 'play' || f.state === 'over') && errs.length === 0, `K=${f.K} errs=${errs}`);
+    await ctx.close();
+  }
+
+  console.log('Fluidez: el lienzo de efectos no usa los píxeles físicos y las llamas tienen tope');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844, { deviceScaleFactor: 3 });
+    await jugar(p); await p.waitForTimeout(3600);
+    await p.evaluate(() => { window.__auto = true; window.__g.set(90); }); await p.waitForTimeout(3500);      // una barra perfecta mantiene viva la partida
+    let maxFl = 0; for (let i = 0; i < 20; i++) { maxFl = Math.max(maxFl, await p.evaluate(() => window.__g.st().fl)); await p.waitForTimeout(100); }
+    const f = await p.evaluate(() => { const c = document.getElementById('fx'), r = c.getBoundingClientRect(); return { ...window.__g.st(), cssW: Math.round(r.width), cssH: Math.round(r.height), dpr: window.devicePixelRatio }; });
+    f.fl = maxFl;
+    ok('la pantalla es ×3 pero el lienzo de efectos tiene 1 píxel por punto (390×844, no 1170×2532)', f.dpr === 3 && f.fxw === 390 && f.fxh === 844 && f.cssW === 390 && f.cssH === 844, JSON.stringify(f));
+    ok('en la fase del diablo hay llamas, pero nunca más de 60', f.fl > 0 && f.fl <= 60, String(f.fl));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
     await ctx.close();
   }
 
