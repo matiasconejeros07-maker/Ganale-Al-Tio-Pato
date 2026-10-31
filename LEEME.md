@@ -16,7 +16,7 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
    `window.FIREBASE_API_KEY = 'AIza...';`
 7. Sube el cambio al repositorio. Listo: para jugar hay que crear una cuenta o iniciar sesión, y el marcador muestra el Top 25.
 
-## Cuentas (nombre y contraseña)
+## Cuentas (correo + nombre de usuario + contraseña)
 
 - Para jugar hay que **crear una cuenta** (nombre + contraseña de al menos 6 caracteres) o **entrar** con una existente.
   La sesión queda guardada en el celular: no hay que volver a escribir la contraseña. Con la misma cuenta se puede entrar desde otro celular y se recupera el mejor puntaje.
@@ -25,6 +25,16 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
 - Como las cuentas no usan un correo real, **no hay recuperación de contraseña**: quien la olvide tendrá que crear otra cuenta con otro nombre.
   Se puede borrar o restablecer una cuenta a mano en Firebase → Authentication → Usuarios.
 - Si `FIREBASE_API_KEY` queda vacía, el juego funciona en modo local (solo pide un nombre, sin contraseña y sin cuentas).
+
+### Correo en las cuentas (recuperar la cuenta y la contraseña)
+
+- **Cuentas nuevas:** se crean con **correo + nombre de usuario (máx. 12) + contraseña**. Para entrar se usa el correo. El nombre de usuario es lo que se ve en el marcador y es único.
+- **Cuentas antiguas (nombre + contraseña):** siguen entrando con su nombre. En el menú aparece «📧 Protege tu cuenta» y en **Ajustes → Correo → Agregar** pueden asociar un correo (piden la contraseña otra vez porque Firebase lo exige para cambiar el correo). **La cuenta es la misma** (mismo `uid`): pesos, compras, emblema, récord y racha no cambian. Después entran con su correo; con el nombre ya no, y el aviso se lo dice.
+- **Verificar el correo:** Firebase manda un **enlace** (no un código numérico: un código necesita un servidor propio y el plan de pago de Firebase). Al abrirlo, Ajustes → Correo → «Ya lo verifiqué» muestra ✅. Se puede reenviar el enlace.
+- **Olvidé mi contraseña:** en la pantalla de entrada, «¿Olvidaste tu contraseña?» manda el enlace para crear una nueva (respuesta igual exista o no la cuenta, para no revelar quién juega).
+- **Cómo funciona por dentro:** al crear la cuenta se reserva el nombre con el correo interno de siempre (`nombre@tio-pato.invalid`, así Firebase impide nombres repetidos, incluso con cuentas antiguas) y recién entonces se cambia por el correo real. El nombre queda anotado en `names/<nombre>` (los puntos van como comas, porque Firebase no admite puntos en las claves) y las reglas aceptan el nombre de la fila del marcador (`k`) si coincide con el correo interno **o** con ese registro. Las cuentas antiguas anotan su nombre solas la próxima vez que abren el juego. El nombre de usuario se guarda también en el perfil de Firebase Auth (`displayName`) para recordarlo al entrar desde otro celular.
+- **Pasos en la consola de Firebase:** (1) publicar `firebase-rules.json` **antes o justo con** esta versión, o las cuentas nuevas no podrán crearse (el juego avisa que faltan las reglas); (2) Authentication → Plantillas → editar «Verificación de correo» y «Restablecer contraseña» y poner el idioma en español (opcional, cambia solo el texto del correo).
+- **Límite honesto:** quien no abre el enlace queda con el correo «sin verificar»: la cuenta funciona igual, pero no hay garantía de que el correo sea suyo. Un tramposo con un programa podría reservar un nombre de una cuenta antigua que nunca volvió a abrir el juego (solo afecta cómo se ve el nombre en el marcador).
 
 ## Pesos y tienda
 

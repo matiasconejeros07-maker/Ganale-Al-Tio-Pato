@@ -3,14 +3,10 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { chromium, st, newPage, playHits } = require('./mockfirebase.js');
+const { chromium, st, newPage, playHits, registrar: reg } = require('./mockfirebase.js');
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { if (c) { pass++; console.log('  ok  ', n); } else { fail++; console.log('  FALLA', n, x); } };
-const registrar = async (p, nombre) => {
-  await p.tap('#tabUp'); await p.fill('#acct', nombre); await p.fill('#pass', 'secreto123'); await p.tap('#authGo'); await p.waitForTimeout(2500);
-  await p.tap('#dailyClose').catch(() => {});
-  return Object.values(st.users).slice(-1)[0].uid;
-};
+const registrar = async (p, nombre) => { const uid = await reg(p, nombre); await p.tap('#dailyClose').catch(() => {}); return uid; };
 const sinBloque = (bloque, arch) => {
   const r = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'firebase-rules.json'), 'utf8')); delete r.rules[bloque];
   const f = path.join(os.tmpdir(), arch + process.pid + '.json'); fs.writeFileSync(f, JSON.stringify(r)); return f;

@@ -28,6 +28,9 @@ jobs:
       - name: Emblema de perfil de punta a punta
         working-directory: pruebas
         run: node perfil.test.js
+      - name: Correo en las cuentas (crear, agregar a una antigua, verificar y recuperar)
+        working-directory: pruebas
+        run: node correo.test.js
       - name: Los pesos se suman (sesión vencida, saldos enormes y diagnóstico)
         working-directory: pruebas
         run: node pesos.test.js
