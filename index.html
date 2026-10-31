@@ -1415,7 +1415,7 @@
   }
 
   function sizeFx() {
-    dpr = lite ? 1 : Math.min(2, window.devicePixelRatio || 1);
+    dpr = 1;                                                     // los efectos (llamas, estela, chispas, brillos) son luces suaves: a resolución 1× se ven casi igual y cuestan 4 veces menos que a 2× (medido: del rebote 55 en adelante bajaba de 60 a ~35 cuadros por segundo)
     fx.width = Math.round(W * dpr); fx.height = Math.round(H * dpr);
     fx.style.width = W + 'px'; fx.style.height = H + 'px';
   }
@@ -1430,9 +1430,10 @@
     const k = fireK(), cxp = duckShow, follow = cxp - prevShow; prevShow = cxp;
     if (k > 0) {
       cx.globalAlpha = k; cx.drawImage(AURA_SPR, cxp - 140, DUCK_CY - 140);                        // resplandor rojo
-      if (flames.length < 90) fireAcc += (45 + 75 * k) * dt;
+      const cap = lite ? 30 : 60;                                  // tope de llamas a la vez
+      if (flames.length < cap) fireAcc += (45 + 75 * k) * dt;
       while (fireAcc >= 1) {
-        fireAcc--;
+        fireAcc--; if (flames.length >= cap) continue;
         flames.push({ x: cxp + (Math.random() - .5) * 64, y: DUCK_CY + (Math.random() - .05) * 58, vx: (Math.random() - .5) * 46, vy: -(60 + Math.random() * 120) * (.7 + .5 * k), life: 1, d: 1 + Math.random() * 1.2, s: 7 + Math.random() * 10 * (.5 + k) });
       }
     }
@@ -2707,7 +2708,7 @@
   let slowN = 0, frameN = 0, slowWins = 0, lite = false;
   function perfWatch(ms) {
     if (lite || document.hidden) return;
-    frameN++; if (ms > 36) slowN++;
+    frameN++; if (ms > 26) slowN++;                                // «lento» = menos de ~38 cuadros por segundo (antes 28: a 30 cuadros por segundo nunca saltaba el modo liviano)
     if (frameN >= 90) {                                            // cada 90 cuadros (~1,5 s) se mira cuántos fueron lentos; 3 ventanas seguidas con más del 30% → modo liviano
       slowWins = slowN / frameN > .3 ? slowWins + 1 : 0; frameN = slowN = 0;
       if (slowWins >= 3) { lite = true; document.body.classList.add('lite'); sizeFx(); }
@@ -2748,7 +2749,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v43';
+  const BUILD = 'v44';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
