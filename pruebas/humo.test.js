@@ -12,7 +12,7 @@ const ok = (nombre, cond, extra = '') => { if (cond) { pass++; console.log('  ok
 async function abrir(browser, w, h, extra = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...extra });
   await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: LOCAL }));
-  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir }), sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; } };\n  fetchLeader();\n})();') }));
+  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir }), sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; } };\n  fetchLeader();\n})();') }));
   const p = await ctx.newPage(); const errs = [], csp = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (/Content.Security.Policy|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140)); });
@@ -59,6 +59,21 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     ok('rebotes 0 a 55: la pelota va al 90% de la velocidad de antes', [0, 1, 30, 55].every(n => k(n) === 0.9), JSON.stringify(r));
     ok('rebotes 56 a 100: va al 95%', [56, 80, 100].every(n => k(n) === 0.95), JSON.stringify(r));
     ok('desde el 101: velocidad completa (100%)', [101, 150, 300].every(n => k(n) === 1), JSON.stringify(r));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
+  console.log('La barra se achica de a poco después del rebote 100 (28% recién en el 200)');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    const f = await p.evaluate(() => Array.from({ length: 301 }, (_, n) => window.__g.sh(n)));
+    const cerca = (a, c) => Math.abs(a - c) < 1e-9;
+    ok('rebote 0 = 100% y rebote 100 = 70% (igual que antes)', cerca(f[0], 1) && cerca(f[100], .7), `${f[0]} ${f[100]}`);
+    ok('rebote 118 = 62,4% (antes 52,9%) y rebote 150 = 49%', Math.abs(f[118] - .6244) < 1e-4 && Math.abs(f[150] - .49) < 1e-9, `${f[118]} ${f[150]}`);
+    ok('llega al 28% en el rebote 200 y ahí se queda', cerca(f[200], .28) && cerca(f[250], .28) && cerca(f[300], .28), `${f[200]} ${f[250]}`);
+    let pasoMax = 0, baja = true;
+    for (let n = 1; n <= 300; n++) { pasoMax = Math.max(pasoMax, f[n - 1] - f[n]); if (f[n] > f[n - 1] + 1e-12) baja = false; }
+    ok('nunca sube y ningún rebote la achica más de 0,42% (antes 0,95%)', baja && pasoMax <= .0042 + 1e-9, `paso máximo ${pasoMax}`);
     ok('sin errores de página', errs.length === 0, errs.join('|'));
     await ctx.close();
   }
