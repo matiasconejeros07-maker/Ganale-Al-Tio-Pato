@@ -12,7 +12,7 @@ const ok = (nombre, cond, extra = '') => { if (cond) { pass++; console.log('  ok
 async function abrir(browser, w, h, extra = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...extra });
   await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: LOCAL }));
-  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir }), sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; } };\n  fetchLeader();\n})();') }));
+  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir }), sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  fetchLeader();\n})();') }));
   const p = await ctx.newPage(); const errs = [], csp = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (/Content.Security.Policy|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140)); });
@@ -52,13 +52,31 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
   {
     const { ctx, p, errs } = await abrir(b, 390, 844);
     const r = await p.evaluate(() => [0, 1, 30, 55, 56, 80, 100, 101, 150, 300].map(n => {
-      const base = Math.min(n <= 100 ? 800 + n * 4 : 800 + 400 + (n - 100) * 16, 1800);     // la velocidad de antes (sin alivio)
-      return [n, +(window.__g.sp(n) / (base * window.__g.st().VS)).toFixed(4)];
+      return [n, +(window.__g.sp(n) / (window.__g.bs(n) * window.__g.st().VS)).toFixed(4)];                  // velocidad real ÷ velocidad base (sin alivio)
     }));
     const k = n => r.find(x => x[0] === n)[1];
     ok('rebotes 0 a 55: la pelota va al 90% de la velocidad de antes', [0, 1, 30, 55].every(n => k(n) === 0.9), JSON.stringify(r));
     ok('rebotes 56 a 100: va al 95%', [56, 80, 100].every(n => k(n) === 0.95), JSON.stringify(r));
     ok('desde el 101: velocidad completa (100%)', [101, 150, 300].every(n => k(n) === 1), JSON.stringify(r));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
+  console.log('La pelota sigue acelerando después del 100, de a poco, y nunca se vuelve imposible');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    const r = await p.evaluate(() => ({ bs: Array.from({ length: 601 }, (_, n) => window.__g.bs(n)), g: window.__g.geo(), ms: window.TIENDA.eco.msPorRebote }));
+    const bs = r.bs;
+    ok('hasta el rebote 100 la velocidad es la de siempre (800 + 4 por rebote)', bs[0] === 800 && bs[55] === 1020 && bs[100] === 1200, `${bs[0]} ${bs[55]} ${bs[100]}`);
+    ok('en el 137 ya no es el tope: 1.440 (antes 1.800) y sigue subiendo', Math.abs(bs[137] - 1440) < 3 && bs[138] > bs[137] && bs[200] > bs[137], `${bs[137]} ${bs[138]} ${bs[200]}`);
+    ok('rebotes 118 / 200 / 300: 1.325 / 1.708 / 1.930', Math.abs(bs[118] - 1325) < 3 && Math.abs(bs[200] - 1708) < 3 && Math.abs(bs[300] - 1930) < 3, `${bs[118]} ${bs[200]} ${bs[300]}`);
+    let sube = true, concava = true;
+    for (let n = 101; n <= 600; n++) { if (bs[n] <= bs[n - 1]) sube = false; if (n > 101 && bs[n] - bs[n - 1] > bs[n - 1] - bs[n - 2] + 1e-9) concava = false; }
+    ok('sube en cada rebote, y cada rebote suma menos que el anterior (sin saltos)', sube && concava);
+    ok('máximo +9 px/s por rebote después del 100 (antes +16) y nunca pasa de 2.100', bs[101] - bs[100] <= 9 && Math.max(...bs) < 2100, `${bs[101] - bs[100]} ${Math.max(...bs)}`);
+    const { top, db, by, vs, vyf } = r.g, viaje = top - by - (db + by);                                   // lo que recorre la pelota entre el Pato y la barra
+    const cicloMin = viaje / (.995 * 2100 * vs * vyf) * 1000 + viaje / (.954 * 2100 * vs * vyf) * 1000;      // las dos pasadas casi verticales, con la velocidad máxima y sin alivio
+    ok(`el ciclo más corto posible (${cicloMin.toFixed(0)} ms) sigue siendo más lento que el mínimo de las reglas (${r.ms} ms por rebote)`, cicloMin > r.ms, String(cicloMin));
     ok('sin errores de página', errs.length === 0, errs.join('|'));
     await ctx.close();
   }
