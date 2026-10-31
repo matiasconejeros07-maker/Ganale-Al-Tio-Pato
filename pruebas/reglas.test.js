@@ -11,12 +11,12 @@ const pesosFor = (h, r = 1) => { const t = Math.floor(h / E); return r * (h + E 
 const START = { s: { '.sv': 'timestamp' }, b: 'peso1', r: 1 };
 let pass = 0, fail = 0;
 const N = Date.now(), T0 = N, SV = { '.sv': 'timestamp' };
-const A = uid => ({ uid, token: { email: 'matias@tio-pato.invalid' } });
+const A = (uid, email = 'matias@tio-pato.invalid') => ({ uid, token: { email } });
 // targaryen ignora with({now}) y usa la hora real: se desplazan hacia atrás las horas guardadas y escritas para simular 'now'
 const isT = (k, v) => ['s', 'e', 'lr', 't', 'bx'].includes(k) && typeof v === 'number' && v >= 1e12;       // horas en ms (los puntajes y rebotes son números chicos)
 function shiftObj(o, off) { if (!o || typeof o !== 'object') return o; const c = Array.isArray(o) ? [] : {}; for (const k in o) c[k] = (o[k] && typeof o[k] === 'object' && !o[k]['.sv']) ? shiftObj(o[k], off) : (isT(k, o[k]) ? o[k] - off : o[k]); return c; }
-function db(data, now, uid = 'u1') {
-  const off = now - Date.now(), base = () => targaryen.database(rules, shiftObj(data || {}, off)).as(A(uid));
+function db(data, now, uid = 'u1', email) {
+  const off = now - Date.now(), base = () => targaryen.database(rules, shiftObj(data || {}, off)).as(A(uid, email));
   const sh = (path, v) => (v && typeof v === 'object' && !v['.sv']) ? shiftObj(v, off) : (isT(path.split('/').pop(), v) ? v - off : v);
   return {
     write: (p, v) => base().write(p, sh(p, v)),
@@ -360,6 +360,33 @@ console.log('Foto de perfil (emblema)');
   ok('emblema en la fila de otra cuenta', as('u2', fila, { 'scores/u1/a': 'e41A33GGG' }), false);
   ok('un campo cualquiera sigue prohibido en el marcador', as('u1', fila, { 'scores/u1/foto': 'e41A33GGG' }), false);
   ok('los demás pueden leer el marcador con emblema', db({ scores: { u1: { n: 'Mati', k: 'mati', s: 40, t: 1, a: 'e41A33GGG' } } }, T0, 'u2').read('/scores'), true);
+}
+
+// ---------- correo asociado a la cuenta y registro de nombres ----------
+console.log('Correo real y registro de nombres');
+{
+  const REAL = 'mati@gmail.com', con = (extra = {}) => ({ ...afterClaim, ...extra });
+  ok('cuenta con correo real y su nombre registrado: guarda el récord', db(con({ names: { matias: 'u1' } }), T0 + 130000, 'u1', REAL).write('/scores/u1', sc(60)), true);
+  ok('cuenta con correo real SIN nombre registrado: no puede guardar el récord', db(con(), T0 + 130000, 'u1', REAL).write('/scores/u1', sc(60)), false);
+  ok('nombre registrado por otra cuenta: no puede usarlo', db(con({ names: { matias: 'u2' } }), T0 + 130000, 'u1', REAL).write('/scores/u1', sc(60)), false);
+  ok('con el correo interno sigue funcionando como siempre', db(con(), T0 + 130000).write('/scores/u1', sc(60)), true);
+  ok('registrar tu nombre (aún con el correo interno)', db({}, T0).write('/names/matias', 'u1'), true);
+  ok('registrar un nombre que no es el de tu correo interno', db({}, T0).write('/names/otro', 'u1'), false);
+  ok('registrar un nombre a nombre de otra cuenta', db({}, T0).write('/names/matias', 'u2'), false);
+  ok('pisar un nombre ya registrado', db({ names: { matias: 'u2' } }, T0).write('/names/matias', 'u1'), false);
+  ok('borrar el nombre de otra cuenta', db({ names: { matias: 'u2' } }, T0).write('/names/matias', null), false);
+  ok('soltar tu propio nombre (deshacer un registro a medias)', db({ names: { matias: 'u1' } }, T0).write('/names/matias', null), true);
+  ok('con un correo real ya no se registran nombres nuevos', db({}, T0, 'u1', REAL).write('/names/matias', 'u1'), false);
+  ok('nombre con formato inválido', db({}, T0, 'u1', 'Ma@tio-pato.invalid').write('/names/Ma', 'u1'), false);
+  const pto = { ...afterClaim, names: { 'ana,perez': 'u1' } };
+  ok('nombre con puntos (ana.perez): se registra como ana,perez con su correo interno', db({}, T0, 'u1', 'ana.perez@tio-pato.invalid').write('/names/ana,perez', 'u1'), true);
+  ok('… y no con otro nombre', db({}, T0, 'u1', 'ana.perez@tio-pato.invalid').write('/names/ana,lopez', 'u1'), false);
+  ok('cuenta con correo real y nombre con puntos registrado: guarda el récord', db(pto, T0 + 130000, 'u1', REAL).write('/scores/u1', sc(60, { k: 'ana.perez' })), true);
+  ok('nombre con puntos sin registrar: no puede', db(afterClaim, T0 + 130000, 'u1', REAL).write('/scores/u1', sc(60, { k: 'ana.perez' })), false);
+  ok('nombre con puntos registrado por otra cuenta: no puede', db({ ...afterClaim, names: { 'ana,perez': 'u2' } }, T0 + 130000, 'u1', REAL).write('/scores/u1', sc(60, { k: 'ana.perez' })), false);
+  ok('cualquiera puede leer un nombre (ver si está libre)', db({ names: { matias: 'u1' } }, T0, 'u9').read('/names/matias'), true);
+  ok('leer un nombre sin sesión', targaryen.database(rules, { names: { matias: 'u1' } }).as(null).with({ now: T0 }).read('/names/matias'), true);
+  ok('pero nadie puede listar todos los nombres', db({ names: { matias: 'u1' } }, T0, 'u9').read('/names'), false);
 }
 
 console.log(`\n${pass} correctas, ${fail} fallas`);

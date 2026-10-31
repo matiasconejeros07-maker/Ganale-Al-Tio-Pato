@@ -76,7 +76,8 @@ const rules = { rules: {
       '.write': "auth != null && auth.uid === $uid && (!data.exists() || newData.child('s').val() >= data.child('s').val())",
       '.validate': "newData.hasChildren(['n', 'k', 's', 't'])",
       n: { '.validate': 'newData.isString() && newData.val().length >= 1 && newData.val().length <= 16' },
-      k: { '.validate': `newData.isString() && newData.val().matches(/^[a-z0-9.]{3,24}$/) && auth.token.email === newData.val() + '${MAIL}'` },
+      // el nombre es de quien lo tiene: con el correo interno (cuentas de nombre + contraseña) o, si la cuenta ya tiene un correo real, con el nombre registrado a su nombre en `names`
+      k: { '.validate': `newData.isString() && newData.val().matches(/^[a-z0-9.]{3,24}$/) && (auth.token.email === newData.val() + '${MAIL}' || root.child('names').child(newData.val().replace('.', ',')).val() === auth.uid)` },
       s: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && ${RUN}.child('e').exists() && newData.val() <= ${RUN}.child('h').val()` },
       t: { '.validate': 'newData.val() === now' },
       a: { '.validate': AVATAR },                                                         // foto de perfil que ven los demás en el marcador (solo el formato i00c00)
@@ -85,6 +86,14 @@ const rules = { rules: {
       $other: { '.validate': false }
     }
   },
+
+  // ---- registro de nombres: names/<nombre con las comas en lugar de puntos (Firebase no deja puntos en las claves)> = uid de la cuenta que lo tiene. Una cuenta que cambia su correo interno por uno real conserva su nombre aquí.
+  //      Solo se escribe una vez, a nombre propio y mientras la cuenta aún tiene el correo interno de ese nombre (así nadie reserva nombres que no son suyos); su dueña puede soltarlo (se usa para deshacer un registro que no terminó). Cualquiera puede leer un nombre, pero no listarlos. ----
+  names: { $k: {
+    '.read': true,
+    '.write': `auth != null && ((!data.exists() && newData.val() === auth.uid && auth.token.email === $k.replace(',', '.') + '${MAIL}') || (data.val() === auth.uid && !newData.exists()))`,
+    '.validate': "newData.isString() && newData.val().length <= 40 && $k.matches(/^[a-z0-9,]{3,24}$/)"
+  } },
 
   // ---- contador de puestos: hist/<puntaje> = cuántas cuentas tienen ese puntaje. Con esto el puesto de cualquiera se calcula leyendo ~500 números
   //      (unos 4 KB) sea cual sea la cantidad de jugadores, en vez de bajar toda la lista. Cada casilla solo se mueve de a 1 y solo si la misma cuenta

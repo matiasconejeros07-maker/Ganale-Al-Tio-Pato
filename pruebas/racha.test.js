@@ -1,7 +1,7 @@
 // Racha diaria de punta a punta: el juego real en Chromium contra un Firebase de mentira que aplica las reglas REALES (firebase-rules.json).
 // Uso:  cd pruebas && npm install && npx playwright install chromium && node racha.test.js
 const fs = require('fs');
-const { chromium, st, newPage, playHits } = require('./mockfirebase.js');
+const { chromium, st, newPage, playHits, registrar } = require('./mockfirebase.js');
 const DAY = 86400000;
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { if (c) { pass++; console.log('  ok  ', n); } else { fail++; console.log('  FALLA', n, x); } };
@@ -9,7 +9,7 @@ const pesosFor = h => h;   // hasta 99 rebotes: $1 por rebote
 (async () => {
   const b = await chromium.launch(fs.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {});
   const { ctx, p, errs } = await newPage(b);
-  await p.tap('#tabUp'); await p.fill('#acct', 'Racha Test'); await p.fill('#pass', 'secreto123'); await p.tap('#authGo'); await p.waitForTimeout(2500);
+  await registrar(p, 'Racha Test');
   const uid = Object.values(st.users)[0].uid;
   const vis = sel => p.evaluate(s => document.querySelector(s).classList.contains('show'), sel);
   const txt = sel => p.evaluate(s => document.querySelector(s).textContent.trim(), sel);

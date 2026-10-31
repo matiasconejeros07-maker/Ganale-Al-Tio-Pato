@@ -42,7 +42,7 @@
           ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
         },
         "k": {
-          ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9.]{3,24}$/) && auth.token.email === newData.val() + '@tio-pato.invalid'"
+          ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9.]{3,24}$/) && (auth.token.email === newData.val() + '@tio-pato.invalid' || root.child('names').child(newData.val().replace('.', ',')).val() === auth.uid)"
         },
         "s": {
           ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 500 && newData.parent().parent().parent().child('runs').child($uid).child('e').exists() && newData.val() <= newData.parent().parent().parent().child('runs').child($uid).child('h').val()"
@@ -59,6 +59,13 @@
         "$other": {
           ".validate": false
         }
+      }
+    },
+    "names": {
+      "$k": {
+        ".read": true,
+        ".write": "auth != null && ((!data.exists() && newData.val() === auth.uid && auth.token.email === $k.replace(',', '.') + '@tio-pato.invalid') || (data.val() === auth.uid && !newData.exists()))",
+        ".validate": "newData.isString() && newData.val().length <= 40 && $k.matches(/^[a-z0-9,]{3,24}$/)"
       }
     },
     "hist": {

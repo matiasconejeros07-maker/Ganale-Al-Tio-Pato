@@ -1,13 +1,13 @@
 // Emblema de perfil de punta a punta: editarlo, guardarlo en la cuenta y en el marcador, verlo en el marcador y como rival del primer lugar.
 // Uso:  cd pruebas && npm install && npx playwright install chromium && node perfil.test.js
 const fs = require('fs');
-const { chromium, st, newPage, playHits } = require('./mockfirebase.js');
+const { chromium, st, newPage, playHits, registrar } = require('./mockfirebase.js');
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { if (c) { pass++; console.log('  ok  ', n); } else { fail++; console.log('  FALLA', n, x); } };
 (async () => {
   const b = await chromium.launch(fs.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {});
   const { ctx, p, errs } = await newPage(b);
-  await p.tap('#tabUp'); await p.fill('#acct', 'Perfil Test'); await p.fill('#pass', 'secreto123'); await p.tap('#authGo'); await p.waitForTimeout(2500);
+  await registrar(p, 'Perfil Test');
   const uid = Object.values(st.users)[0].uid;
   st.db.scores = { a1: { n: 'Matías', k: 'matias', s: 131, t: 1, a: 'e41A33GGG' }, a2: { n: 'Cami', k: 'cami', s: 80, t: 2 } };   // el primero tiene un escudo rojo con dorado y una corona
   await p.reload(); await p.waitForTimeout(2500); await p.tap('#dailyClose').catch(() => {});
@@ -50,7 +50,7 @@ const ok = (n, c, x = '') => { if (c) { pass++; console.log('  ok  ', n); } else
     const arch = path.join(os.tmpdir(), 'reglas-viejas-' + process.pid + '.json'); fs.writeFileSync(arch, JSON.stringify(viejas));
     st.denied.length = 0; st.rulesFile = arch;
     const { ctx: c2, p: p2, errs: e2 } = await newPage(b);
-    await p2.tap('#tabUp'); await p2.fill('#acct', 'Sin Reglas'); await p2.fill('#pass', 'secreto123'); await p2.tap('#authGo'); await p2.waitForTimeout(2500);
+    await registrar(p2, 'Sin Reglas');
     const uid2 = Object.values(st.users).find(u => /sin\.reglas/.test(u.email || '') || true && u.uid !== uid).uid;
     st.db.scores = { ...(st.db.scores || {}), [uid2]: { n: 'Sin Reglas', k: 'sin.reglas', s: 40, t: Date.now() - 5000 } };               // ya tiene puntaje, así que debería salir en el marcador
     await p2.reload(); await p2.waitForTimeout(2500); await p2.tap('#dailyClose').catch(() => {});

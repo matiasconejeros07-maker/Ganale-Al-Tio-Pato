@@ -243,6 +243,21 @@
   .tog.off i { transform: translateX(-54px); }
   .setl small { display: block; margin-top: 2px; font-size: 12px; font-weight: 700; line-height: 1.25; color: #6b6840; }
   .btn.mini { margin: 0; padding: 10px 20px; font-size: 16px; }
+  /* al crear la cuenta o recuperar la contraseña el formulario es más largo: se achica el dibujo y se oculta el texto de relleno para que el botón quede a la vista */
+  body.authup #menu .stage, body.authreset #menu .stage { --st: clamp(84px, 14vh, 120px); }
+  body.authup #menu .slogan, body.authup #menu .tag, body.authreset #menu .slogan, body.authreset #menu .tag, body.authup #menu .rec, body.authreset #menu .rec { display: none; }
+  body.authup #menu .mid, body.authreset #menu .mid { gap: 6px; }
+  .authbox [hidden], .mailbody [hidden], .mailbanner[hidden], #mailRow[hidden] { display: none !important; }
+  .seti-mail { font-size: 26px; line-height: 32px; text-align: center; }
+  .mailbanner { display: flex; align-items: center; gap: 8px; width: min(100%, 340px); margin: 4px auto 10px; padding: 8px 8px 8px 14px; border-radius: 18px; background: #fff; border: 2px solid #ffc928; box-shadow: 0 4px 12px rgba(0, 0, 0, .12); font-size: 13px; font-weight: 800; text-align: left; line-height: 1.25; }
+  .mailbanner span { flex: 1; }
+  .mailbanner .btn.mini { padding: 8px 14px; font-size: 14px; flex: none; }
+  .mailbanner .mbx { flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(0,0,0,.07); font-size: 14px; font-weight: 900; cursor: pointer; color: #6b6840; }
+  .mailbody { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 14px; }
+  .mailbody form { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+  .mailtxt { white-space: pre-line; overflow-wrap: anywhere; margin: 0 0 6px; font-size: 15px; font-weight: 700; line-height: 1.35; color: #44411f; text-align: center; }
+  #mailVer { display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: center; }
+  .btn.out2 { background: transparent; color: var(--ink); border: 3px solid var(--ink); font-size: 17px; padding: 12px 20px; }
   .btn.out { width: 100%; margin-top: 20px; background: transparent; color: #c0392b; border: 3px solid #c0392b; font-size: 17px; padding: 13px 20px; }
   .btn.out[hidden] { display: none; }
   .setver { margin-top: 14px; font-size: 13px; font-weight: 800; color: #9b977a; }
@@ -884,13 +899,16 @@
         <p class="slogan"><span>¡Rebota, gana y hazte millonario!</span> 💰</p>
         <p class="tag" id="tagline">Rebota la moneda con tu barra y junta pesos. El Tío Pato siempre te la devuelve.</p>
         <div class="rec" id="bestMenu"></div>
-        <!-- con cuentas: inicia sesión o crea tu cuenta (nombre + contraseña) -->
+        <!-- con cuentas: entra con tu correo (o con tu nombre, las cuentas antiguas) o crea tu cuenta con correo + nombre de usuario + contraseña -->
+        <div class="mailbanner" id="mailBanner" hidden><span id="mailBannerTxt">📧 Protege tu cuenta: agrega tu correo</span><button class="btn mini" id="mailBannerGo" type="button">Agregar</button><button class="mbx" id="mailBannerX" type="button" aria-label="Ahora no">✕</button></div>
         <form class="authbox" id="authForm" hidden autocomplete="on" novalidate>
           <div class="seg" role="tablist"><button type="button" id="tabIn" class="on" role="tab">Entrar</button><button type="button" id="tabUp" role="tab">Crear cuenta</button></div>
-          <input class="field" id="acct" name="username" type="text" maxlength="16" placeholder="Tu nombre" autocomplete="username" autocapitalize="words" spellcheck="false" aria-label="Tu nombre">
+          <input class="field" id="acctMail" name="email" type="email" maxlength="80" placeholder="Tu correo" autocomplete="email" autocapitalize="off" spellcheck="false" aria-label="Tu correo" hidden>
+          <input class="field" id="acct" name="username" type="text" maxlength="80" placeholder="Correo o nombre" autocomplete="username" autocapitalize="off" spellcheck="false" aria-label="Correo o nombre">
           <div class="pw"><input class="field" id="pass" name="password" type="password" minlength="6" maxlength="64" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña"><button type="button" id="eye" aria-label="Mostrar contraseña">👁</button></div>
           <div class="status err" id="authMsg" role="alert"></div>
           <button class="btn" id="authGo" type="submit">Entrar</button>
+          <button class="link" id="forgot" type="button">¿Olvidaste tu contraseña?</button>
         </form>
         <!-- sin cuentas (modo local): solo el nombre -->
         <input id="name" type="text" maxlength="12" placeholder="Tu nombre" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Tu nombre">
@@ -950,8 +968,25 @@
       <div class="setrow"><span class="uemb" id="setEmb"></span><span class="setl">Mi emblema<small id="avSt"></small></span><button class="btn mini" id="openEmblem" type="button">Editar</button></div>
       <div class="setrow"><span class="seti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.2 5.8a8.6 8.6 0 0 1 0 12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="setl" id="lblSound">Sonido</span><button class="tog" id="togSound" type="button" role="switch" aria-checked="true" aria-labelledby="lblSound"><span class="tt">SÍ</span><i></i></button></div>
       <div class="setrow"><span class="seti"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="18" rx="2.2"/><path d="M4.5 8v8M2 10.5v3M19.5 8v8M22 10.5v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="setl" id="lblVib">Vibración</span><button class="tog" id="togVib" type="button" role="switch" aria-checked="true" aria-labelledby="lblVib"><span class="tt">SÍ</span><i></i></button></div>
+      <div class="setrow" id="mailRow" hidden><span class="seti seti-mail" aria-hidden="true">✉️</span><span class="setl">Correo<small id="mailSt"></small></span><button class="btn mini" id="mailBtn" type="button">Agregar</button></div>
       <button class="btn out" id="logout" type="button" hidden>Cerrar sesión</button>
       <div class="setver" id="setVer">Versión</div>
+    </div>
+  </div>
+</div>
+<div class="modal" id="mailModal" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
+  <div class="mcard set">
+    <div class="sethead"><h2 id="mailTitle">Tu correo</h2></div>
+    <button class="setx" id="mailClose" type="button" aria-label="Cerrar">✕</button>
+    <div class="setbody mailbody">
+      <p class="mailtxt" id="mailTxt"></p>
+      <form id="mailAdd" autocomplete="on" novalidate>
+        <input class="field" id="mEmail" name="email" type="email" maxlength="80" placeholder="Tu correo" autocomplete="email" autocapitalize="off" spellcheck="false" aria-label="Tu correo">
+        <div class="pw"><input class="field" id="mPass" name="password" type="password" maxlength="64" placeholder="Tu contraseña actual" autocomplete="current-password" aria-label="Tu contraseña actual"></div>
+        <button class="btn" id="mGo" type="submit">Asociar mi correo</button>
+      </form>
+      <div id="mailVer"><button class="btn" id="mResend" type="button">Reenviar enlace</button><button class="btn out2" id="mCheck" type="button">Ya lo verifiqué</button></div>
+      <div class="status" id="mailMsg" role="status"></div>
     </div>
   </div>
 </div>
@@ -1484,21 +1519,27 @@
   }
 
   const authErr = m => ({
-    EMAIL_EXISTS: 'Ese nombre ya está en uso. Elige otro, o entra con tu contraseña.',
-    INVALID_LOGIN_CREDENTIALS: 'Nombre o contraseña incorrectos.', INVALID_PASSWORD: 'Nombre o contraseña incorrectos.', EMAIL_NOT_FOUND: 'Nombre o contraseña incorrectos.',
+    EMAIL_EXISTS: 'Ese nombre ya está en uso. Elige otro, o entra con tu contraseña.', NAME_TAKEN: 'Ese nombre ya está en uso. Elige otro.',
+    MAIL_TAKEN: 'Ese correo ya está asociado a otra cuenta. Entra con él o recupera tu contraseña.', INVALID_EMAIL: 'Escribe un correo válido.',
+    INVALID_LOGIN_CREDENTIALS: 'Correo, nombre o contraseña incorrectos.', INVALID_PASSWORD: 'Correo, nombre o contraseña incorrectos.', EMAIL_NOT_FOUND: 'Correo, nombre o contraseña incorrectos.',
+    REGLAS: 'Faltan publicar las reglas nuevas de Firebase (firebase-rules.json) para crear cuentas con correo.', NET: 'Sin conexión. Revisa tu internet e inténtalo de nuevo.',
+    CREDENTIAL_TOO_OLD_LOGIN_AGAIN: 'Por seguridad, vuelve a escribir tu contraseña e inténtalo de nuevo.',
     WEAK_PASSWORD: 'La contraseña debe tener al menos 6 caracteres.',
     TOO_MANY_ATTEMPTS_TRY_LATER: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
     OPERATION_NOT_ALLOWED: 'El acceso con contraseña no está activado en Firebase (Authentication → Método de acceso → Correo electrónico/contraseña).',
     API_KEY_INVALID: 'La clave de Firebase de config.js no es válida.', USER_DISABLED: 'Esta cuenta está deshabilitada.'
   })[String(m).split(' ')[0]] || (/Failed to fetch|abort|NetworkError/i.test(m) ? 'Sin conexión. Revisa tu internet e inténtalo de nuevo.' : 'No se pudo iniciar sesión (' + m + ').');
-  async function authCall(kind, email, password) {
-    const r = await http(`https://identitytoolkit.googleapis.com/v1/accounts:${kind}?key=${encodeURIComponent(API_KEY)}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, returnSecureToken: true })
+  async function authPost(endpoint, body) {                       // accounts:signUp · signInWithPassword · update · sendOobCode · lookup · delete
+    const r = await http(`https://identitytoolkit.googleapis.com/v1/accounts:${endpoint}?key=${encodeURIComponent(API_KEY)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error((j.error && j.error.message) || 'ERROR');
     return j;
   }
+  const authCall = (kind, email, password) => authPost(kind, { email, password, returnSecureToken: true });
+  const isMail = x => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(x).trim());
+  const isInternal = x => String(x || '').toLowerCase().endsWith(MAIL);
   // Token vigente (se renueva solo con la sesión guardada: no tienes que volver a escribir la contraseña).
   async function idToken(force = false) {
     if (!session) throw new Error('SIN_SESION');
@@ -2251,14 +2292,14 @@
       const [wr, sr, kr] = await Promise.all([http(`${DB}/wallets/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}/s.json`), http(`${DB}/streaks/${uid}.json?auth=${tok}`)]);
       if (!wr.ok) return wr.status === 401 || wr.status === 403 ? 'denied' : 'error';
       if (!sr.ok) return 'error';                                  // sin saber tu récord no se cobra (si se asumiera 0, el servidor rechazaría la partida entera y se perdería): se reintenta
-      const w = (await wr.json()) || {}, best = +(await sr.json()) || 0;
+      const w = (await wr.json()) || {}, sv = await sr.json(), best = +sv || 0, rowExists = typeof sv === 'number';
       if (+w.lr === pr.s) { pending = null; savePending(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
       if (!kr.ok && kr.status !== 401 && kr.status !== 403) return 'error';
       const kv = kr.ok ? await kr.json() : null, mult = boostMult(pr.s, kv && +kv.bx || 0);      // ¿la partida empezó con «pesos dobles»? lo decide la racha que guarda el servidor
-      const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h) * mult, body = {};
+      const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h) * mult, body = {}, rowSeen = rowExists;
       body[`runs/${uid}/e`] = SV; body[`runs/${uid}/h`] = pr.h; body[`runs/${uid}/p`] = p;
       body[`wallets/${uid}/c`] = c0 + p; body[`wallets/${uid}/sp`] = sp0; body[`wallets/${uid}/lr`] = pr.s;
-      if (pr.h > best) { body[`scores/${uid}/n`] = cleanName(player.name || session.name) || 'Jugador'; body[`scores/${uid}/k`] = session.key; body[`scores/${uid}/s`] = pr.h; body[`scores/${uid}/t`] = SV; if (avParse(player.av)) body[`scores/${uid}/a`] = player.av; }   // por campos: así no se borra `c` (el contador de puestos)
+      if (pr.h > best) { if (!rowSeen) { body[`scores/${uid}/n`] = cleanName(player.name || session.name) || 'Jugador'; body[`scores/${uid}/k`] = session.key; } body[`scores/${uid}/s`] = pr.h; body[`scores/${uid}/t`] = SV; if (avParse(player.av)) body[`scores/${uid}/a`] = player.av; }   // por campos: así no se borra `c` (el contador de puestos)
       const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
       if (r.ok) {
         wallet.c = c0 + p; wallet.sp = sp0; wallet.lr = pr.s; saveWallet();
@@ -2599,14 +2640,18 @@
     nameInput.hidden = AUTH; $('play').hidden = AUTH && !logged;
     $('coinChip').hidden = AUTH && !logged; $('openShop').hidden = AUTH && !logged; $('topbar').hidden = !logged && AUTH;
     if (logged) { const n = cleanName(player.name || session.name) || 'Tú'; $('hello').textContent = n; paintAvatars(); }
-    renderCoins(); renderStreak();
+    document.body.classList.toggle('authup', AUTH && !logged && authMode === 'up'); document.body.classList.toggle('authreset', AUTH && !logged && authMode === 'reset');
+    renderCoins(); renderStreak(); paintMailBanner();
     $('bestMenu').textContent = player.best ? `🏆 Tu récord: ${player.best}` : '';
   }
-  function setAuthMode(m) {
-    authMode = m; $('tabIn').classList.toggle('on', m === 'in'); $('tabUp').classList.toggle('on', m === 'up'); $('tabIn').setAttribute('aria-selected', String(m === 'in')); $('tabUp').setAttribute('aria-selected', String(m === 'up'));
-    $('authGo').textContent = m === 'in' ? 'Entrar' : 'Crear cuenta'; $('authMsg').textContent = '';
+  function setAuthMode(m) {                                        // 'in' = entrar (correo o nombre) · 'up' = crear cuenta (correo + nombre + contraseña) · 'reset' = recuperar la contraseña
+    authMode = m; document.body.classList.toggle('authup', m === 'up'); document.body.classList.toggle('authreset', m === 'reset'); $('tabIn').classList.toggle('on', m !== 'up'); $('tabUp').classList.toggle('on', m === 'up'); $('tabIn').setAttribute('aria-selected', String(m !== 'up')); $('tabUp').setAttribute('aria-selected', String(m === 'up'));
+    $('authGo').textContent = m === 'up' ? 'Crear cuenta' : m === 'reset' ? 'Enviar enlace' : 'Entrar'; $('authMsg').textContent = ''; $('authMsg').className = 'status err';
+    $('acctMail').hidden = m === 'in'; $('acct').hidden = m === 'reset'; $('forgot').hidden = m !== 'in'; $('pass').parentElement.hidden = m === 'reset';
     $('pass').autocomplete = m === 'in' ? 'current-password' : 'new-password'; $('pass').minLength = m === 'in' ? 6 : 8;
-    $('acct').maxLength = m === 'in' ? NAME_OLD : NAME_MAX; $('acct').placeholder = m === 'in' ? 'Tu nombre' : 'Tu nombre (máx. 12)'; if (m === 'up') $('acct').value = cleanName($('acct').value);
+    $('acct').maxLength = m === 'up' ? NAME_MAX : 80; $('acct').placeholder = m === 'up' ? 'Nombre de usuario (máx. 12)' : 'Correo o nombre'; $('acct').autocapitalize = m === 'up' ? 'words' : 'off'; $('acct').autocomplete = m === 'up' ? 'nickname' : 'username';
+    $('acct').setAttribute('aria-label', m === 'up' ? 'Nombre de usuario' : 'Correo o nombre');
+    if (m === 'up') $('acct').value = cleanName($('acct').value);
   }
   async function loadMine() {                                      // tu mejor puntaje guardado en la nube (para cuando entras desde otro celular)
     try {
@@ -2620,27 +2665,149 @@
   }
   function logout() {
     closeSettings(); session = null; saveSession(); streak = null; streakOk = false; closeDaily(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
-    leaderBest = 0; loadWallet(); applyCosmetics(); setInitial(); renderScores(); renderMenu(); fetchLeader();
+    leaderBest = 0; loadWallet(); applyCosmetics(); setInitial(); renderScores(); setAuthMode('in'); renderMenu(); fetchLeader();
+  }
+  function beginSession(j, name) {                                 // guarda la sesión con lo que devolvió Firebase; email = el correo real de la cuenta ('' si aún tiene el interno)
+    const email = isInternal(j.email) ? '' : String(j.email || '').toLowerCase();
+    session = { uid: j.localId, name, key: acctKey(name), id: j.idToken, refresh: j.refreshToken, exp: Date.now() + (+j.expiresIn || 3600) * 1000, email, ev: false };
+    saveSession();
+  }
+  // Cuentas de nombre + contraseña (antiguas): su nombre se anota en `names/` mientras aún tienen el correo interno, para conservarlo cuando le pongan uno real.
+  const nameKey = k => String(k).replace(/\./g, ',');                 // Firebase no admite puntos en las claves: en `names/` el punto va como coma
+  async function claimName(uid, key, tok) {                        // 'ok' | 'taken' | 'rules' | 'net'
+    const nk = nameKey(key);
+    try {
+      const g = await http(`${DB}/names/${nk}.json?auth=${encodeURIComponent(tok)}`);
+      if (!g.ok) return g.status === 401 || g.status === 403 ? 'rules' : 'net';
+      const cur = await g.json(); if (cur === uid) return 'ok'; if (cur !== null) return 'taken';
+      const w = await http(`${DB}/names/${nk}.json?auth=${encodeURIComponent(tok)}&print=silent`, { method: 'PUT', headers: JSONH, body: JSON.stringify(uid) });
+      return w.ok ? 'ok' : w.status === 401 || w.status === 403 ? 'taken' : 'net';
+    } catch (e) { return 'net'; }
+  }
+  async function signUpWithMail(mail, name, pass) {                // el nombre se reserva con el correo interno; luego la cuenta pasa a tener el correo real
+    const key = acctKey(name);
+    const free = await http(`${DB}/names/${nameKey(key)}.json`);
+    if (!free.ok) throw new Error(free.status === 401 || free.status === 403 ? 'REGLAS' : 'NET');
+    if ((await free.json()) !== null) throw new Error('NAME_TAKEN');
+    const j = await authCall('signUp', key + MAIL, pass);          // EMAIL_EXISTS = el nombre ya lo tiene una cuenta antigua
+    const undo = async () => { try { await http(`${DB}/names/${nameKey(key)}.json?auth=${encodeURIComponent(j.idToken)}&print=silent`, { method: 'DELETE' }); } catch (e) {} try { await authPost('delete', { idToken: j.idToken }); } catch (e) {} };
+    try {
+      const c = await claimName(j.localId, key, j.idToken);
+      if (c !== 'ok') throw new Error(c === 'taken' ? 'NAME_TAKEN' : c === 'rules' ? 'REGLAS' : 'NET');
+      let u; try { u = await authPost('update', { idToken: j.idToken, email: mail, displayName: name, returnSecureToken: true }); }
+      catch (e) { throw new Error(e.message === 'EMAIL_EXISTS' ? 'MAIL_TAKEN' : e.message); }
+      authPost('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: u.idToken }).catch(() => {});      // enlace para verificar el correo
+      return { ...j, ...u, email: mail, localId: j.localId };
+    } catch (e) { await undo(); throw e; }
   }
   async function submitAuth(e) {
     e.preventDefault();
-    const name = cleanName($('acct').value, authMode === 'in' ? NAME_OLD : NAME_MAX), pass = $('pass').value, msg = $('authMsg'), key = acctKey(name);
-    msg.textContent = '';
-    if (name.length < 3 || key.length < 3) { msg.textContent = 'El nombre debe tener al menos 3 letras o números.'; $('acct').focus(); return; }
-    const minPass = authMode === 'up' ? 8 : 6;                    // al crear la cuenta se pide una contraseña más larga (los nombres del marcador son públicos)
+    const msg = $('authMsg'), pass = $('pass').value; msg.textContent = ''; msg.className = 'status err';
+    const mail = $('acctMail').value.trim().toLowerCase(), idIn = $('acct').value.trim();
+    if (authMode === 'reset') {                                    // recuperar la contraseña: Firebase manda un enlace al correo de la cuenta
+      if (!isMail(mail)) { msg.textContent = 'Escribe el correo de tu cuenta.'; $('acctMail').focus(); return; }
+      const go = $('authGo'); go.disabled = true; go.textContent = 'Un momento…';
+      try { await authPost('sendOobCode', { requestType: 'PASSWORD_RESET', email: mail }); }
+      catch (err) { if (err.message !== 'EMAIL_NOT_FOUND') { msg.textContent = authErr(err.message); go.disabled = false; go.textContent = 'Enviar enlace'; return; } }
+      msg.className = 'status'; msg.textContent = 'Si ese correo tiene una cuenta, te enviamos un enlace para crear una contraseña nueva. Revisa también el correo no deseado.';
+      go.disabled = false; go.textContent = 'Enviar enlace'; return;
+    }
+    let name, key, email;
+    if (authMode === 'up') {
+      name = cleanName($('acct').value, NAME_MAX); key = acctKey(name);
+      if (!isMail(mail) || isInternal(mail)) { msg.textContent = 'Escribe un correo válido.'; $('acctMail').focus(); return; }
+      if (name.length < 3 || key.length < 3) { msg.textContent = 'El nombre de usuario debe tener al menos 3 letras o números.'; $('acct').focus(); return; }
+    } else if (isMail(idIn)) { email = idIn.toLowerCase(); }
+    else {
+      name = cleanName(idIn, NAME_OLD); key = acctKey(name); email = key + MAIL;
+      if (name.length < 3 || key.length < 3) { msg.textContent = 'Escribe tu correo, o tu nombre si tu cuenta es antigua.'; $('acct').focus(); return; }
+    }
+    const minPass = authMode === 'up' ? 8 : 6;                    // al crear la cuenta se pide una contraseña más larga
     if (pass.length < minPass) { msg.textContent = `La contraseña debe tener al menos ${minPass} caracteres.`; $('pass').focus(); return; }
-    const go = $('authGo'); go.disabled = true; const label = go.textContent; go.textContent = 'Un momento…';
+    const go = $('authGo'); go.disabled = true; go.textContent = 'Un momento…';
     try {
-      const j = await authCall(authMode === 'up' ? 'signUp' : 'signInWithPassword', key + MAIL, pass);
-      session = { uid: j.localId, name, key, id: j.idToken, refresh: j.refreshToken, exp: Date.now() + (+j.expiresIn || 3600) * 1000 };
-      saveSession();
+      const j = authMode === 'up' ? await signUpWithMail(mail, name, pass) : await authCall('signInWithPassword', email, pass);
+      if (!name) name = cleanName(j.displayName, NAME_OLD) || cleanName(String(j.email || email).split('@')[0], NAME_MAX);       // entrando con el correo, el nombre viene de la cuenta
+      beginSession(j, name);
       player = { id: j.localId, name, best: 0, dirty: false }; savePlayer();
-      $('pass').value = ''; $('acct').value = '';
+      mailNote = authMode === 'up' ? '✅ Cuenta creada. Te enviamos un enlace a tu correo para verificarlo (mira también el correo no deseado).' : '';
+      $('pass').value = ''; $('acct').value = ''; $('acctMail').value = '';
       loadWallet(); applyCosmetics(); await pullWallet(); applyCosmetics(); pullStreak().then(() => { renderStreak(); autoDaily(); });
       if (pending) claimRun().then(renderCoins);                   // cobra una partida que quedó pendiente
-      setInitial(); renderMenu(); await loadMine(); fetchLeader();
-    } catch (err) { msg.textContent = authErr(err.message); }
-    finally { go.disabled = false; go.textContent = authMode === 'in' ? 'Entrar' : 'Crear cuenta'; }
+      setInitial(); renderMenu(); await loadMine(); fetchLeader(); mailBoot();
+    } catch (err) { msg.textContent = authMode === 'in' && /INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND/.test(err.message) && !isMail(idIn) ? 'Nombre o contraseña incorrectos. Si ya agregaste tu correo a la cuenta, entra con tu correo.' : authErr(err.message); }
+    finally { go.disabled = false; go.textContent = authMode === 'up' ? 'Crear cuenta' : 'Entrar'; }
+  }
+
+  /* ---------- correo de la cuenta: se agrega a las cuentas antiguas sin perder nada (mismo uid: pesos, récord, emblema y compras siguen igual) ---------- */
+  let mailNote = '';
+  async function mailBoot() {                                      // al abrir: el estado del correo (¿ya lo verificó?) y, en las cuentas antiguas, anotar su nombre en `names/`
+    if (!AUTH || !session) return;
+    try {
+      if (session.email) { if (!session.ev) checkMail(true); }
+      else if (!session.nm) { const r = await claimName(session.uid, session.key, await idToken()); if (r === 'ok') { session.nm = true; saveSession(); } }
+    } catch (e) {}
+  }
+  const MAILX_KEY = 'gana-al-tio-pato-correo-oculto', MAILX_MS = 3 * 86400000;
+  const mailHidden = () => { try { return Date.now() - (+localStorage.getItem(MAILX_KEY) || 0) < MAILX_MS; } catch (e) { return false; } };
+  function paintMailBanner() {
+    const logged = AUTH && !!session, noMail = logged && !session.email;
+    $('mailBanner').hidden = !(logged && ((noMail && !mailHidden()) || mailNote));
+    $('mailBannerTxt').textContent = mailNote || '📧 Protege tu cuenta: agrega tu correo para poder recuperarla';
+    $('mailBannerGo').hidden = !!mailNote || !noMail;
+  }
+  function paintMail() {                                           // fila «Correo» de Ajustes
+    const logged = AUTH && !!session; $('mailRow').hidden = !logged; if (!logged) return;
+    const e = session.email;
+    $('mailSt').textContent = e ? `${e} · ${session.ev ? '✅ verificado' : '⏳ sin verificar'}` : 'Sin correo: agrégalo para recuperar tu cuenta';
+    $('mailBtn').textContent = !e ? 'Agregar' : session.ev ? 'Ver' : 'Verificar';
+  }
+  function mailMsg(t, ok) { const m = $('mailMsg'); m.textContent = t || ''; m.className = 'status' + (ok ? '' : ' err'); }
+  function openMail() {
+    if (!AUTH || !session) return;
+    const e = session.email;
+    $('mailTitle').textContent = e ? 'Tu correo' : 'Agrega tu correo';
+    $('mailTxt').textContent = e ? `${e}\n${session.ev ? 'Verificado ✅. Si algún día olvidas tu contraseña, te mandaremos el enlace aquí.' : 'Aún no lo verificas: abre el enlace que te enviamos (revisa también el correo no deseado).'}`
+      : 'Asocia tu correo a tu cuenta: no pierdes nada (pesos, récord, emblema y compras siguen iguales) y podrás recuperar tu cuenta y tu contraseña. Te enviaremos un enlace para verificarlo.';
+    $('mailAdd').hidden = !!e; $('mailVer').hidden = !e || !!session.ev; mailMsg('');
+    $('mailModal').classList.add('show'); (e ? $('mailClose') : $('mEmail')).focus();
+    if (e && !session.ev) checkMail(true);
+  }
+  function closeMail() { $('mailModal').classList.remove('show'); $('mPass').value = ''; }
+  async function checkMail(quiet) {                                // ¿ya verificó? (pide un token nuevo para que Firebase lo sepa)
+    try {
+      const j = await authPost('lookup', { idToken: await idToken(true) }), u = j.users && j.users[0];
+      if (u) { session.ev = !!u.emailVerified; if (u.email && !isInternal(u.email)) session.email = String(u.email).toLowerCase(); saveSession(); }
+      paintMail(); paintMailBanner();
+      if (session.ev) { $('mailVer').hidden = true; $('mailTxt').textContent = `${session.email}\nVerificado ✅. Si algún día olvidas tu contraseña, te mandaremos el enlace aquí.`; mailMsg('✅ Correo verificado', true); }
+      else if (!quiet) mailMsg('Todavía no aparece verificado. Abre el enlace del correo y vuelve a tocar «Ya lo verifiqué».');
+    } catch (err) { if (!quiet) mailMsg(authErr(err.message)); }
+  }
+  async function resendMail() {
+    $('mResend').disabled = true; mailMsg('');
+    try { await authPost('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: await idToken(true) }); mailMsg('Listo, te enviamos el enlace otra vez.', true); }
+    catch (err) { mailMsg(authErr(err.message)); }
+    setTimeout(() => { $('mResend').disabled = false; }, 20000);          // Firebase limita los reenvíos
+  }
+  async function addMail(e) {
+    e.preventDefault();
+    const mail = $('mEmail').value.trim().toLowerCase(), pass = $('mPass').value;
+    if (!isMail(mail) || isInternal(mail)) { mailMsg('Escribe un correo válido.'); $('mEmail').focus(); return; }
+    if (pass.length < 6) { mailMsg('Escribe tu contraseña actual.'); $('mPass').focus(); return; }
+    const go = $('mGo'); go.disabled = true; go.textContent = 'Un momento…'; mailMsg('');
+    try {
+      const j = await authCall('signInWithPassword', session.key + MAIL, pass);            // Firebase pide haber entrado hace poco para cambiar el correo: se comprueba tu contraseña
+      const c = await claimName(session.uid, session.key, j.idToken);                      // el nombre queda a tu nombre antes de cambiar el correo interno
+      if (c !== 'ok') throw new Error(c === 'taken' ? 'NAME_TAKEN' : c === 'rules' ? 'REGLAS' : 'NET');
+      let u; try { u = await authPost('update', { idToken: j.idToken, email: mail, displayName: session.name, returnSecureToken: true }); }
+      catch (err) { throw new Error(err.message === 'EMAIL_EXISTS' ? 'MAIL_TAKEN' : err.message); }
+      session.id = u.idToken; session.refresh = u.refreshToken || session.refresh; session.exp = Date.now() + (+u.expiresIn || 3600) * 1000; session.email = mail; session.ev = false; saveSession();
+      authPost('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: u.idToken }).catch(() => {});
+      $('mPass').value = ''; $('mailTitle').textContent = 'Tu correo'; $('mailAdd').hidden = true; $('mailVer').hidden = false;
+      $('mailTxt').textContent = `${mail}\nAsociado a tu cuenta. Te enviamos un enlace para verificarlo (revisa también el correo no deseado). Desde ahora puedes entrar con tu correo.`;
+      mailMsg('✅ Correo agregado', true); paintMail(); paintMailBanner(); renderMenu();
+    } catch (err) { mailMsg(err.message === 'INVALID_LOGIN_CREDENTIALS' || err.message === 'INVALID_PASSWORD' ? 'Esa contraseña no es la de tu cuenta.' : authErr(err.message)); }
+    finally { go.disabled = false; go.textContent = 'Asociar mi correo'; }
   }
 
   const HELP_KEY = 'gana-al-tio-pato-ayuda', hint = $('hint');
@@ -2749,7 +2916,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v44';
+  const BUILD = 'v45';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -2860,6 +3027,12 @@
 
   $('authForm').addEventListener('submit', submitAuth);
   $('tabIn').addEventListener('click', () => setAuthMode('in'));
+  $('forgot').addEventListener('click', () => { setAuthMode('reset'); $('acctMail').focus(); });
+  $('mailBtn').addEventListener('click', () => { closeSettings(); openMail(); });
+  $('mailBannerGo').addEventListener('click', openMail);
+  $('mailBannerX').addEventListener('click', () => { mailNote = ''; try { localStorage.setItem(MAILX_KEY, String(Date.now())); } catch (e) {} paintMailBanner(); });
+  $('mailAdd').addEventListener('submit', addMail); $('mResend').addEventListener('click', resendMail); $('mCheck').addEventListener('click', () => checkMail(false));
+  $('mailClose').addEventListener('click', closeMail); $('mailModal').addEventListener('click', e => { if (e.target === $('mailModal')) closeMail(); });
   $('tabUp').addEventListener('click', () => setAuthMode('up'));
   $('eye').addEventListener('click', () => { const p = $('pass'); const show = p.type === 'password'; p.type = show ? 'text' : 'password'; $('eye').textContent = show ? '🙈' : '👁'; });
   $('logout').addEventListener('click', logout);
@@ -2877,7 +3050,7 @@
   $('soundBtn').addEventListener('click', toggleSound); $('togSound').addEventListener('click', toggleSound); $('togVib').addEventListener('click', toggleVib); paintSound();
   let setFrom = null;
   function openSettings() {
-    setFrom = document.activeElement; paintSound(); paintAvState();
+    setFrom = document.activeElement; paintSound(); paintAvState(); paintMail();
     $('setVer').textContent = 'Versión ' + BUILD + (AUTH && session ? ' · ' + (cleanName(player.name || session.name) || '') : '');
     $('settings').classList.add('show'); $('setClose').focus();
   }
@@ -2914,7 +3087,7 @@
   measure(); layout(); setInitial(); duckLook(); renderMenu();
   leaderBest = player.best; renderScores();
   target.style.visibility = 'hidden';
-  if (AUTH && session) { loadMine(); pullWallet().then(() => { applyCosmetics(); renderMenu(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => { renderStreak(); autoDaily(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
+  if (AUTH && session) { loadMine(); mailBoot(); pullWallet().then(() => { applyCosmetics(); renderMenu(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => { renderStreak(); autoDaily(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
   fetchLeader();
 })();
 </script>
