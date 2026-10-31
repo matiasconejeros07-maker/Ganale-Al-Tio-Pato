@@ -1021,7 +1021,7 @@
   const SPEED0 = 800, STEP_LO = 4, STEP_HI = 16, SPEED_MAX = 1800;           // px/s
   const EASE_1 = 55, EASE_2 = 100, EASE_K1 = .90, EASE_K2 = .95;            // alivio de dificultad: la pelota va un 10% más lenta hasta el rebote 55 y un 5% más lenta hasta el 100 (desde el 101 va a toda velocidad)
   const ease = h => h <= EASE_1 ? EASE_K1 : h <= EASE_2 ? EASE_K2 : 1;
-  const PADDLE_START = .42, SHRINK_LO = .003, SHRINK_HI = .0095, SHRINK_MIN = .28;   // la barra: 100% → 70% en el rebote 100 → 28%
+  const PADDLE_START = .42, SHRINK_LO = .003, SHRINK_HI = .0042, SHRINK_MIN = .28;   // la barra: 100% → 70% en el rebote 100 → 28% recién en el 200 (después del 100 se achica de a poco: 0,42% por rebote)
   const rateAt = n => Math.floor(n / TIER) + 1;             // pesos que vale el rebote número n ($1 hasta el 99, $2 del 100 al 199…)
   const pesosFor = h => { const t = Math.floor(h / TIER); return h + TIER * t * (t - 1) / 2 + t * (h - TIER * t + 1); };   // pesos de una partida de h rebotes
   let gameRate = 1;                                         // pesos por punto de la pelota con la que empezó la partida (ball[].rate)
@@ -2746,7 +2746,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v41';
+  const BUILD = 'v42';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
