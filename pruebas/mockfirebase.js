@@ -8,7 +8,7 @@ const PAGE = 'file://' + JUEGO + 'index.html';
 const DBURL = 'https://juegotiopato-default-rtdb.firebaseio.com';
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
 const rules = () => JSON.parse(fs.readFileSync(st.rulesFile || (JUEGO + 'firebase-rules.json'), 'utf8'));
-const st = { rulesFile: null, db: {}, users: {}, mails: [], uidN: 0, recentMs: 0, log: [], denied: [], failRoot: 0, down: false, htmlPatch: null, cfg: fs.readFileSync(JUEGO + 'config.js', 'utf8'), tienda: null };
+const st = { rulesFile: null, db: {}, users: {}, mails: [], uidN: 0, recentMs: 0, eep: true, blockChange: '', pend: {}, log: [], denied: [], failRoot: 0, down: false, htmlPatch: null, cfg: fs.readFileSync(JUEGO + 'config.js', 'utf8'), tienda: null };
 const b64 = o => Buffer.from(JSON.stringify(o)).toString('base64url');
 const mkTok = (uid, email, ev) => { const iat = Math.floor(Date.now() / 1000); return 'e30.' + b64({ user_id: uid, sub: uid, email, email_verified: !!ev, aud: 'juegotiopato', iat, exp: iat + 3600, ms: Date.now() }) + '.firma'; };   // un token con forma de JWT, como los de Google
 const authOf = tok => { let p; try { p = JSON.parse(Buffer.from(String(tok || '').split('.')[1] || '', 'base64url').toString()); } catch (e) { return null; } return p && p.user_id && !(st.minTokenTs && p.ms < st.minTokenTs) ? { uid: p.user_id, token: { email: p.email, email_verified: !!p.email_verified } } : null; };   // st.minTokenTs: los tokens emitidos antes de esa hora ya no valen (Firebase los trata como sin sesión)
@@ -27,14 +27,20 @@ async function mocks(ctx) {
     const err = m => J(r, { error: { message: m } }, 400);
     const resp = e => { const u = st.users[e]; return { localId: u.uid, email: e, displayName: u.name || '', idToken: mkTok(u.uid, e, u.ev), refreshToken: 'rt|' + u.uid, expiresIn: '3600' }; };
     if (act === 'signUp') { if (st.users[b.email]) return err('EMAIL_EXISTS'); st.users[b.email] = { uid: 'UID' + (st.uidN++) + 'abcdefghijklmnopqrst', pass: b.password, ev: false, name: '' }; return J(r, resp(b.email)); }
-    if (act === 'signInWithPassword') { const u = st.users[b.email]; if (!u || u.pass !== b.password) return err('INVALID_LOGIN_CREDENTIALS'); return J(r, resp(b.email)); }
+    if (act === 'signInWithPassword') { const u = st.users[b.email]; if (!u || u.pass !== b.password) return err('INVALID_LOGIN_CREDENTIALS'); u.revoked = false; return J(r, resp(b.email)); }
     const tp = tokP(b.idToken), cur = mailOf(tp.user_id);
     if (act === 'sendOobCode' && b.requestType === 'PASSWORD_RESET') { if (!st.users[b.email]) return err('EMAIL_NOT_FOUND'); st.mails.push({ type: 'reset', email: b.email }); return J(r, { email: b.email }); }
     if (!cur) return err('INVALID_ID_TOKEN');
     if (act === 'update') {
       if (st.recentMs && Date.now() - tp.ms > st.recentMs) return err('CREDENTIAL_TOO_OLD_LOGIN_AGAIN');
+      if (b.email && b.email !== cur && st.eep) return err('OPERATION_NOT_ALLOWED');                // con la protección contra enumeración de correos (viene activada en los proyectos nuevos) Firebase no deja cambiar el correo directamente
       let e = cur; if (b.email && b.email !== cur) { if (st.users[b.email]) return err('EMAIL_EXISTS'); st.users[b.email] = st.users[cur]; delete st.users[cur]; st.users[b.email].ev = false; e = b.email; }
       if (b.displayName) st.users[e].name = b.displayName; return J(r, resp(e));
+    }
+    if (act === 'sendOobCode' && b.requestType === 'VERIFY_AND_CHANGE_EMAIL') {                  // el cambio se hace al abrir el enlace que llega al correo nuevo
+      if (st.blockChange) return err(st.blockChange);
+      if (st.users[b.newEmail]) return err('EMAIL_EXISTS');
+      st.mails.push({ type: 'change', email: b.newEmail, from: cur }); st.pend[b.newEmail] = cur; return J(r, { email: cur });
     }
     if (act === 'sendOobCode') { st.mails.push({ type: 'verify', email: cur }); return J(r, { email: cur }); }
     if (act === 'lookup') { const u = st.users[cur]; return J(r, { users: [{ localId: u.uid, email: cur, emailVerified: !!u.ev, displayName: u.name || '' }] }); }
@@ -45,6 +51,7 @@ async function mocks(ctx) {
     const req = r.request(); if (req.method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors });
     const uid = new URLSearchParams(req.postData()).get('refresh_token').split('|')[1]; const email = Object.keys(st.users).find(e => st.users[e].uid === uid);
     if (!email) return J(r, { error: { message: 'USER_NOT_FOUND' } }, 400);
+    if (st.users[email].revoked) return J(r, { error: { message: 'TOKEN_EXPIRED' } }, 400);
     return J(r, { id_token: mkTok(uid, email, st.users[email].ev), refresh_token: 'rt|' + uid, expires_in: '3600', user_id: uid });
   });
   await ctx.route(DBURL + '/**', async r => {
@@ -58,6 +65,7 @@ async function mocks(ctx) {
       if (!rd.allowed) { st.denied.push('GET ' + path); return J(r, { error: 'Permission denied' }, 401); }
       if (parts[0] === 'scores' && parts.length === 1) {
         let rows = Object.entries(st.db.scores || {}).sort((a, b) => a[1].s - b[1].s);
+        if (u.searchParams.get('orderBy') === '"k"') { const q = JSON.parse(u.searchParams.get('equalTo') || 'null'); rows = rows.filter(([, v]) => v.k === q); if (u.searchParams.get('limitToFirst')) rows = rows.slice(0, +u.searchParams.get('limitToFirst')); return J(r, rows.length ? Object.fromEntries(rows) : null); }
         if (u.searchParams.get('shallow') === 'true') return J(r, Object.fromEntries(rows.map(([k]) => [k, true])));
         if (u.searchParams.get('startAt')) rows = rows.filter(([, v]) => v.s >= +u.searchParams.get('startAt'));
         if (u.searchParams.get('limitToLast')) rows = rows.slice(-u.searchParams.get('limitToLast'));
@@ -101,4 +109,6 @@ async function registrar(p, nombre, correo, clave = 'secreto123') {
   await p.tap('#tabUp'); await p.fill('#acctMail', correo || (nombre.toLowerCase().replace(/[^a-z0-9]+/g, '.') + '@correo.test')); await p.fill('#acct', nombre); await p.fill('#pass', clave); await p.tap('#authGo'); await p.waitForTimeout(2500);
   return (Object.values(st.users).find(u => u.name === nombre) || Object.values(st.users).slice(-1)[0]).uid;
 }
-module.exports = { chromium, st, PAGE, mocks, newPage, playHits, registrar, DBURL, JUEGO };
+// La persona abre el enlace «verificar y cambiar correo»: la cuenta pasa a tener el correo nuevo, verificado (y Firebase cierra las sesiones viejas).
+const abrirCambio = nuevo => { const cur = st.pend[nuevo]; const u = st.users[cur]; delete st.users[cur]; u.ev = true; u.revoked = true; st.users[nuevo] = u; delete st.pend[nuevo]; };
+module.exports = { chromium, st, PAGE, mocks, newPage, playHits, registrar, abrirCambio, DBURL, JUEGO };

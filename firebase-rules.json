@@ -33,7 +33,8 @@
     "scores": {
       ".read": true,
       ".indexOn": [
-        "s"
+        "s",
+        "k"
       ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid && (!data.exists() || newData.child('s').val() >= data.child('s').val())",
@@ -64,8 +65,15 @@
     "names": {
       "$k": {
         ".read": true,
-        ".write": "auth != null && ((!data.exists() && newData.val() === auth.uid && auth.token.email === $k.replace(',', '.') + '@tio-pato.invalid') || (data.val() === auth.uid && !newData.exists()))",
+        ".write": "auth != null && ((!data.exists() && newData.val() === auth.uid && (auth.token.email === $k.replace(',', '.') + '@tio-pato.invalid' || (newData.parent().parent().child('mynames').child(auth.uid).val() === $k && !root.child('mynames').child(auth.uid).exists()))) || (data.val() === auth.uid && !newData.exists()))",
         ".validate": "newData.isString() && newData.val().length <= 40 && $k.matches(/^[a-z0-9,]{3,24}$/)"
+      }
+    },
+    "mynames": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9,]{3,24}$/) && newData.parent().parent().child('names').child(newData.val()).val() === $uid"
       }
     },
     "hist": {

@@ -1524,11 +1524,12 @@
     INVALID_LOGIN_CREDENTIALS: 'Correo, nombre o contraseña incorrectos.', INVALID_PASSWORD: 'Correo, nombre o contraseña incorrectos.', EMAIL_NOT_FOUND: 'Correo, nombre o contraseña incorrectos.',
     REGLAS: 'Faltan publicar las reglas nuevas de Firebase (firebase-rules.json) para crear cuentas con correo.', NET: 'Sin conexión. Revisa tu internet e inténtalo de nuevo.',
     CREDENTIAL_TOO_OLD_LOGIN_AGAIN: 'Por seguridad, vuelve a escribir tu contraseña e inténtalo de nuevo.',
+    TOKEN_EXPIRED: 'Tu sesión venció. Entra de nuevo con tu correo y tu contraseña.',
     WEAK_PASSWORD: 'La contraseña debe tener al menos 6 caracteres.',
     TOO_MANY_ATTEMPTS_TRY_LATER: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
     OPERATION_NOT_ALLOWED: 'El acceso con contraseña no está activado en Firebase (Authentication → Método de acceso → Correo electrónico/contraseña).',
     API_KEY_INVALID: 'La clave de Firebase de config.js no es válida.', USER_DISABLED: 'Esta cuenta está deshabilitada.'
-  })[String(m).split(' ')[0]] || (/Failed to fetch|abort|NetworkError/i.test(m) ? 'Sin conexión. Revisa tu internet e inténtalo de nuevo.' : 'No se pudo iniciar sesión (' + m + ').');
+  })[String(m).split(' ')[0]] || (/Failed to fetch|abort|NetworkError/i.test(m) ? 'Sin conexión. Revisa tu internet e inténtalo de nuevo.' : (/^CHANGE_BLOCKED:/.test(m) ? 'Firebase no dejó cambiar el correo de esta cuenta (' + m.slice(15) + '). Avisa a quien administra el juego.' : 'No se pudo completar (' + m + ').'));
   async function authPost(endpoint, body) {                       // accounts:signUp · signInWithPassword · update · sendOobCode · lookup · delete
     const r = await http(`https://identitytoolkit.googleapis.com/v1/accounts:${endpoint}?key=${encodeURIComponent(API_KEY)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
@@ -2684,21 +2685,32 @@
       return w.ok ? 'ok' : w.status === 401 || w.status === 403 ? 'taken' : 'net';
     } catch (e) { return 'net'; }
   }
-  async function signUpWithMail(mail, name, pass) {                // el nombre se reserva con el correo interno; luego la cuenta pasa a tener el correo real
-    const key = acctKey(name);
-    const free = await http(`${DB}/names/${nameKey(key)}.json`);
-    if (!free.ok) throw new Error(free.status === 401 || free.status === 403 ? 'REGLAS' : 'NET');
-    if ((await free.json()) !== null) throw new Error('NAME_TAKEN');
-    const j = await authCall('signUp', key + MAIL, pass);          // EMAIL_EXISTS = el nombre ya lo tiene una cuenta antigua
-    const undo = async () => { try { await http(`${DB}/names/${nameKey(key)}.json?auth=${encodeURIComponent(j.idToken)}&print=silent`, { method: 'DELETE' }); } catch (e) {} try { await authPost('delete', { idToken: j.idToken }); } catch (e) {} };
+  async function nameFree(key) {                                   // ¿el nombre está libre? ni en el registro ni en el marcador (cuentas antiguas): 'ok' | 'taken' | 'rules' | 'net'
     try {
-      const c = await claimName(j.localId, key, j.idToken);
-      if (c !== 'ok') throw new Error(c === 'taken' ? 'NAME_TAKEN' : c === 'rules' ? 'REGLAS' : 'NET');
-      let u; try { u = await authPost('update', { idToken: j.idToken, email: mail, displayName: name, returnSecureToken: true }); }
-      catch (e) { throw new Error(e.message === 'EMAIL_EXISTS' ? 'MAIL_TAKEN' : e.message); }
-      authPost('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: u.idToken }).catch(() => {});      // enlace para verificar el correo
-      return { ...j, ...u, email: mail, localId: j.localId };
-    } catch (e) { await undo(); throw e; }
+      const g = await http(`${DB}/names/${nameKey(key)}.json`);
+      if (!g.ok) return g.status === 401 || g.status === 403 ? 'rules' : 'net';
+      if ((await g.json()) !== null) return 'taken';
+      const q = await http(`${DB}/scores.json?orderBy=%22k%22&equalTo=%22${encodeURIComponent(key)}%22&limitToFirst=1`);
+      if (!q.ok) return q.status >= 500 ? 'net' : 'rules';          // 400 = en las reglas publicadas falta el índice de «k»
+      return (await q.json()) ? 'taken' : 'ok';
+    } catch (e) { return 'net'; }
+  }
+  async function claimNameReal(uid, key, tok, release) {           // cuenta con correo real: names/<nombre> y mynames/<uid> en una sola escritura (release = soltarlos)
+    const nk = nameKey(key), body = release ? { [`names/${nk}`]: null, [`mynames/${uid}`]: null } : { [`names/${nk}`]: uid, [`mynames/${uid}`]: nk };
+    try { const r = await http(`${DB}/.json?auth=${encodeURIComponent(tok)}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) }); return r.ok ? 'ok' : r.status === 401 || r.status === 403 ? 'taken' : 'net'; }
+    catch (e) { return 'net'; }
+  }
+  async function signUpWithMail(mail, name, pass) {                // la cuenta se crea con el correo real; el nombre se reserva en names/ (único) y se manda el enlace de verificación
+    const key = acctKey(name), f = await nameFree(key);
+    if (f !== 'ok') throw new Error(f === 'taken' ? 'NAME_TAKEN' : f === 'rules' ? 'REGLAS' : 'NET');
+    let j; try { j = await authCall('signUp', mail, pass); } catch (e) { throw new Error(e.message === 'EMAIL_EXISTS' ? 'MAIL_TAKEN' : e.message); }
+    try {
+      const c = await claimNameReal(j.localId, key, j.idToken);
+      if (c !== 'ok') throw new Error(c === 'taken' ? 'NAME_TAKEN' : 'NET');
+      authPost('update', { idToken: j.idToken, displayName: name }).catch(() => {});                  // el nombre queda en el perfil de Firebase: así se recuerda al entrar desde otro celular
+      authPost('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: j.idToken }).catch(() => {});      // enlace para verificar el correo
+      return { ...j, email: mail, displayName: name };
+    } catch (e) { try { await claimNameReal(j.localId, key, j.idToken, true); } catch (e2) {} try { await authPost('delete', { idToken: j.idToken }); } catch (e3) {} throw e; }       // no queda nada a medias
   }
   async function submitAuth(e) {
     e.preventDefault();
@@ -2744,14 +2756,14 @@
   async function mailBoot() {                                      // al abrir: el estado del correo (¿ya lo verificó?) y, en las cuentas antiguas, anotar su nombre en `names/`
     if (!AUTH || !session) return;
     try {
-      if (session.email) { if (!session.ev) checkMail(true); }
-      else if (!session.nm) { const r = await claimName(session.uid, session.key, await idToken()); if (r === 'ok') { session.nm = true; saveSession(); } }
+      if (session.email || session.pend) { if (!session.ev) await checkMail(true); }
+      if (session && !session.email && !session.nm) { const r = await claimName(session.uid, session.key, await idToken()); if (r === 'ok') { session.nm = true; saveSession(); } }
     } catch (e) {}
   }
   const MAILX_KEY = 'gana-al-tio-pato-correo-oculto', MAILX_MS = 3 * 86400000;
   const mailHidden = () => { try { return Date.now() - (+localStorage.getItem(MAILX_KEY) || 0) < MAILX_MS; } catch (e) { return false; } };
   function paintMailBanner() {
-    const logged = AUTH && !!session, noMail = logged && !session.email;
+    const logged = AUTH && !!session, noMail = logged && !session.email && !session.pend;
     $('mailBanner').hidden = !(logged && ((noMail && !mailHidden()) || mailNote));
     $('mailBannerTxt').textContent = mailNote || '📧 Protege tu cuenta: agrega tu correo para poder recuperarla';
     $('mailBannerGo').hidden = !!mailNote || !noMail;
@@ -2759,33 +2771,38 @@
   function paintMail() {                                           // fila «Correo» de Ajustes
     const logged = AUTH && !!session; $('mailRow').hidden = !logged; if (!logged) return;
     const e = session.email;
-    $('mailSt').textContent = e ? `${e} · ${session.ev ? '✅ verificado' : '⏳ sin verificar'}` : 'Sin correo: agrégalo para recuperar tu cuenta';
-    $('mailBtn').textContent = !e ? 'Agregar' : session.ev ? 'Ver' : 'Verificar';
+    $('mailSt').textContent = e ? `${e} · ${session.ev ? '✅ verificado' : '⏳ sin verificar'}` : session.pend ? `${session.pend} · ⏳ falta abrir el enlace` : 'Sin correo: agrégalo para recuperar tu cuenta';
+    $('mailBtn').textContent = !e && !session.pend ? 'Agregar' : e && session.ev ? 'Ver' : 'Verificar';
   }
   function mailMsg(t, ok) { const m = $('mailMsg'); m.textContent = t || ''; m.className = 'status' + (ok ? '' : ' err'); }
   function openMail() {
     if (!AUTH || !session) return;
-    const e = session.email;
-    $('mailTitle').textContent = e ? 'Tu correo' : 'Agrega tu correo';
-    $('mailTxt').textContent = e ? `${e}\n${session.ev ? 'Verificado ✅. Si algún día olvidas tu contraseña, te mandaremos el enlace aquí.' : 'Aún no lo verificas: abre el enlace que te enviamos (revisa también el correo no deseado).'}`
+    const e = session.email, pend = !e && session.pend;
+    $('mailTitle').textContent = e || pend ? 'Tu correo' : 'Agrega tu correo';
+    $('mailTxt').textContent = pend ? `${pend}\nTe enviamos un enlace a ese correo. Ábrelo para terminar de asociarlo a tu cuenta (revisa también el correo no deseado). Después vuelve aquí y entra con tu correo y tu contraseña de siempre.` : e ? `${e}\n${session.ev ? 'Verificado ✅. Si algún día olvidas tu contraseña, te mandaremos el enlace aquí.' : 'Aún no lo verificas: abre el enlace que te enviamos (revisa también el correo no deseado).'}`
       : 'Asocia tu correo a tu cuenta: no pierdes nada (pesos, récord, emblema y compras siguen iguales) y podrás recuperar tu cuenta y tu contraseña. Te enviaremos un enlace para verificarlo.';
-    $('mailAdd').hidden = !!e; $('mailVer').hidden = !e || !!session.ev; mailMsg('');
-    $('mailModal').classList.add('show'); (e ? $('mailClose') : $('mEmail')).focus();
-    if (e && !session.ev) checkMail(true);
+    $('mailAdd').hidden = !!e || !!pend; $('mailVer').hidden = !(e || pend) || !!session.ev; mailMsg('');
+    $('mailModal').classList.add('show'); (e || pend ? $('mailClose') : $('mEmail')).focus();
+    if ((e && !session.ev) || pend) checkMail(true);
   }
   function closeMail() { $('mailModal').classList.remove('show'); $('mPass').value = ''; }
-  async function checkMail(quiet) {                                // ¿ya verificó? (pide un token nuevo para que Firebase lo sepa)
+  async function checkMail(quiet) {                                // ¿ya verificó / ya abrió el enlace? (pide un token nuevo para que Firebase lo sepa)
     try {
       const j = await authPost('lookup', { idToken: await idToken(true) }), u = j.users && j.users[0];
-      if (u) { session.ev = !!u.emailVerified; if (u.email && !isInternal(u.email)) session.email = String(u.email).toLowerCase(); saveSession(); }
-      paintMail(); paintMailBanner();
-      if (session.ev) { $('mailVer').hidden = true; $('mailTxt').textContent = `${session.email}\nVerificado ✅. Si algún día olvidas tu contraseña, te mandaremos el enlace aquí.`; mailMsg('✅ Correo verificado', true); }
-      else if (!quiet) mailMsg('Todavía no aparece verificado. Abre el enlace del correo y vuelve a tocar «Ya lo verifiqué».');
-    } catch (err) { if (!quiet) mailMsg(authErr(err.message)); }
+      if (u) { session.ev = !!u.emailVerified; if (u.email && !isInternal(u.email)) { session.email = String(u.email).toLowerCase(); session.pend = ''; } saveSession(); }
+      paintMail(); paintMailBanner(); renderMenu();
+      if (session.email && session.ev) { $('mailVer').hidden = true; $('mailTxt').textContent = `${session.email}\nVerificado ✅. Si algún día olvidas tu contraseña, te mandaremos el enlace aquí.`; mailMsg('✅ Correo verificado', true); }
+      else if (!quiet) mailMsg(session.pend ? 'Todavía no abres el enlace del correo. Ábrelo y vuelve a tocar «Ya lo verifiqué».' : 'Todavía no aparece verificado. Abre el enlace del correo y vuelve a tocar «Ya lo verifiqué».');
+    } catch (err) {
+      if (!session) {                                              // Firebase cerró la sesión al cambiar el correo: hay que entrar con el correo nuevo
+        closeMail(); setAuthMode('in'); const m = $('authMsg'); m.className = 'status'; m.textContent = '✅ Tu correo ya quedó asociado. Entra con tu correo y tu contraseña de siempre.'; return;
+      }
+      if (!quiet) mailMsg(authErr(err.message));
+    }
   }
   async function resendMail() {
     $('mResend').disabled = true; mailMsg('');
-    try { await authPost('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: await idToken(true) }); mailMsg('Listo, te enviamos el enlace otra vez.', true); }
+    try { await authPost('sendOobCode', session.pend ? { requestType: 'VERIFY_AND_CHANGE_EMAIL', idToken: await idToken(true), newEmail: session.pend } : { requestType: 'VERIFY_EMAIL', idToken: await idToken(true) }); mailMsg('Listo, te enviamos el enlace otra vez.', true); }
     catch (err) { mailMsg(authErr(err.message)); }
     setTimeout(() => { $('mResend').disabled = false; }, 20000);          // Firebase limita los reenvíos
   }
@@ -2799,13 +2816,27 @@
       const j = await authCall('signInWithPassword', session.key + MAIL, pass);            // Firebase pide haber entrado hace poco para cambiar el correo: se comprueba tu contraseña
       const c = await claimName(session.uid, session.key, j.idToken);                      // el nombre queda a tu nombre antes de cambiar el correo interno
       if (c !== 'ok') throw new Error(c === 'taken' ? 'NAME_TAKEN' : c === 'rules' ? 'REGLAS' : 'NET');
-      let u; try { u = await authPost('update', { idToken: j.idToken, email: mail, displayName: session.name, returnSecureToken: true }); }
-      catch (err) { throw new Error(err.message === 'EMAIL_EXISTS' ? 'MAIL_TAKEN' : err.message); }
-      session.id = u.idToken; session.refresh = u.refreshToken || session.refresh; session.exp = Date.now() + (+u.expiresIn || 3600) * 1000; session.email = mail; session.ev = false; saveSession();
-      authPost('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: u.idToken }).catch(() => {});
+      authPost('update', { idToken: j.idToken, displayName: session.name }).catch(() => {});                // el nombre queda en el perfil: así se recuerda al entrar con el correo
+      let u = null;
+      try { u = await authPost('update', { idToken: j.idToken, email: mail, returnSecureToken: true }); }      // 1) cambio directo (si Firebase lo permite)
+      catch (err) {
+        if (err.message === 'EMAIL_EXISTS') throw new Error('MAIL_TAKEN');
+        if (!/OPERATION_NOT_ALLOWED/.test(err.message)) throw err;
+        try { await authPost('sendOobCode', { requestType: 'VERIFY_AND_CHANGE_EMAIL', idToken: j.idToken, newEmail: mail }); }     // 2) Firebase exige confirmar el correo nuevo: el cambio se hace al abrir el enlace
+        catch (e2) { throw new Error(e2.message === 'EMAIL_EXISTS' ? 'MAIL_TAKEN' : 'CHANGE_BLOCKED:' + e2.message); }
+      }
       $('mPass').value = ''; $('mailTitle').textContent = 'Tu correo'; $('mailAdd').hidden = true; $('mailVer').hidden = false;
-      $('mailTxt').textContent = `${mail}\nAsociado a tu cuenta. Te enviamos un enlace para verificarlo (revisa también el correo no deseado). Desde ahora puedes entrar con tu correo.`;
-      mailMsg('✅ Correo agregado', true); paintMail(); paintMailBanner(); renderMenu();
+      if (u) {                                                                                            // cambio directo: ya es tu correo
+        session.id = u.idToken; session.refresh = u.refreshToken || session.refresh; session.exp = Date.now() + (+u.expiresIn || 3600) * 1000; session.email = mail; session.ev = false; session.pend = ''; saveSession();
+        authPost('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: u.idToken }).catch(() => {});
+        $('mailTxt').textContent = `${mail}\nAsociado a tu cuenta. Te enviamos un enlace para verificarlo (revisa también el correo no deseado). Desde ahora puedes entrar con tu correo.`;
+        mailMsg('✅ Correo agregado', true);
+      } else {                                                                                            // por enlace: queda pendiente hasta que lo abra
+        session.pend = mail; saveSession();
+        $('mailTxt').textContent = `${mail}\nTe enviamos un enlace a ese correo. Ábrelo para terminar de asociarlo a tu cuenta (revisa también el correo no deseado). Después vuelve aquí y entra con tu correo y tu contraseña de siempre.`;
+        mailMsg('📧 Revisa tu correo', true);
+      }
+      paintMail(); paintMailBanner(); renderMenu();
     } catch (err) { mailMsg(err.message === 'INVALID_LOGIN_CREDENTIALS' || err.message === 'INVALID_PASSWORD' ? 'Esa contraseña no es la de tu cuenta.' : authErr(err.message)); }
     finally { go.disabled = false; go.textContent = 'Asociar mi correo'; }
   }
@@ -2916,7 +2947,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v45';
+  const BUILD = 'v46';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];

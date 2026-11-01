@@ -71,7 +71,7 @@ const rules = { rules: {
 
   // ---- marcadores: cada cuenta escribe solo lo suyo, nunca baja y no puede superar los rebotes de su partida terminada ----
   scores: {
-    '.read': true, '.indexOn': ['s'],
+    '.read': true, '.indexOn': ['s', 'k'],                                                  // `k` sirve para ver si un nombre ya lo usa alguien en el marcador
     $uid: {
       '.write': "auth != null && auth.uid === $uid && (!data.exists() || newData.child('s').val() >= data.child('s').val())",
       '.validate': "newData.hasChildren(['n', 'k', 's', 't'])",
@@ -87,12 +87,19 @@ const rules = { rules: {
     }
   },
 
-  // ---- registro de nombres: names/<nombre con las comas en lugar de puntos (Firebase no deja puntos en las claves)> = uid de la cuenta que lo tiene. Una cuenta que cambia su correo interno por uno real conserva su nombre aquí.
-  //      Solo se escribe una vez, a nombre propio y mientras la cuenta aún tiene el correo interno de ese nombre (así nadie reserva nombres que no son suyos); su dueña puede soltarlo (se usa para deshacer un registro que no terminó). Cualquiera puede leer un nombre, pero no listarlos. ----
+  // ---- registro de nombres: names/<nombre con las comas en lugar de puntos (Firebase no deja puntos en las claves)> = uid de la cuenta que lo tiene.
+  //      Se escribe una sola vez y solo así: (1) una cuenta antigua con el correo interno de ese nombre, o (2) una cuenta con correo real que anota a la vez
+  //      `mynames/<su uid>` = ese nombre (cada cuenta puede tener un solo nombre). Su dueña puede soltarlo (sirve para deshacer un registro que no terminó).
+  //      Cualquiera puede leer un nombre (para ver si está libre), pero no listarlos. ----
   names: { $k: {
     '.read': true,
-    '.write': `auth != null && ((!data.exists() && newData.val() === auth.uid && auth.token.email === $k.replace(',', '.') + '${MAIL}') || (data.val() === auth.uid && !newData.exists()))`,
+    '.write': `auth != null && ((!data.exists() && newData.val() === auth.uid && (auth.token.email === $k.replace(',', '.') + '${MAIL}' || (newData.parent().parent().child('mynames').child(auth.uid).val() === $k && !root.child('mynames').child(auth.uid).exists()))) || (data.val() === auth.uid && !newData.exists()))`,
     '.validate': "newData.isString() && newData.val().length <= 40 && $k.matches(/^[a-z0-9,]{3,24}$/)"
+  } },
+  mynames: { $uid: {
+    '.read': 'auth != null && auth.uid === $uid',
+    '.write': 'auth != null && auth.uid === $uid',
+    '.validate': "newData.isString() && newData.val().matches(/^[a-z0-9,]{3,24}$/) && newData.parent().parent().child('names').child(newData.val()).val() === $uid"
   } },
 
   // ---- contador de puestos: hist/<puntaje> = cuántas cuentas tienen ese puntaje. Con esto el puesto de cualquiera se calcula leyendo ~500 números

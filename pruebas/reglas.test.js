@@ -389,5 +389,25 @@ console.log('Correo real y registro de nombres');
   ok('pero nadie puede listar todos los nombres', db({ names: { matias: 'u1' } }, T0, 'u9').read('/names'), false);
 }
 
+// ---------- cuentas con correo real: el nombre se anota junto con `mynames` ----------
+console.log('Nombre de una cuenta con correo real (mynames)');
+{
+  const REAL = 'mati@gmail.com', as = (data, upd, uid = 'u1', email = REAL) => db(data, T0, uid, email).update('/', upd);
+  ok('cuenta con correo real anota su nombre y mynames a la vez', as({}, { 'names/ana,perez': 'u1', 'mynames/u1': 'ana,perez' }), true);
+  ok('… pero no el nombre solo (sin mynames)', as({}, { 'names/ana,perez': 'u1' }), false);
+  ok('… ni con un mynames que dice otro nombre', as({}, { 'names/ana,perez': 'u1', 'mynames/u1': 'ana,lopez' }), false);
+  ok('… ni mynames sin el nombre', as({}, { 'mynames/u1': 'ana,perez' }), false);
+  ok('un segundo nombre para la misma cuenta', as({ names: { 'ana,perez': 'u1' }, mynames: { u1: 'ana,perez' } }, { 'names/otro,nombre': 'u1', 'mynames/u1': 'otro,nombre' }), false);
+  ok('anotar un nombre ya ocupado', as({ names: { 'ana,perez': 'u2' }, mynames: { u2: 'ana,perez' } }, { 'names/ana,perez': 'u1', 'mynames/u1': 'ana,perez' }), false);
+  ok('anotar el nombre a nombre de otra cuenta', as({}, { 'names/ana,perez': 'u2', 'mynames/u2': 'ana,perez' }), false);
+  ok('formato inválido del nombre', as({}, { 'names/Ana': 'u1', 'mynames/u1': 'Ana' }), false);
+  ok('deshacer: soltar el nombre y mynames', as({ names: { 'ana,perez': 'u1' }, mynames: { u1: 'ana,perez' } }, { 'names/ana,perez': null, 'mynames/u1': null }), true);
+  ok('soltar el nombre de otra cuenta', as({ names: { 'ana,perez': 'u2' }, mynames: { u2: 'ana,perez' } }, { 'names/ana,perez': null }), false);
+  ok('con ese registro la cuenta guarda su récord en el marcador', db({ ...afterClaim, names: { matias: 'u1' }, mynames: { u1: 'matias' } }, T0 + 130000, 'u1', REAL).write('/scores/u1', sc(60)), true);
+  ok('leer tu mynames', db({ mynames: { u1: 'ana,perez' } }, T0, 'u1', REAL).read('/mynames/u1'), true);
+  ok('leer el mynames de otra cuenta', db({ mynames: { u1: 'ana,perez' } }, T0, 'u2', REAL).read('/mynames/u1'), false);
+  ok('un correo interno sigue registrando su nombre de siempre (cuentas antiguas)', db({}, T0).write('/names/matias', 'u1'), true);
+}
+
 console.log(`\n${pass} correctas, ${fail} fallas`);
 process.exit(fail ? 1 : 0);
