@@ -64,7 +64,10 @@ async function mocks(ctx) {
       const rd = db().read(path === '/' ? '/' : path);
       if (!rd.allowed) { st.denied.push('GET ' + path); return J(r, { error: 'Permission denied' }, 401); }
       if (parts[0] === 'scores' && parts.length === 1) {
+        const ob = (u.searchParams.get('orderBy') || '').replace(/"/g, '');                                         // como Firebase: consultar por un campo sin índice en las reglas da error 400
+        if (ob && !(((rules().rules.scores || {})['.indexOn']) || []).includes(ob)) return J(r, { error: `Index not defined, add ".indexOn": "${ob}", for path "/scores", to the rules` }, 400);
         let rows = Object.entries(st.db.scores || {}).sort((a, b) => a[1].s - b[1].s);
+        if (u.searchParams.get('orderBy') === '"ms"') { rows = rows.sort((a, b) => (typeof a[1].ms === 'number' ? a[1].ms : -1) - (typeof b[1].ms === 'number' ? b[1].ms : -1)); if (u.searchParams.get('limitToLast')) rows = rows.slice(-u.searchParams.get('limitToLast')); return J(r, rows.length ? Object.fromEntries(rows) : null); }
         if (u.searchParams.get('orderBy') === '"k"') { const q = JSON.parse(u.searchParams.get('equalTo') || 'null'); rows = rows.filter(([, v]) => v.k === q); if (u.searchParams.get('limitToFirst')) rows = rows.slice(0, +u.searchParams.get('limitToFirst')); return J(r, rows.length ? Object.fromEntries(rows) : null); }
         if (u.searchParams.get('shallow') === 'true') return J(r, Object.fromEntries(rows.map(([k]) => [k, true])));
         if (u.searchParams.get('startAt')) rows = rows.filter(([, v]) => v.s >= +u.searchParams.get('startAt'));
