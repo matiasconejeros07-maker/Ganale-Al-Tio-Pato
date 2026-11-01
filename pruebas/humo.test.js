@@ -12,7 +12,7 @@ const ok = (nombre, cond, extra = '') => { if (cond) { pass++; console.log('  ok
 async function abrir(browser, w, h, extra = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...extra });
   await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: LOCAL }));
-  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length }), set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
+  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length, pt: parts.length }), banner: () => bonusBanner(2, 2), set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
   const p = await ctx.newPage(); const errs = [], csp = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (/Content.Security.Policy|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140)); });
@@ -58,6 +58,26 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     f.fl = maxFl;
     ok('la pantalla es ×3 pero el lienzo de efectos tiene 1 píxel por punto (390×844, no 1170×2532)', f.dpr === 3 && f.fxw === 390 && f.fxh === 844 && f.cssW === 390 && f.cssH === 844, JSON.stringify(f));
     ok('en la fase del diablo hay llamas, pero nunca más de 60', f.fl > 0 && f.fl <= 60, String(f.fl));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
+  console.log('El «¡Monedas dobles! ×2» del rebote 100 es una sola animación liviana');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844, { deviceScaleFactor: 3 });
+    await jugar(p); await p.waitForTimeout(3600);
+    await p.evaluate(() => { window.__auto = true; window.__g.set(99); });
+    let hit100 = false, vistas = [];
+    for (let i = 0; i < 80 && !hit100; i++) { await p.waitForTimeout(100); hit100 = await p.evaluate(() => window.__g.st().hits >= 100); }
+    for (let i = 0; i < 6; i++) { vistas.push(await p.evaluate(() => ({ cartel: document.getElementById('mult').getAnimations({ subtree: true }).length, insignia: document.getElementById('mbadge').getAnimations().length, chispas: window.__g.st().pt }))); await p.waitForTimeout(150); }
+    ok('el juego llega al rebote 100 y muestra el cartel', hit100 && vistas[0].cartel === 1, JSON.stringify(vistas));
+    ok('hay una sola animación de ×2: la del cartel (la insignia no pulsa)', vistas.every(v => v.insignia === 0) && vistas.every(v => v.cartel <= 1), JSON.stringify(vistas));
+    const e = await p.evaluate(() => { const a = document.getElementById('mult').getAnimations()[0]; const cs = getComputedStyle(document.querySelector('#mult b')); return { dur: a ? a.effect.getTiming().duration : 0, props: a ? [...new Set(a.effect.getKeyframes().flatMap(k => Object.keys(k).filter(x => !['offset', 'easing', 'composite', 'computedOffset'].includes(x))))].sort().join(',') : '', filtro: cs.filter, recorte: cs.webkitBackgroundClip || cs.backgroundClip, sombra: getComputedStyle(document.getElementById('mult')).willChange }; });
+    ok('dura 1,5 s y solo anima opacidad y posición (nada que recalcule la página)', (e.dur === 1500 || e.dur === 0) && (e.props === 'opacity,transform' || e.props === ''), JSON.stringify(e));
+    ok('el número no lleva filtros de sombra ni recorte de texto, y el cartel va en su propia capa', e.filtro === 'none' && e.recorte !== 'text' && /transform/.test(e.sombra), JSON.stringify(e));
+    ok('sin lluvia de chispas en el rebote 100 (antes salían 70 de golpe; un rebote normal suelta unas 8-12)', vistas.every(v => v.chispas <= 30), JSON.stringify(vistas.map(v => v.chispas)));
+    await p.waitForTimeout(1600);
+    ok('el cartel desaparece solo y queda sin animaciones pendientes', await p.evaluate(() => document.getElementById('mult').getAnimations().length === 0 && getComputedStyle(document.getElementById('mult')).opacity === '0'));
     ok('sin errores de página', errs.length === 0, errs.join('|'));
     await ctx.close();
   }
