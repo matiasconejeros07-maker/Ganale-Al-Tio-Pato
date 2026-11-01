@@ -48,6 +48,10 @@ const eq = {};
 for (const c of CATS) eq[c] = { '.validate': `newData.isString() && (newData.val() === '${defaults[c]}' || newData.parent().parent().child('own').child('${c}_' + newData.val()).val() === true)` };
 eq['$other'] = { '.validate': false };
 
+// tiempo jugado: lo que suma una partida ya cobrada = lo que duró (hora de fin - hora de inicio, las dos del servidor) con tope por rebotes
+const TI = ECO.tiempo, RV = f => `${RUN}.child('${f}').val()`;
+const DUR = `(${RV('e')} - ${RV('s')})`, CAP = `(${RV('h')} * ${TI.msPorRebote} + ${TI.holguraMs})`;
+const TIMEINC = `(${DUR} < ${CAP} ? ${DUR} : ${CAP})`;
 const P = "newData.parent()";
 const rules = { rules: {
   '.read': false, '.write': false,
@@ -71,7 +75,7 @@ const rules = { rules: {
 
   // ---- marcadores: cada cuenta escribe solo lo suyo, nunca baja y no puede superar los rebotes de su partida terminada ----
   scores: {
-    '.read': true, '.indexOn': ['s', 'k'],                                                  // `k` sirve para ver si un nombre ya lo usa alguien en el marcador
+    '.read': true, '.indexOn': ['s', 'k', 'ms'],                                                  // `k` sirve para ver si un nombre ya lo usa alguien en el marcador
     $uid: {
       '.write': "auth != null && auth.uid === $uid && (!data.exists() || newData.child('s').val() >= data.child('s').val())",
       '.validate': "newData.hasChildren(['n', 'k', 's', 't'])",
@@ -81,6 +85,10 @@ const rules = { rules: {
       s: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && ${RUN}.child('e').exists() && newData.val() <= ${RUN}.child('h').val()` },
       t: { '.validate': 'newData.val() === now' },
       a: { '.validate': AVATAR },                                                         // foto de perfil que ven los demás en el marcador (solo el formato i00c00)
+      // ms = tiempo jugado acumulado (marcador «Tiempo») · ml = la última partida cobrada que ya se sumó. Se escriben juntos, después de cobrar la partida (aparte del cobro:
+      // si fallan, los pesos no se ven afectados) y cada partida suma una sola vez, lo que dura con tope.
+      ms: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && newData.val() === (data.exists() ? data.val() : 0) + ${TIMEINC} && ${P}.child('ml').val() === ${RV('s')} && root.child('wallets').child($uid).child('lr').val() === ${RV('s')}` },
+      ml: { '.validate': `newData.isNumber() && newData.val() === ${RV('s')} && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val()) && root.child('wallets').child($uid).child('lr').val() === newData.val()` },
       // c = el puntaje que ya está contado en `hist` (así cada cuenta cuenta una sola vez y se puede mover de casilla al mejorar). Solo sube y siempre es igual al puntaje de ese momento.
       c: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && newData.val() === ${P}.child('s').val() && (!data.exists() || newData.val() > data.val())` },
       $other: { '.validate': false }

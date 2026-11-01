@@ -34,7 +34,8 @@
       ".read": true,
       ".indexOn": [
         "s",
-        "k"
+        "k",
+        "ms"
       ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid && (!data.exists() || newData.child('s').val() >= data.child('s').val())",
@@ -53,6 +54,12 @@
         },
         "a": {
           ".validate": "newData.isString() && newData.val().matches(/^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,5}$/)"
+        },
+        "ms": {
+          ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && newData.val() === (data.exists() ? data.val() : 0) + ((newData.parent().parent().parent().child('runs').child($uid).child('e').val() - newData.parent().parent().parent().child('runs').child($uid).child('s').val()) < (newData.parent().parent().parent().child('runs').child($uid).child('h').val() * 4500 + 6000) ? (newData.parent().parent().parent().child('runs').child($uid).child('e').val() - newData.parent().parent().parent().child('runs').child($uid).child('s').val()) : (newData.parent().parent().parent().child('runs').child($uid).child('h').val() * 4500 + 6000)) && newData.parent().child('ml').val() === newData.parent().parent().parent().child('runs').child($uid).child('s').val() && root.child('wallets').child($uid).child('lr').val() === newData.parent().parent().parent().child('runs').child($uid).child('s').val()"
+        },
+        "ml": {
+          ".validate": "newData.isNumber() && newData.val() === newData.parent().parent().parent().child('runs').child($uid).child('s').val() && newData.parent().parent().parent().child('runs').child($uid).child('e').exists() && (!data.exists() || newData.val() > data.val()) && root.child('wallets').child($uid).child('lr').val() === newData.val()"
         },
         "c": {
           ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 500 && newData.val() === newData.parent().child('s').val() && (!data.exists() || newData.val() > data.val())"

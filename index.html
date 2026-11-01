@@ -413,6 +413,8 @@
   #list .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #list .sc { font-weight: 800; font-variant-numeric: tabular-nums; }
   #list li.top .rk { font-size: 22px; }
+  .boardseg { flex: none; width: min(100%, 300px); }
+  #list .sc.tm, #myRow .sc.tm { font-size: 15px; white-space: nowrap; }
   #list li.mine { background: #fff0a0; }
   #list .empty { display: block; text-align: center; color: #8a8658; padding: 28px 16px; }
   #list { flex: 0 1 auto; }                                       /* el Top 25 se encoge si hace falta; tu fila queda siempre a la vista debajo */
@@ -947,6 +949,7 @@
     <!-- marcadores -->
     <section class="screen" id="board">
       <h1>🏆 Marcadores</h1>
+      <div class="seg boardseg" id="boardKind" role="tablist" hidden><button type="button" id="kindR" class="on" role="tab" aria-selected="true">🏆 Rebotes</button><button type="button" id="kindT" role="tab" aria-selected="false">⏱️ Tiempo</button></div>
       <div class="board-note" id="boardNote"></div>
       <div class="board-note" id="boardLeft"></div>
       <ul id="list" aria-live="polite"></ul>
@@ -1573,6 +1576,20 @@
       .map(([id, v]) => ({ id, n: cleanName(v.n) || '—', a: typeof v.a === 'string' ? v.a : '', s: v.s, t: +v.t || 0 }))
       .sort((a, b) => b.s - a.s || a.t - b.t);
   }
+  async function fetchTopTime(limit = TOP_N) {                     // las cuentas con más tiempo jugado (índice `ms` de las reglas)
+    const r = await http(`${DB}/scores.json?orderBy=%22ms%22&limitToLast=${limit}`);
+    if (!r.ok) throw new Error('http ' + r.status);
+    const data = (await r.json()) || {};
+    return Object.entries(data)
+      .filter(([, v]) => v && typeof v.ms === 'number' && v.ms > 0 && typeof v.n === 'string')
+      .map(([id, v]) => ({ id, n: cleanName(v.n) || '—', a: typeof v.a === 'string' ? v.a : '', ms: v.ms, t: +v.t || 0 }))
+      .sort((a, b) => b.ms - a.ms || a.t - b.t);
+  }
+  async function fetchMyTime() {                                   // tu tiempo (para mostrarlo debajo si no estás entre los 25 primeros)
+    if (!AUTH || !session) return 0;
+    const r = await http(`${DB}/scores/${session.uid}/ms.json`);
+    const v = r.ok ? await r.json() : 0; return typeof v === 'number' ? v : 0;
+  }
   async function fetchLeader() {                                 // el mayor puntaje del marcador (para el encabezado)
     let top = player.best;
     if (ONLINE) {
@@ -1590,11 +1607,17 @@
   /* ---------- pantalla de marcadores ---------- */
   let boardFrom = 'menu', boardTimer = null, boardClock = null;
 
-  function renderBoard(rows, me) {
-    const ul = $('list'); ul.textContent = '';
+  const TIEMPO = ECO.tiempo || { msPorRebote: 4500, holguraMs: 6000 };
+  const fmtPlayed = ms => {                                        // 45 s · 12 min · 3 h 05 min · 2 d 4 h
+    const m = Math.floor(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
+    return ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : h < 1 ? `${m} min` : d < 1 ? `${h} h ${String(m % 60).padStart(2, '0')} min` : `${d} d ${h % 24} h`;
+  };
+  let boardKind = 'r';                                             // 'r' = más rebotes · 't' = más tiempo jugado
+  function renderBoard(rows, me, myMs) {
+    const T = boardKind === 't', ul = $('list'); ul.textContent = '';
     if (!rows.length) {
       const li = document.createElement('li'); li.className = 'empty';
-      li.textContent = 'Todavía nadie le gana al Tío Pato. ¡Sé el primero!';
+      li.textContent = T ? 'Todavía nadie suma tiempo. ¡Juega una partida y sé el primero!' : 'Todavía nadie le gana al Tío Pato. ¡Sé el primero!';
       ul.appendChild(li);
     }
     const medals = ['🥇', '🥈', '🥉'];
@@ -1607,22 +1630,22 @@
       const nm = document.createElement('span'); nm.className = 'nm';
       const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(row.id === player.id ? (avParse(player.av) ? player.av : row.a) : row.a), avLetter(row.n), embBoard()));
       const tx = document.createElement('span'); tx.className = 't'; tx.textContent = row.n; nm.append(pv, tx);   // textContent: nunca HTML
-      const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = row.s;
+      const sc = document.createElement('span'); sc.className = T ? 'sc tm' : 'sc'; sc.textContent = T ? fmtPlayed(row.ms) : row.s;
       li.append(rk, nm, sc); frag.appendChild(li);
     });
     ul.appendChild(frag);
-    // Si no estás entre los 25 primeros: tres puntos y, debajo, tu puesto en el mundo y tu puntaje.
+    // Si no estás entre los 25 primeros: tres puntos y, debajo, tu puesto en el mundo y tu puntaje (en «Tiempo»: tu tiempo, sin puesto: contarlo exigiría bajar todas las cuentas).
     const box = $('myRow'); box.textContent = '';
-    box.hidden = !(me && player.best > 0 && !rows.some(r => r.id === player.id));
+    box.hidden = T ? !(myMs > 0 && !rows.some(r => r.id === player.id)) : !(me && player.best > 0 && !rows.some(r => r.id === player.id));
     if (!box.hidden) {
       const dots = document.createElement('div'); dots.className = 'dots'; dots.setAttribute('aria-hidden', 'true'); dots.innerHTML = '<i></i><i></i><i></i>';
       const list = document.createElement('ul'), li = document.createElement('li');
-      const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = '#' + me.rank.toLocaleString('es-CL');
+      const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = T ? '—' : '#' + me.rank.toLocaleString('es-CL');
       const nm = document.createElement('span'); nm.className = 'nm';
       const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(player.av), avLetter(player.name || (session && session.name)), embBoard()));
       const tx = document.createElement('span'); tx.className = 't'; tx.textContent = cleanName(player.name || (session && session.name)) || 'Tú';
       const you = document.createElement('small'); you.textContent = '(tú)'; nm.append(pv, tx, you);
-      const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = player.best;
+      const sc = document.createElement('span'); sc.className = T ? 'sc tm' : 'sc'; sc.textContent = T ? fmtPlayed(myMs) : player.best;
       li.append(rk, nm, sc); list.appendChild(li); box.append(dots, list);
     }
     const mine = ul.querySelector('.mine');
@@ -1673,13 +1696,26 @@
   let lastMe = null, lastMeAt = 0, lastMeBest = -1, lastSig = '', boardOpenAt = 0;
   async function refreshBoard(first) {
     if (document.hidden && !first) return;                       // app o pestaña en segundo plano: no gasta datos
-    const note = $('boardNote');
+    const note = $('boardNote'), kind = boardKind;
     if (first) note.textContent = ONLINE ? 'Actualizando…' : 'Modo local: aquí solo aparece tu mejor puntaje en este dispositivo.';
     try {
+      if (kind === 't') {                                         // Top 25 por tiempo jugado: mismo formato, misma frecuencia y mismo límite de tiempo que el de rebotes
+        syncTime();
+        const [rows, mine] = await Promise.all([fetchTopTime(TOP_N), fetchMyTime().catch(() => 0)]);
+        if (kind !== boardKind) return;                           // cambió de pestaña mientras cargaba
+        const sig = JSON.stringify(['t', rows.map(r => [r.id, r.ms, r.n]), mine]);
+        if (sig !== lastSig) {
+          lastSig = sig; const ul = $('list'), top = ul.scrollTop;
+          renderBoard(rows, null, mine); ul.scrollTop = top;
+          note.textContent = `Top ${Math.min(rows.length, TOP_N)} · gana quien más tiempo lleva jugando (se cuenta desde que existe este marcador)`;
+        }
+        return;
+      }
       if (player.dirty) await syncBest();
       if (countedFor !== (session ? session.uid : '') + ':' + player.best) syncCount();
       const needRank = ONLINE && (first || Date.now() - lastMeAt >= RANK_MS || lastMeBest !== player.best);
       const [rows, me] = await Promise.all([fetchTop(TOP_N), needRank ? myRank().catch(() => null) : null]);
+      if (kind !== boardKind) return;
       if (needRank) { lastMe = me; lastMeAt = Date.now(); lastMeBest = player.best; }
       const sig = JSON.stringify([rows.map(r => [r.id, r.s, r.n]), lastMe && lastMe.rank, lastMe && lastMe.total, player.best]);
       if (sig !== lastSig) {                                      // solo se redibuja si algo cambió (así no se pierde el scroll ni parpadea)
@@ -1691,8 +1727,15 @@
         }
       }
     } catch (e) {
-      if (first) note.textContent = 'No se pudo cargar. Reintentando…';
+      if (first) note.textContent = kind === 't' && /http 400/.test(String(e.message)) ? 'Falta publicar las reglas nuevas de Firebase para este marcador.' : 'No se pudo cargar. Reintentando…';
     }
+  }
+  function setBoardKind(k) {                                       // cambia entre «Rebotes» y «Tiempo» sin alargar el minuto del marcador
+    if (k === boardKind) return;
+    boardKind = k; $('kindR').classList.toggle('on', k === 'r'); $('kindT').classList.toggle('on', k === 't'); $('kindR').setAttribute('aria-selected', String(k === 'r')); $('kindT').setAttribute('aria-selected', String(k === 't'));
+    lastSig = ''; delete $('list').dataset.scrolled; $('list').textContent = ''; $('myRow').hidden = true; $('boardNote').textContent = 'Actualizando…';
+    refreshBoard(true);
+    if (boardTimer) { clearTimeout(boardTimer); boardTick(); }     // los 30 s vuelven a empezar; el minuto para mirar el marcador no cambia
   }
 
   // El marcador se mira como máximo BOARD_MAX_MS: un reloj de 1 s cuenta hacia atrás y, al llegar a 0, devuelve al inicio.
@@ -1711,6 +1754,7 @@
   function boardTick() { boardTimer = setTimeout(async () => { if (boardLeftMs() > 1500) await refreshBoard(); if (boardTimer) boardTick(); }, REFRESH_MS); }
   function openBoard(from) {
     boardFrom = from; delete $('list').dataset.scrolled;
+    boardKind = 'r'; $('kindR').classList.add('on'); $('kindT').classList.remove('on'); $('kindR').setAttribute('aria-selected', 'true'); $('kindT').setAttribute('aria-selected', 'false'); $('boardKind').hidden = !(ONLINE && AUTH);
     setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
     lastSig = ''; lastMe = null; lastMeAt = 0; boardOpenAt = Date.now(); show('board'); refreshBoard(true);
     $('refreshBoard').disabled = false; paintLeft();
@@ -2274,6 +2318,7 @@
     if (!AUTH || !session) return null;
     try {
       if (pending) await claimRun();                               // primero cobra la partida anterior si quedó pendiente
+      await syncTime();                                            // y suma su tiempo jugado (antes de que la nueva partida la reemplace)
       let tok = encodeURIComponent(await idToken());
       const uid = session.uid, ball = itemOf('ball', wallet.eq.ball) || CAT.ball[0], rate = ball.rate || 1;      // la pelota y lo que paga quedan anotados al empezar (las reglas los comprueban)
       const r = await retrying(() => http(`${DB}/runs/${uid}.json?auth=${tok}&print=silent`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: ball.id, r: rate }) }));
@@ -2284,6 +2329,30 @@
       if (typeof s !== 'number') return null;
       run = { s, r: rate }; return run;
     } catch (e) { runFail = 'net'; return null; }
+  }
+  // Tiempo jugado: después de cobrar una partida se suma lo que duró (con tope por rebotes) a `scores/<uid>/ms`. Va aparte del cobro: si falla, los pesos no se ven afectados.
+  // Hay que hacerlo antes de empezar la siguiente partida (la partida anterior desaparece de `runs/` al empezar otra), por eso beginRun lo espera.
+  let timing = false;
+  const TIME_KEY = () => 'gana-al-tio-pato-tiempo-' + (session ? session.uid : 'local');
+  const getTimePend = () => { try { return JSON.parse(localStorage.getItem(TIME_KEY()) || 'null'); } catch (e) { return null; } };
+  const setTimePend = v => { try { v ? localStorage.setItem(TIME_KEY(), JSON.stringify(v)) : localStorage.removeItem(TIME_KEY()); } catch (e) {} };
+  const markTime = s => { const o = getTimePend(); if (!o || o.s !== s) setTimePend({ s, n: 0 }); };
+  async function syncTime() {
+    const pend = AUTH && session ? getTimePend() : null; if (!pend || timing) return;
+    timing = true;
+    try {
+      const uid = session.uid, tok = encodeURIComponent(await idToken());
+      const [rr, sr] = await Promise.all([http(`${DB}/runs/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}.json`)]);
+      if (!rr.ok || !sr.ok) return;                                // sin conexión: se reintenta
+      const run = await rr.json(), row = await sr.json();
+      if (!run || run.s !== pend.s || typeof run.e !== 'number' || typeof run.h !== 'number') { setTimePend(null); return; }     // esa partida ya no está: no se puede contar
+      if (!row || typeof row.s !== 'number') { setTimePend(null); return; }                                                     // aún no tienes fila en el marcador
+      if (row.ml === run.s) { setTimePend(null); return; }                                                                       // ya estaba sumada
+      const inc = Math.min(run.e - run.s, run.h * TIEMPO.msPorRebote + TIEMPO.holguraMs);
+      const w = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify({ [`scores/${uid}/ms`]: (+row.ms || 0) + inc, [`scores/${uid}/ml`]: run.s }) });
+      if (w.ok) setTimePend(null);
+      else if (w.status === 401 || w.status === 403) { pend.n = (pend.n || 0) + 1; setTimePend(pend.n >= 3 ? null : pend); }   // (también pasa si aún no se publicaron las reglas nuevas)
+    } catch (e) {} finally { timing = false; }
   }
   let claiming = null;
   const claimRun = () => claiming || (claiming = doClaim().finally(() => { claiming = null; }));
@@ -2297,7 +2366,7 @@
       if (!wr.ok) return wr.status === 401 || wr.status === 403 ? 'denied' : 'error';
       if (!sr.ok) return 'error';                                  // sin saber tu récord no se cobra (si se asumiera 0, el servidor rechazaría la partida entera y se perdería): se reintenta
       const w = (await wr.json()) || {}, sv = await sr.json(), best = +sv || 0, rowExists = typeof sv === 'number';
-      if (+w.lr === pr.s) { pending = null; savePending(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
+      if (+w.lr === pr.s) { pending = null; savePending(); markTime(pr.s); syncTime(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
       if (!kr.ok && kr.status !== 401 && kr.status !== 403) return 'error';
       const kv = kr.ok ? await kr.json() : null, mult = boostMult(pr.s, kv && +kv.bx || 0);      // ¿la partida empezó con «pesos dobles»? lo decide la racha que guarda el servidor
       const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h) * mult, body = {}, rowSeen = rowExists;
@@ -2308,12 +2377,12 @@
       if (r.ok) {
         wallet.c = c0 + p; wallet.sp = sp0; wallet.lr = pr.s; saveWallet();
         if (pr.h > player.best) { player.best = pr.h; savePlayer(); }
-        pending = null; savePending(); if (pr.h > best) syncCount(); return 'ok';
+        pending = null; savePending(); markTime(pr.s); syncTime(); if (pr.h > best) syncCount(); return 'ok';
       }
       if (r.status === 401 || r.status === 403) {
         const g = await http(`${DB}/wallets/${uid}/lr.json?auth=${tok}`); const lr = g.ok ? await g.json() : null;
         pending = null; savePending();
-        if (lr === pr.s) { await pullWallet(); return 'ok'; }
+        if (lr === pr.s) { markTime(pr.s); syncTime(); await pullWallet(); return 'ok'; }
         return 'denied';
       }
       return 'error';
@@ -2950,7 +3019,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v47';
+  const BUILD = 'v48';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3061,6 +3130,7 @@
 
   $('authForm').addEventListener('submit', submitAuth);
   $('tabIn').addEventListener('click', () => setAuthMode('in'));
+  $('kindR').addEventListener('click', () => setBoardKind('r')); $('kindT').addEventListener('click', () => setBoardKind('t'));
   $('forgot').addEventListener('click', () => { setAuthMode('reset'); $('acctMail').focus(); });
   $('mailBtn').addEventListener('click', () => { closeSettings(); openMail(); });
   $('mailBannerGo').addEventListener('click', openMail);

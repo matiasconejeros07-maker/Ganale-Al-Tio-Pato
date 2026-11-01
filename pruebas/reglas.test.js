@@ -13,7 +13,7 @@ let pass = 0, fail = 0;
 const N = Date.now(), T0 = N, SV = { '.sv': 'timestamp' };
 const A = (uid, email = 'matias@tio-pato.invalid') => ({ uid, token: { email } });
 // targaryen ignora with({now}) y usa la hora real: se desplazan hacia atrás las horas guardadas y escritas para simular 'now'
-const isT = (k, v) => ['s', 'e', 'lr', 't', 'bx'].includes(k) && typeof v === 'number' && v >= 1e12;       // horas en ms (los puntajes y rebotes son números chicos)
+const isT = (k, v) => ['s', 'e', 'lr', 't', 'bx', 'ml'].includes(k) && typeof v === 'number' && v >= 1e12;       // horas en ms (los puntajes y rebotes son números chicos)
 function shiftObj(o, off) { if (!o || typeof o !== 'object') return o; const c = Array.isArray(o) ? [] : {}; for (const k in o) c[k] = (o[k] && typeof o[k] === 'object' && !o[k]['.sv']) ? shiftObj(o[k], off) : (isT(k, o[k]) ? o[k] - off : o[k]); return c; }
 function db(data, now, uid = 'u1', email) {
   const off = now - Date.now(), base = () => targaryen.database(rules, shiftObj(data || {}, off)).as(A(uid, email));
@@ -407,6 +407,30 @@ console.log('Nombre de una cuenta con correo real (mynames)');
   ok('leer tu mynames', db({ mynames: { u1: 'ana,perez' } }, T0, 'u1', REAL).read('/mynames/u1'), true);
   ok('leer el mynames de otra cuenta', db({ mynames: { u1: 'ana,perez' } }, T0, 'u2', REAL).read('/mynames/u1'), false);
   ok('un correo interno sigue registrando su nombre de siempre (cuentas antiguas)', db({}, T0).write('/names/matias', 'u1'), true);
+}
+
+// ---------- tiempo jugado (marcador «Tiempo») ----------
+console.log('Tiempo jugado');
+{
+  const fila = (extra = {}) => ({ n: 'Matías', k: 'matias', s: 60, t: T0 - 100, c: 60, ...extra });
+  const base = (scores = fila(), run = {}, lr = T0) => ({ runs: { u1: { s: T0, b: 'peso1', r: 1, e: T0 + 60000, h: 60, p: 60, ...run } }, wallets: { u1: { c: 60, sp: 0, lr } }, scores: { u1: scores } });
+  const as = (data, upd, uid = 'u1') => db(data, T0 + 70000, uid).update('/', upd);
+  const inc = (ms, ml = T0) => ({ 'scores/u1/ms': ms, 'scores/u1/ml': ml });
+  ok('una partida cobrada de 60 s suma 60 s de tiempo jugado', as(base(), inc(60000)), true);
+  ok('el tiempo se acumula sobre lo que ya había (100 s + 60 s)', as(base(fila({ ms: 100000, ml: T0 - 500000 })), inc(160000)), true);
+  ok('sumar más de lo que duró la partida', as(base(), inc(60001)), false);
+  ok('sumar menos de lo que duró', as(base(), inc(59999)), false);
+  ok('sumar la misma partida dos veces', as(base(fila({ ms: 60000, ml: T0 })), inc(120000)), false);
+  ok('marcar una partida más vieja que la última sumada', as(base(fila({ ms: 60000, ml: T0 + 5 })), inc(120000)), false);
+  ok('sumar tiempo sin marcar la partida (ml)', as(base(), { 'scores/u1/ms': 60000 }), false);
+  ok('marcar una partida que no es la última cobrada', as(base(), inc(60000, T0 + 7)), false);
+  ok('sumar tiempo de una partida que todavía no se cobró', as(base(fila(), {}, T0 - 90000), inc(60000)), false);
+  ok('dejar el juego abierto no suma horas: una partida de 2 rebotes que «duró» 1 hora cuenta solo 15 s (2 × 4,5 s + 6 s)', as(base(fila(), { e: T0 + 3600000, h: 2, p: 2 }), inc(15000)), true);
+  ok('… y no se puede sumar la hora entera', as(base(fila(), { e: T0 + 3600000, h: 2, p: 2 }), inc(3600000)), false);
+  ok('sumar tiempo en la fila de otra cuenta', as(base(), inc(60000), 'u2'), false);
+  ok('el tiempo no puede ser negativo ni un decimal', as(base(), inc(-1)), false);
+  ok('el tiempo a mano, sin partida', db({ scores: { u1: fila() } }, T0).write('/scores/u1/ms', 99999999), false);
+  ok('los demás pueden leer el tiempo de cada cuenta en el marcador', db({ scores: { u1: fila({ ms: 60000, ml: T0 }) } }, T0, 'u2').read('/scores'), true);
 }
 
 console.log(`\n${pass} correctas, ${fail} fallas`);

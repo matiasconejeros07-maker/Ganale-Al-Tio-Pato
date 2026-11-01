@@ -28,6 +28,9 @@ jobs:
       - name: Emblema de perfil de punta a punta
         working-directory: pruebas
         run: node perfil.test.js
+      - name: Marcador de tiempo jugado (sumar, Top 25 y reglas sin publicar)
+        working-directory: pruebas
+        run: node tiempo.test.js
       - name: Correo en las cuentas (crear, agregar a una antigua, verificar y recuperar)
         working-directory: pruebas
         run: node correo.test.js

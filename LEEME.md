@@ -162,6 +162,14 @@ Revisión hecha con las skills de seguridad y calidad de jeffallan (escaneo est�
 - Para miles de jugadores a la vez, lo más barato es que el Top 25 y el contador se lean de una copia en el CDN de Firebase Hosting (una Cloud Function los publica cada pocos segundos) en vez de leer la base de datos en cada pedido: ver la guía de seguridad y costos.
 - El plan gratuito (Spark) de Firebase (1 GB guardado, 10 GB de descarga al mes) alcanza de sobra para miles de jugadores; para una app en las tiendas con 10.000+ jugadores conviene pasar al plan Blaze (pago por uso, con alerta de presupuesto).
 
+
+### Marcador «Tiempo» (horas jugadas)
+
+- En el marcador hay dos pestañas: **🏆 Rebotes** y **⏱️ Tiempo**. «Tiempo» muestra el **Top 25 de quienes más tiempo llevan jugando**, con el mismo formato que el de rebotes: medallas 🥇🥈🥉, emblema, nombre, tu fila resaltada, actualización cada 30 s, botón «Actualizar» cada 5 s como máximo y el mismo minuto para mirarlo. Si no estás entre los 25, debajo salen tres puntos y **tu tiempo**; no hay «puesto en el mundo» porque contarlo exigiría bajar todas las cuentas (el de rebotes lo hace con el contador `hist`).
+- El tiempo se muestra como `45 s`, `12 min`, `3 h 05 min` o `2 d 4 h`. **Cuenta desde que existe este marcador**: no se puede recuperar el tiempo de partidas anteriores.
+- **Cómo se mide y por qué no se infla:** después de cobrar cada partida se suma a `scores/<uid>/ms` lo que duró (hora de fin menos hora de inicio, las dos del servidor), con **tope de 4,5 s por rebote + 6 s** (`eco.tiempo` en `tienda.js`). Así dejar el juego abierto o tardar en cobrar no suma horas. Las reglas (`ms` + `ml` = la última partida sumada) comprueban que se sume exactamente eso y una sola vez por partida. Se escribe **aparte del cobro**: si falla, los pesos no se ven afectados, y el juego lo reintenta antes de empezar la siguiente partida. El Top 25 usa el índice `ms` de `scores`.
+- **Límite honesto:** un programa que juegue 24 horas seguidas aparecería como alguien que juega 24 horas al día (no puede sumar más tiempo real del que pasó).
+
 ## El arte de los personajes
 
 Cada personaje es un par de imágenes sueltas en `trajes/` (el dibujo calmo y el enojado): se preparan con `python3 herramientas/preparar-trajes.py original.png trajes/nombre.webp`.
