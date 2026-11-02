@@ -194,6 +194,28 @@
   .mcard h2 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -.01em; }
   .mcard .msub { margin: 6px 0 0; font-size: 14px; font-weight: 700; color: #6b6840; min-height: 1.3em; }
   .mclose { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; border: 0; background: none; font-size: 20px; cursor: pointer; color: var(--ink); opacity: .6; }
+  .dtabs { width: 100%; margin: 12px auto 0; }
+  .dtabs button { font-size: 13px; padding: 10px 2px; }
+  .dtabs[hidden], .mlist[hidden], .dgrid[hidden] { display: none; }
+  .mlist { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 14px; max-height: min(46vh, 380px); overflow-y: auto; overscroll-behavior: contain; text-align: left; }
+  .mrow { display: flex; align-items: center; gap: 10px; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 9px 10px; }
+  .mrow .mi { flex: none; font-size: 26px; line-height: 1; width: 34px; text-align: center; }
+  .mrow .mt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .mrow .mt b { font-size: 14px; font-weight: 800; line-height: 1.2; }
+  .mrow .mt small { font-size: 11px; font-weight: 700; color: #6b6840; font-variant-numeric: tabular-nums; }
+  .mrow .mbar { height: 7px; border-radius: 999px; background: rgba(0,0,0,.09); overflow: hidden; }
+  .mrow .mbar i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #ffc928, #ff9a1f); }
+  .mrow .mr { flex: none; min-width: 58px; text-align: center; font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; background: #111; color: #fff; border-radius: 999px; padding: 5px 9px; }
+  .mrow .mlv { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: #5b9bd5; border-radius: 999px; padding: 1px 7px; vertical-align: 1px; }
+  .mrow .mlv.l1 { background: #e5a800; } .mrow .mlv.l2 { background: #e0149f; }
+  .mrow.ready { border-color: #ffc928; background: linear-gradient(#fff8d6, #ffe98a); box-shadow: 0 0 0 3px rgba(255, 201, 40, .45); }
+  .mrow.ready .mr { background: #2f9d3a; }
+  .mrow.done { background: #eaf7e6; border-color: #9fd48f; }
+  .mrow.done .mi, .mrow.done .mt { opacity: .5; }
+  .mrow.done .mr { background: #9fd48f; color: #1f6b27; }
+  #menu .tile.wide { width: 100%; position: relative; }
+  .mbadge2 { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #e0149f; color: #fff; font-size: 13px; font-weight: 900; line-height: 22px; text-align: center; }
+  .mbadge2[hidden] { display: none; }
   .dgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 14px; }
   .dcard { position: relative; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 8px 4px 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-weight: 800; }
   .dcard .dn { background: #111; color: #fff; border-radius: 999px; padding: 3px 10px; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
@@ -247,6 +269,7 @@
   body.authup #menu .stage, body.authreset #menu .stage { --st: clamp(84px, 14vh, 120px); }
   body.authup #menu .slogan, body.authup #menu .tag, body.authreset #menu .slogan, body.authreset #menu .tag, body.authup #menu .rec, body.authreset #menu .rec { display: none; }
   body.authup #menu .mid, body.authreset #menu .mid { gap: 6px; }
+  #menu .tile.wide[hidden] { display: none; }
   .authbox [hidden], .mailbody [hidden], .mailbanner[hidden], #mailRow[hidden] { display: none !important; }
   .seti-mail { font-size: 26px; line-height: 32px; text-align: center; }
   .mailbanner { display: flex; align-items: center; gap: 8px; width: min(100%, 340px); margin: 4px auto 10px; padding: 8px 8px 8px 14px; border-radius: 18px; background: #fff; border: 2px solid #ffc928; box-shadow: 0 4px 12px rgba(0, 0, 0, .12); font-size: 13px; font-weight: 800; text-align: left; line-height: 1.25; }
@@ -914,6 +937,7 @@
         <div class="actions">
           <button class="btn play" id="play"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>Jugar</button>
           <div class="duo"><button class="tile" id="openShop"><span>🛍️</span>Tienda</button><button class="tile" id="openBoard"><span>🏆</span>Marcadores</button></div>
+          <button class="tile wide" id="openMiss" type="button" hidden><span>🎯</span>Misiones<b class="mbadge2" id="missBadge" hidden>0</b></button>
         </div>
       </div>
       <div class="foot"><button class="link" id="openSettings" type="button">⚙️ Ajustes</button><button class="link" id="install" hidden>📲 Instalar app</button></div>
@@ -929,6 +953,7 @@
       <div class="coinsline" id="coinsLine"></div>
       <div class="status" id="saveStatus"></div>
       <div class="status" id="timeLine"></div>
+      <div class="status" id="missLine"></div>
       <button class="link" id="diagBtn" hidden>Ver detalle técnico</button>
       <pre id="diagOut" hidden></pre>
       <div class="best" id="bestResult"></div>
@@ -1018,8 +1043,10 @@
     <button class="mclose" id="dailyClose" type="button" aria-label="Cerrar">✕</button>
     <h2 id="dailyTitle">Racha diaria 🔥</h2>
     <p class="msub" id="dailySub">Entra cada día y gana premios.</p>
+    <div class="seg dtabs" id="dTabs" role="tablist"><button type="button" id="tabS" class="on" role="tab" aria-selected="true">🔥 Racha</button><button type="button" id="tabD" role="tab" aria-selected="false">🎯 Hoy</button><button type="button" id="tabA" role="tab" aria-selected="false">🏅 Logros</button></div>
     <div class="pocket" id="pocket" aria-live="polite"><img id="pocketImg" src="skins/peso1.webp" alt=""><span>Tu bolsillo</span><b id="pocketNum">$0</b></div>
     <div class="dgrid" id="dailyGrid"></div>
+    <div class="mlist" id="missList" hidden></div>
     <button class="btn" id="dailyGo" type="button">Reclamar</button>
     <div class="status" id="dailyMsg" role="status"></div>
   </div>
@@ -1701,7 +1728,7 @@
     if (first) note.textContent = ONLINE ? 'Actualizando…' : 'Modo local: aquí solo aparece tu mejor puntaje en este dispositivo.';
     try {
       if (kind === 't') {                                         // Top 25 por tiempo jugado: mismo formato, misma frecuencia y mismo límite de tiempo que el de rebotes
-        syncTime();
+        syncRun();
         const [rows, mine] = await Promise.all([fetchTopTime(TOP_N), fetchMyTime().catch(() => 0)]);
         if (kind !== boardKind) return;                           // cambió de pestaña mientras cargaba
         const sig = JSON.stringify(['t', rows.map(r => [r.id, r.ms, r.n]), mine]);
@@ -2319,7 +2346,7 @@
     if (!AUTH || !session) return null;
     try {
       if (pending) await claimRun();                               // primero cobra la partida anterior si quedó pendiente
-      await syncTime();                                            // y suma su tiempo jugado (antes de que la nueva partida la reemplace)
+      await syncRun();                                            // y suma su tiempo jugado y sus números de misiones (antes de que la nueva partida la reemplace)
       let tok = encodeURIComponent(await idToken());
       const uid = session.uid, ball = itemOf('ball', wallet.eq.ball) || CAT.ball[0], rate = ball.rate || 1;      // la pelota y lo que paga quedan anotados al empezar (las reglas los comprueban)
       const r = await retrying(() => http(`${DB}/runs/${uid}.json?auth=${tok}&print=silent`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ s: SV, b: ball.id, r: rate }) }));
@@ -2328,33 +2355,61 @@
       const g = await retrying(() => http(`${DB}/runs/${uid}/s.json?auth=${tok}`));
       const s = g.ok ? await g.json() : null;
       if (typeof s !== 'number') return null;
+      srvSkew = s - Date.now();                                     // cuánto se adelanta o atrasa el reloj del teléfono respecto del servidor (para saber en qué día estamos)
       run = { s, r: rate }; return run;
     } catch (e) { runFail = 'net'; return null; }
   }
-  // Tiempo jugado: después de cobrar una partida se suma lo que duró (con tope por rebotes) a `scores/<uid>/ms`. Va aparte del cobro: si falla, los pesos no se ven afectados.
-  // Hay que hacerlo antes de empezar la siguiente partida (la partida anterior desaparece de `runs/` al empezar otra), por eso beginRun lo espera.
+  // Después de cobrar una partida se suman, aparte del cobro (si fallan, los pesos no se ven afectados):
+  //  · su tiempo jugado a `scores/<uid>/ms` (marcador «Tiempo jugado») y
+  //  · sus números a `stats/<uid>` (misiones: partidas, rebotes, lo de hoy).
+  // Hay que hacerlo antes de empezar la siguiente partida (la anterior desaparece de `runs/` al empezar otra), por eso beginRun lo espera.
   let timing = false;
   const TIME_KEY = () => 'gana-al-tio-pato-tiempo-' + (session ? session.uid : 'local');
   const getTimePend = () => { try { return JSON.parse(localStorage.getItem(TIME_KEY()) || 'null'); } catch (e) { return null; } };
   const setTimePend = v => { try { v ? localStorage.setItem(TIME_KEY(), JSON.stringify(v)) : localStorage.removeItem(TIME_KEY()); } catch (e) {} };
-  const markTime = (s, t) => { const o = getTimePend(); if (!o || o.s !== s) setTimePend({ s, t: t > 0 ? Math.round(t) : 0, n: 0 }); };
-  async function syncTime() {
+  const markRun = (s, t) => { const o = getTimePend(); if (!o || o.s !== s) setTimePend({ s, t: t > 0 ? Math.round(t) : 0, tm: 1, st: 1, nt: 0, ns: 0 }); };
+  const denied4 = r => r.status === 401 || r.status === 403;
+  async function syncRun() {
     const pend = AUTH && session ? getTimePend() : null; if (!pend || timing) return;
     timing = true;
     try {
       const uid = session.uid, tok = encodeURIComponent(await idToken());
-      const [rr, sr] = await Promise.all([http(`${DB}/runs/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}.json`)]);
+      const [rr, sr, qr] = await Promise.all([http(`${DB}/runs/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}.json`), pend.st && MIS ? http(`${DB}/stats/${uid}.json?auth=${tok}`) : Promise.resolve(null)]);
       if (!rr.ok || !sr.ok) return;                                // sin conexión: se reintenta
       const run = await rr.json(), row = await sr.json();
       if (!run || run.s !== pend.s || typeof run.e !== 'number' || typeof run.h !== 'number') { setTimePend(null); return; }     // esa partida ya no está: no se puede contar
-      if (!row || typeof row.s !== 'number') { setTimePend(null); return; }                                                     // aún no tienes fila en el marcador
-      if (row.ml === run.s) { setTimePend(null); return; }                                                                       // ya estaba sumada
-      // se suma lo que duró de verdad la partida (lo que dice «Aguantaste»), sin pasar de lo que tardó en el servidor ni del tope por rebotes (así lo exigen las reglas)
-      const cap = Math.min(run.e - run.s, run.h * TIEMPO.msPorRebote + TIEMPO.holguraMs);
-      const inc = Math.max(0, Math.min(pend.t > 0 ? Math.round(pend.t) : run.e - run.s - TIEMPO.cuentaMs, cap)), total = (+row.ms || 0) + inc;
-      const w = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify({ [`scores/${uid}/ms`]: total, [`scores/${uid}/ml`]: run.s }) });
-      if (w.ok) { setTimePend(null); if (state === 'over') $('timeLine').textContent = `⏱️ +${fmtClock(inc / 1000)} · en total llevas ${fmtPlayed(total)} jugando`; }
-      else if (w.status === 401 || w.status === 403) { pend.n = (pend.n || 0) + 1; setTimePend(pend.n >= 3 ? null : pend); }   // (también pasa si aún no se publicaron las reglas nuevas)
+      // --- tiempo jugado: lo que duró de verdad la partida (lo que dice «Aguantaste»), sin pasar de lo que tardó en el servidor ni del tope por rebotes (así lo exigen las reglas)
+      if (pend.tm) {
+        if (!row || typeof row.s !== 'number' || row.ml === run.s) pend.tm = 0;                                                  // aún sin fila en el marcador, o ya estaba sumada
+        else {
+          const cap = Math.min(run.e - run.s, run.h * TIEMPO.msPorRebote + TIEMPO.holguraMs);
+          const inc = Math.max(0, Math.min(pend.t > 0 ? Math.round(pend.t) : run.e - run.s - TIEMPO.cuentaMs, cap)), total = (+row.ms || 0) + inc;
+          const w = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify({ [`scores/${uid}/ms`]: total, [`scores/${uid}/ml`]: run.s }) });
+          if (w.ok) { pend.tm = 0; if (state === 'over') $('timeLine').textContent = `⏱️ +${fmtClock(inc / 1000)} · en total llevas ${fmtPlayed(total)} jugando`; }
+          else if (denied4(w) && ++pend.nt >= 3) pend.tm = 0;                                                                     // (también pasa si aún no se publicaron las reglas nuevas)
+        }
+      }
+      // --- estadísticas de las misiones
+      if (pend.st) {
+        if (!MIS || run.h < MIS.minRebotes) pend.st = 0;                                                                         // las partidas muy cortas no cuentan
+        else if (qr && !qr.ok) { if (denied4(qr)) pend.st = 0; }                                                                 // reglas viejas: no hay misiones todavía
+        else if (qr) {
+          const old = await qr.json(), o = old || {};
+          if (o.sl === run.s) pend.st = 0;                                                                                       // ya estaba contada
+          else {
+            const day = dayOf(srvNow()), same = !!old && o.d === day;
+            const body = { g: (+o.g || 0) + 1, r: (+o.r || 0) + run.h, sl: run.s, d: day, dg: (same ? +o.dg || 0 : 0) + 1, dr: (same ? +o.dr || 0 : 0) + run.h, dm: same ? Math.max(+o.dm || 0, run.h) : run.h };
+            if (!same) body.dc = 0;                                                                                              // día nuevo: las casillas de hoy vuelven a estar sin cobrar
+            const patch = {}; for (const k in body) patch[`stats/${uid}/${k}`] = body[k];
+            const w = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(patch) });
+            if (w.ok) {
+              pend.st = 0; misStats = { ...body, dc: same ? (+o.dc || 0) : 0 }; statsOk = true; renderMissChip();
+              const n = readyCount(); if (n > 0 && state === 'over') $('missLine').textContent = `🎯 Tienes ${n} misión${n === 1 ? '' : 'es'} para reclamar en Misiones`;
+            } else if (denied4(w) && ++pend.ns >= 3) pend.st = 0;
+          }
+        }
+      }
+      setTimePend(pend.tm || pend.st ? pend : null);
     } catch (e) {} finally { timing = false; }
   }
   let claiming = null;
@@ -2369,7 +2424,7 @@
       if (!wr.ok) return wr.status === 401 || wr.status === 403 ? 'denied' : 'error';
       if (!sr.ok) return 'error';                                  // sin saber tu récord no se cobra (si se asumiera 0, el servidor rechazaría la partida entera y se perdería): se reintenta
       const w = (await wr.json()) || {}, sv = await sr.json(), best = +sv || 0, rowExists = typeof sv === 'number';
-      if (+w.lr === pr.s) { pending = null; savePending(); markTime(pr.s, pr.t); syncTime(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
+      if (+w.lr === pr.s) { pending = null; savePending(); markRun(pr.s, pr.t); syncRun(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
       if (!kr.ok && kr.status !== 401 && kr.status !== 403) return 'error';
       const kv = kr.ok ? await kr.json() : null, mult = boostMult(pr.s, kv && +kv.bx || 0);      // ¿la partida empezó con «pesos dobles»? lo decide la racha que guarda el servidor
       const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h) * mult, body = {}, rowSeen = rowExists;
@@ -2380,12 +2435,12 @@
       if (r.ok) {
         wallet.c = c0 + p; wallet.sp = sp0; wallet.lr = pr.s; saveWallet();
         if (pr.h > player.best) { player.best = pr.h; savePlayer(); }
-        pending = null; savePending(); markTime(pr.s, pr.t); syncTime(); if (pr.h > best) syncCount(); return 'ok';
+        pending = null; savePending(); markRun(pr.s, pr.t); syncRun(); if (pr.h > best) syncCount(); return 'ok';
       }
       if (r.status === 401 || r.status === 403) {
         const g = await http(`${DB}/wallets/${uid}/lr.json?auth=${tok}`); const lr = g.ok ? await g.json() : null;
         pending = null; savePending();
-        if (lr === pr.s) { markTime(pr.s, pr.t); syncTime(); await pullWallet(); return 'ok'; }
+        if (lr === pr.s) { markRun(pr.s, pr.t); syncRun(); await pullWallet(); return 'ok'; }
         return 'denied';
       }
       return 'error';
@@ -2427,6 +2482,7 @@
     chip.setAttribute('aria-label', on ? `Racha diaria: ${info.broken ? 0 : info.n} días${info.claimable ? '. Tienes un premio para reclamar' : ''}` : 'Racha diaria');
     $('boostBar').hidden = !(on && info.boostLeft > 0); if (info.boostLeft > 0) $('boostLeft').textContent = fmtLeft(info.boostLeft);
     $('pocket').classList.toggle('glow', on && info.boostLeft > 0);
+    renderMissChip();
     if ($('daily').classList.contains('show')) paintDailyButton();                      // cada segundo solo se actualiza el texto del botón (la cuadrícula no se redibuja)
   }
   // Los dibujos de cada día son los pesos que regalan: $100 = una moneda de $100 · $200 = dos monedas de $100 · $300 = tres · $400 = cuatro · $500 = la moneda de $500 · $1.000 = el billete de $1.000.
@@ -2437,6 +2493,8 @@
     return out;
   }
   function renderDaily(msg) {
+    if (dailyTab !== 'streak') { renderMissions(msg); return; }
+    $('dailyGrid').hidden = false; $('missList').hidden = true; $('dailyTitle').textContent = 'Racha diaria 🔥';
     const info = streakInfo(), grid = $('dailyGrid');
     // tarjeta de hoy (o la última cobrada): si hoy se puede cobrar, las anteriores del ciclo ya están hechas; si ya cobraste, la de hoy también
     const ti = info.claimable ? (info.nextN - 1) % RLEN : (info.n - 1) % RLEN, doneTo = info.claimable ? ti - 1 : ti;
@@ -2465,6 +2523,7 @@
     if (msg !== undefined) { $('dailyMsg').textContent = msg.t; $('dailyMsg').className = 'status' + (msg.ok ? ' ok' : ' err'); }
   }
   function paintDailyButton() {
+    if (dailyTab !== 'streak') { paintMissButton(); return; }
     const info = streakInfo();
     $('dailySub').textContent = info.broken && info.claimable ? '¡Perdiste la racha! Empieza de nuevo hoy.'
       : info.n > 0 ? `Llevas ${info.broken ? 0 : info.n} día${info.n === 1 ? '' : 's'} seguido${info.n === 1 ? '' : 's'} 🔥` : 'Entra cada día y gana premios.';
@@ -2474,10 +2533,12 @@
     else { go.disabled = true; go.textContent = `Vuelve en ${fmtWait(info.toNext)}`; }
   }
   let dailyFrom = null;
-  function openDaily() {
-    if (!AUTH || !session || !streakOk) return;
-    dailyFrom = document.activeElement; renderDaily({ t: '', ok: true });
+  function openDaily(tab) {
+    tab = tab === 'day' || tab === 'ach' ? tab : 'streak';
+    if (!AUTH || !session || (tab === 'streak' ? !streakOk : !MIS_ON())) return;
+    dailyFrom = document.activeElement; setDailyTab(tab, true);
     $('daily').classList.add('show'); $('dailyGo').focus();
+    if (tab !== 'streak') pullMissions().then(() => { if ($('daily').classList.contains('show') && dailyTab !== 'streak') renderDaily(); });
   }
   function closeDaily() { $('daily').classList.remove('show'); if (dailyFrom && dailyFrom.focus) { try { dailyFrom.focus(); } catch (e) {} } dailyFrom = null; }
   function autoDaily() {                                                       // al entrar, si hay premio del día, se muestra solo (una vez por día y por visita)
@@ -2541,7 +2602,129 @@
     } catch (e) { return 'error'; }
     finally { streakBusy = false; }
   }
+  /* ---------- misiones: 3 por día (fácil, media y difícil: más difícil, más premio) y logros de una sola vez ----------
+     El servidor (reglas de Firebase) lleva las estadísticas, decide cuál es la misión de cada día, si se cumplió y cuánto se paga; aquí solo se muestra y se pide el cobro. */
+  const MIS = (window.TIENDA && window.TIENDA.eco && window.TIENDA.eco.misiones) || null;
+  let misStats = null, statsOk = false, claimedM = {}, dailyTab = 'streak', missBusy = false, srvSkew = 0;
+  const srvNow = () => Date.now() + srvSkew;
+  const MIS_ON = () => !!(AUTH && session && MIS && statsOk);
+  const pickJ = (day, k) => ((day * 5 + 2 * k) % 7) % 3;                         // qué misión le toca a la casilla k ese día (la misma fórmula que las reglas)
+  const DIA_CAMPO = { g: 'dg', r: 'dr', m: 'dm' }, NIVEL = ['Fácil', 'Media', 'Difícil'];
+  const TXT_D = { g: n => `Juega ${n} partidas hoy`, r: n => `Suma ${n} rebotes hoy`, m: n => `Llega a ${n} rebotes en una sola partida hoy` };
+  const TXT_L = { g: n => n === 1 ? 'Juega tu primera partida' : `Juega ${n} partidas`, r: n => `Suma ${n.toLocaleString('es-CL')} rebotes en total`, b: n => `Llega a ${n} rebotes en una partida`,
+    s: n => `Mantén una racha de ${n} días`, e: () => 'Crea tu emblema de perfil', c: () => 'Compra tu primer artículo en la tienda', v: () => 'Verifica tu correo' };
+  const ICO = { g: '🎮', r: '🔁', m: '🎯', b: '🏆', s: '🔥', e: '🎨', c: '🛍️', v: '✉️' };
+  // lo que tienes hecho en cada logro (con lo que sabe el juego; al cobrar se vuelve a comprobar con lo que dice el servidor)
+  function progLogro(tipo, v) {
+    v = v || {}; const st = v.stats || misStats || {};
+    return tipo === 'g' ? +st.g || 0 : tipo === 'r' ? +st.r || 0 : tipo === 'b' ? v.best != null ? v.best : player.best || 0
+      : tipo === 's' ? v.streakN != null ? v.streakN : (streak ? streak.n : 0) : tipo === 'e' ? (v.av != null ? v.av : avParse(player.av)) ? 1 : 0
+      : tipo === 'c' ? (v.sp != null ? v.sp : wallet.sp) >= 1 ? 1 : 0 : tipo === 'v' ? (session && session.ev && session.email ? 1 : 0) : 0;
+  }
+  function missionState(v) {
+    v = v || {}; const day = dayOf(srvNow()), st = v.stats !== undefined ? v.stats : misStats, same = !!st && st.d === day, cl = v.claimed || claimedM;
+    const dia = MIS.dia.map((c, k) => {
+      const [tipo, meta] = c.de[pickJ(day, k)], prog = same ? +st[DIA_CAMPO[tipo]] || 0 : 0, hecha = (((same ? +st.dc || 0 : 0) >> k) & 1) === 1;
+      return { k, tipo, meta, premio: c.premio, prog: Math.min(prog, meta), hecha, lista: !hecha && prog >= meta, daily: true };
+    });
+    const logros = MIS.logros.map(([id, tipo, meta, premio]) => {
+      const prog = progLogro(tipo, { ...v, stats: st }), hecha = !!cl[id];
+      return { id, tipo, meta, premio, prog: Math.min(prog, meta), hecha, lista: !hecha && prog >= meta };
+    });
+    return { dia, logros, day, dc: same ? +st.dc || 0 : 0 };
+  }
+  const readyCount = () => { if (!MIS_ON()) return 0; const m = missionState(); return m.dia.filter(x => x.lista).length + m.logros.filter(x => x.lista).length; };
+  function renderMissChip() {
+    const on = MIS_ON(), n = on ? readyCount() : 0, b = $('missBadge');
+    $('openMiss').hidden = !on; b.hidden = n === 0; b.textContent = n;
+    $('tabD').hidden = $('tabA').hidden = !on; $('dTabs').hidden = !(on && streakOk);
+  }
+  async function pullMissions() {                                              // estadísticas y logros cobrados, tal como los guarda el servidor
+    if (!AUTH || !session || !MIS) { statsOk = false; return false; }
+    try {
+      const tok = encodeURIComponent(await idToken()), uid = session.uid;
+      const [sr, mr] = await Promise.all([http(`${DB}/stats/${uid}.json?auth=${tok}`), http(`${DB}/missions/${uid}.json?auth=${tok}`)]);
+      if (!sr.ok || !mr.ok) { statsOk = false; renderMissChip(); return false; }                  // 401/403: las reglas nuevas todavía no están publicadas en Firebase
+      const v = await sr.json(); misStats = v && typeof v.g === 'number' ? v : null; claimedM = (await mr.json()) || {}; statsOk = true; renderMissChip(); return true;
+    } catch (e) { return false; }
+  }
+  function setDailyTab(t, quiet) {
+    dailyTab = t;
+    [['tabS', 'streak'], ['tabD', 'day'], ['tabA', 'ach']].forEach(([id, k]) => { $(id).classList.toggle('on', k === t); $(id).setAttribute('aria-selected', String(k === t)); });
+    renderMissChip(); renderDaily(quiet ? { t: '', ok: true } : { t: '', ok: true });
+    if (!quiet && t !== 'streak') pullMissions().then(() => { if (dailyTab !== 'streak') renderDaily(); });
+  }
+  function missionRow(m) {
+    const row = document.createElement('div'); row.className = 'mrow' + (m.hecha ? ' done' : m.lista ? ' ready' : '');
+    const ic = document.createElement('span'); ic.className = 'mi'; ic.textContent = ICO[m.tipo] || '🎯';
+    const tx = document.createElement('div'); tx.className = 'mt';
+    const tt = document.createElement('b'); tt.textContent = (m.daily ? TXT_D : TXT_L)[m.tipo](m.meta);
+    if (m.daily) { const lv = document.createElement('span'); lv.className = 'mlv l' + m.k; lv.textContent = NIVEL[m.k]; tt.appendChild(lv); }
+    const bar = document.createElement('div'); bar.className = 'mbar'; const fill = document.createElement('i'); fill.style.width = Math.round(100 * m.prog / m.meta) + '%'; bar.appendChild(fill);
+    const sm = document.createElement('small'); sm.textContent = m.hecha ? 'Cobrada ✓' : m.lista ? '¡Lista para reclamar!' : (m.meta > 1 ? `${m.prog.toLocaleString('es-CL')} / ${m.meta.toLocaleString('es-CL')}` : 'Pendiente');
+    tx.append(tt, bar, sm);
+    const rw = document.createElement('span'); rw.className = 'mr'; rw.textContent = m.hecha ? '✓' : money(m.premio);
+    row.append(ic, tx, rw); return row;
+  }
+  function missionItems(tab) {
+    const st = missionState();
+    if (tab === 'day') return st.dia;
+    return st.logros.slice().sort((a, b) => (a.hecha - b.hecha) || (b.lista - a.lista) || (b.prog / b.meta - a.prog / a.meta) || (a.meta - b.meta));       // listas arriba, luego las más avanzadas, cobradas al final
+  }
+  function renderMissions(msg) {
+    const tab = dailyTab, list = $('missList'); list.textContent = '';
+    $('dailyGrid').hidden = true; list.hidden = false; $('dailyTitle').textContent = tab === 'day' ? 'Misiones de hoy 🎯' : 'Logros 🏅';
+    if (MIS_ON()) missionItems(tab).forEach(m => list.appendChild(missionRow(m)));
+    const items = MIS_ON() ? missionItems(tab) : [], hechas = items.filter(m => m.hecha).length;
+    $('dailySub').textContent = tab === 'day' ? `Hoy llevas ${hechas} de 3 · se renuevan a medianoche (hora de Chile)` : `${hechas} de ${items.length} logros cobrados`;
+    paintMissButton(); if (!pocketBusy) setPocket(balance());
+    const pi = document.querySelector('#coinChip .ci'); if (pi && pi.getAttribute('src')) $('pocketImg').src = pi.getAttribute('src');
+    if (msg !== undefined) { $('dailyMsg').textContent = msg.t; $('dailyMsg').className = 'status' + (msg.ok ? ' ok' : ' err'); }
+  }
+  function paintMissButton() {
+    const go = $('dailyGo'), items = MIS_ON() ? missionItems(dailyTab) : [], listas = items.filter(m => m.lista), v = listas.reduce((a, m) => a + m.premio, 0);
+    if (missBusy) { go.disabled = true; go.textContent = 'Reclamando…'; }
+    else if (listas.length) { go.disabled = false; go.textContent = `Reclamar ${money(v)}`; }
+    else { go.disabled = true; go.textContent = dailyTab === 'day' ? (items.length && items.every(m => m.hecha) ? `¡Las 3 listas! Vuelve en ${fmtWait(streakInfo().toNext)}` : 'Cumple una misión para reclamar') : 'Cumple un logro para reclamar'; }
+  }
+  // Cobra todo lo que esté listo en la pestaña (misiones de hoy o logros) en UNA escritura. Antes de armar el cobro se vuelve a leer todo del servidor.
+  async function claimMissions(which) {                                        // { res: 'ok' | 'nada' | 'denied' | 'error', v }
+    if (!MIS_ON() || missBusy) return { res: 'error', v: 0 };
+    missBusy = true; renderDaily();
+    try {
+      for (let intento = 0; intento < 2; intento++) {
+        const tok = encodeURIComponent(await idToken()), uid = session.uid;
+        const [wr, sr, br, kr, mr] = await Promise.all([http(`${DB}/wallets/${uid}.json?auth=${tok}`), http(`${DB}/stats/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}/s.json`), http(`${DB}/streaks/${uid}.json?auth=${tok}`), http(`${DB}/missions/${uid}.json?auth=${tok}`)]);
+        if (!wr.ok || !sr.ok || !br.ok || !mr.ok || (!kr.ok && !denied4(kr))) return { res: [wr, sr, mr].some(denied4) ? 'denied' : 'error', v: 0 };
+        const w = (await wr.json()) || {}, c0 = +w.c || 0, sp0 = +w.sp || 0, sv = await sr.json(), best = +(await br.json()) || 0, kv = kr.ok ? await kr.json() : null;
+        misStats = sv && typeof sv.g === 'number' ? sv : null; claimedM = (await mr.json()) || {};
+        const m = missionState({ stats: misStats, claimed: claimedM, best, streakN: kv && +kv.n || 0, av: !!w.av, sp: sp0 }), body = {};
+        let v = 0;
+        if (which === 'day') { let dc = m.dc; m.dia.forEach(x => { if (x.lista) { dc |= 1 << x.k; v += x.premio; } }); if (v > 0) body[`stats/${uid}/dc`] = dc; }
+        else m.logros.forEach(x => { if (x.lista) { body[`missions/${uid}/${x.id}`] = true; v += x.premio; } });
+        if (v <= 0) { renderMissChip(); return { res: 'nada', v: 0 }; }
+        body[`wallets/${uid}/c`] = c0 + v; body[`wallets/${uid}/sp`] = sp0;
+        const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+        if (r.ok) { wallet.c = c0 + v; saveWallet(); await pullMissions(); renderCoins(); return { res: 'ok', v }; }
+        if (!denied4(r)) return { res: 'error', v: 0 };
+        if (intento === 1) return { res: 'denied', v: 0 };                                // se reintenta una vez (otra partida pudo cobrarse justo en medio)
+      }
+      return { res: 'denied', v: 0 };
+    } catch (e) { return { res: 'error', v: 0 }; }
+    finally { missBusy = false; }
+  }
+  async function onMissGo() {
+    const which = dailyTab === 'day' ? 'day' : 'ach', rect = $('dailyGo').getBoundingClientRect(), bal0 = balance();
+    const { res, v } = await claimMissions(which);
+    if (res === 'ok') {
+      pocketBusy = true; renderDaily({ t: `¡Listo! +${money(v)} 🎉`, ok: true }); celebrate(rect, v, bal0, balance());
+      [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .12), 900 + i * 90)); vib([20, 30, 20, 30, 50]);
+    } else if (res === 'nada') renderDaily({ t: 'Todavía no hay premios por reclamar.', ok: true });
+    else renderDaily({ t: res === 'denied' ? 'Firebase no permitió reclamar. Revisa que estén publicadas las reglas nuevas.' : 'Sin conexión. Inténtalo de nuevo.', ok: false });
+    renderMissChip();
+  }
   async function onDailyGo() {
+    if (dailyTab !== 'streak') { onMissGo(); return; }
     const before = streakInfo(), n = before.nextN, v = RACHA.dias[(n - 1) % RLEN];
     const todayEl = $('dailyGrid').querySelector('.dcard.today'), rect = todayEl ? todayEl.getBoundingClientRect() : null, bal0 = balance();
     const res = await claimStreak();
@@ -2553,7 +2736,9 @@
     } else if (res === 'ya') { renderStreak(); renderDaily({ t: 'Ya reclamaste el premio de hoy.', ok: true }); }
     else renderDaily({ t: res === 'denied' ? 'Firebase no permitió reclamar. Revisa la fecha y la hora de tu celular y que estén publicadas las reglas nuevas.' : 'Sin conexión. Inténtalo de nuevo.', ok: false });
   }
-  $('streakChip').addEventListener('click', openDaily);
+  $('streakChip').addEventListener('click', () => openDaily('streak'));
+  $('openMiss').addEventListener('click', () => openDaily('day'));
+  $('tabS').addEventListener('click', () => setDailyTab('streak')); $('tabD').addEventListener('click', () => setDailyTab('day')); $('tabA').addEventListener('click', () => setDailyTab('ach'));
   $('dailyGo').addEventListener('click', onDailyGo);
   $('dailyClose').addEventListener('click', closeDaily);
   $('daily').addEventListener('click', e => { if (e.target === $('daily')) closeDaily(); });
@@ -2740,7 +2925,7 @@
     leaderBest = Math.max(leaderBest, player.best); renderMenu(); renderScores(); setInitial(); syncCount();
   }
   function logout() {
-    closeSettings(); session = null; saveSession(); streak = null; streakOk = false; closeDaily(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
+    closeSettings(); session = null; saveSession(); streak = null; streakOk = false; misStats = null; statsOk = false; claimedM = {}; dailyTab = 'streak'; closeDaily(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
     leaderBest = 0; loadWallet(); applyCosmetics(); setInitial(); renderScores(); setAuthMode('in'); renderMenu(); fetchLeader();
   }
   function beginSession(j, name) {                                 // guarda la sesión con lo que devolvió Firebase; email = el correo real de la cuenta ('' si aún tiene el interno)
@@ -2819,7 +3004,7 @@
       player = { id: j.localId, name, best: 0, dirty: false }; savePlayer();
       mailNote = authMode === 'up' ? '✅ Cuenta creada. Te enviamos un enlace a tu correo para verificarlo (mira también el correo no deseado).' : '';
       $('pass').value = ''; $('acct').value = ''; $('acctMail').value = '';
-      loadWallet(); applyCosmetics(); await pullWallet(); applyCosmetics(); pullStreak().then(() => { renderStreak(); autoDaily(); });
+      loadWallet(); applyCosmetics(); await pullWallet(); applyCosmetics(); pullStreak().then(() => { renderStreak(); autoDaily(); }); pullMissions();
       if (pending) claimRun().then(renderCoins);                   // cobra una partida que quedó pendiente
       setInitial(); renderMenu(); await loadMine(); fetchLeader(); mailBoot();
     } catch (err) { msg.textContent = authMode === 'in' && /INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND/.test(err.message) && !isMail(idIn) ? 'Nombre o contraseña incorrectos. Si ya agregaste tu correo a la cuenta, entra con tu correo.' : authErr(err.message); }
@@ -3022,7 +3207,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v49';
+  const BUILD = 'v50';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3069,7 +3254,7 @@
     $('finalSub').textContent = `Aguantaste ${fmtClock(elapsed)} · ${curCh().name} ${curCh().g === 'p' ? 'llegaron' : 'llegó'} a ${phaseName()}\n${(itemOf('ball', wallet.eq.ball) || CAT.ball[0]).n} · ${money(gameRate)} por punto`;
     $('bestResult').textContent = record ? '🎉 ¡Nuevo récord personal!' : `Tu mejor puntaje: ${player.best}`;
     renderScores(); setHero(); makeRain(hits >= P_DEVIL); setEnd(true); setThemeActive(false); document.body.classList.remove('hell', 'dark');
-    const cl = $('coinsLine'), st = $('saveStatus'); st.className = 'status'; st.textContent = ''; cl.textContent = ''; $('timeLine').textContent = '';
+    const cl = $('coinsLine'), st = $('saveStatus'); st.className = 'status'; st.textContent = ''; cl.textContent = ''; $('timeLine').textContent = ''; $('missLine').textContent = '';
     $('diagBtn').hidden = true; $('diagOut').hidden = true;
     tone(300, .35, 'sawtooth', .1, 120);
     show('result');
@@ -3194,7 +3379,7 @@
   measure(); layout(); setInitial(); duckLook(); renderMenu();
   leaderBest = player.best; renderScores();
   target.style.visibility = 'hidden';
-  if (AUTH && session) { loadMine(); mailBoot(); pullWallet().then(() => { applyCosmetics(); renderMenu(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => { renderStreak(); autoDaily(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
+  if (AUTH && session) { loadMine(); mailBoot(); pullMissions(); pullWallet().then(() => { applyCosmetics(); renderMenu(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => { renderStreak(); autoDaily(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
   fetchLeader();
 })();
 </script>

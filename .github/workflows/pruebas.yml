@@ -28,6 +28,9 @@ jobs:
       - name: Emblema de perfil de punta a punta
         working-directory: pruebas
         run: node perfil.test.js
+      - name: Misiones (estadísticas, misiones del día, logros y premios exactos)
+        working-directory: pruebas
+        run: node misiones.test.js
       - name: Marcador de tiempo jugado (sumar, Top 25 y reglas sin publicar)
         working-directory: pruebas
         run: node tiempo.test.js

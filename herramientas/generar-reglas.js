@@ -52,6 +52,30 @@ eq['$other'] = { '.validate': false };
 const TI = ECO.tiempo, RV = f => `${RUN}.child('${f}').val()`;
 const DUR = `(${RV('e')} - ${RV('s')})`, CAP = `(${RV('h')} * ${TI.msPorRebote} + ${TI.holguraMs})`;
 const TIMEINC = `(${DUR} < ${CAP} ? ${DUR} : ${CAP})`;
+// misiones: estadísticas que solo suben al cobrar partidas de verdad (stats), logros de una sola vez (missions) y 3 misiones por día (dc = casillas ya cobradas hoy).
+const M = ECO.misiones, W_ROOT = "root.child('wallets').child($uid)", OLDP = 'data.parent()';
+const bit = (v, k) => `(${v} % ${2 ** (k + 1)} >= ${2 ** k})`;                              // ¿está encendido el bit k de v?
+const DSAME = `(${OLDP}.child('d').exists() && ${OLDP}.child('d').val() === newData.parent().child('d').val())`;       // el contador del día ya era de hoy
+// una partida se suma una sola vez a las estadísticas: su `sl` pasa a ser la partida cobrada y antes era una anterior
+const FRESH = `newData.parent().child('sl').val() === ${RV('s')} && (!${OLDP}.child('sl').exists() || ${OLDP}.child('sl').val() < ${RV('s')})`;
+const STAT = { g: 'dg', r: 'dr', m: 'dm' };
+// misión de la casilla k del día: se elige entre 3 según la fecha ((día × 5 + 2k) % 7 % 3), igual para todos
+const pickJ = k => `((${TODAY} * 5 + ${2 * k}) % 7 % 3)`;
+const condDia = k => { const j = pickJ(k), d = M.dia[k].de; return `(${j} === 0 ? newData.parent().child('${STAT[d[0][0]]}').val() >= ${d[0][1]} : ${j} === 1 ? newData.parent().child('${STAT[d[1][0]]}').val() >= ${d[1][1]} : newData.parent().child('${STAT[d[2][0]]}').val() >= ${d[2][1]})`; };
+const condLogro = (tipo, meta) => ({
+  g: `root.child('stats').child($uid).child('g').val() >= ${meta}`,
+  r: `root.child('stats').child($uid).child('r').val() >= ${meta}`,
+  b: `root.child('scores').child($uid).child('s').val() >= ${meta}`,
+  s: `root.child('streaks').child($uid).child('n').val() >= ${meta}`,
+  e: `${W_ROOT}.child('av').exists()`,
+  c: `${W_ROOT}.child('sp').val() >= ${meta}`,
+  v: `auth.token.email_verified === true && !auth.token.email.endsWith('${MAIL}')`
+})[tipo];
+const NEWM = "newData.parent().parent().parent().child('missions').child($uid)", OLDM = "root.child('missions').child($uid)";
+const NEWDC = "(newData.parent().parent().parent().child('stats').child($uid).child('dc').exists() ? newData.parent().parent().parent().child('stats').child($uid).child('dc').val() : 0)";
+const OLDDC = "(root.child('stats').child($uid).child('dc').exists() ? root.child('stats').child($uid).child('dc').val() : 0)";
+const MIS_SUM = '(' + M.logros.map(([id, , , premio]) => `(${NEWM}.child('${id}').exists() && !${OLDM}.child('${id}').exists() ? ${premio} : 0)`).join(' + ') + ')';
+const DIA_SUM = '(' + M.dia.map((x, k) => `(${bit(NEWDC, k)} && !${bit(OLDDC, k)} ? ${x.premio} : 0)`).join(' + ') + ')';
 const P = "newData.parent()";
 const rules = { rules: {
   '.read': false, '.write': false,
@@ -133,6 +157,34 @@ const rules = { rules: {
     $other: { '.validate': false }
   } },
 
+  // ---- estadísticas para las misiones: g = partidas · r = rebotes totales · sl = última partida sumada · d = día de los contadores de hoy ·
+  //      dg/dr/dm = partidas, rebotes y mejor partida de hoy · dc = casillas del día ya cobradas (bits 1, 2 y 4). Se escriben después de cobrar la partida (aparte del cobro:
+  //      si fallan, los pesos no se ven afectados), cada partida suma una sola vez y solo cuenta si llegó a `minRebotes`. Los contadores de hoy vuelven a 0 al cambiar el día. ----
+  stats: { $uid: {
+    '.read': 'auth != null && auth.uid === $uid',
+    '.write': 'auth != null && auth.uid === $uid && newData.exists()',
+    '.validate': "newData.hasChildren(['g', 'r', 'sl', 'd', 'dg', 'dr', 'dm', 'dc'])",
+    sl: { '.validate': `newData.isNumber() && newData.val() === ${RV('s')} && ${W_ROOT}.child('lr').val() === newData.val() && ${RUN}.child('e').exists() && ${RV('h')} >= ${M.minRebotes} && (!data.exists() || newData.val() > data.val())` },
+    g: { '.validate': `newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && ${FRESH}` },
+    r: { '.validate': `newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + ${RV('h')} && ${FRESH}` },
+    d: { '.validate': `newData.isNumber() && newData.val() === ${TODAY} && ${FRESH} && (${DSAME} || ${P}.child('dc').val() === 0)` },
+    dg: { '.validate': `newData.isNumber() && newData.val() === (${DSAME} ? ${OLDP}.child('dg').val() : 0) + 1 && ${FRESH}` },
+    dr: { '.validate': `newData.isNumber() && newData.val() === (${DSAME} ? ${OLDP}.child('dr').val() : 0) + ${RV('h')} && ${FRESH}` },
+    dm: { '.validate': `newData.isNumber() && newData.val() === (${DSAME} && ${OLDP}.child('dm').val() > ${RV('h')} ? ${OLDP}.child('dm').val() : ${RV('h')}) && ${FRESH}` },
+    dc: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 7 && ((!${DSAME} && newData.val() === 0) || (${DSAME} && ${P}.child('d').val() === ${TODAY} && newData.val() >= ${'(data.exists() ? data.val() : 0)'}`
+      + ' && ' + M.dia.map((x, k) => `!(${bit('(data.exists() ? data.val() : 0)', k)} && !${bit('newData.val()', k)})`).join(' && ')
+      + ' && ' + M.dia.map((x, k) => `(!(${bit('newData.val()', k)} && !${bit('(data.exists() ? data.val() : 0)', k)}) || ${condDia(k)})`).join(' && ') + '))' },
+    $other: { '.validate': false }
+  } },
+
+  // ---- logros de una sola vez: missions/<uid>/<id> = true. Cada uno solo se puede escribir una vez y solo si las estadísticas (o el dato de la cuenta) ya cumplen la meta;
+  //      el premio en pesos lo valida la cartera (c). No se pueden borrar para cobrar otra vez. ----
+  missions: { $uid: {
+    '.read': 'auth != null && auth.uid === $uid',
+    ...Object.fromEntries(M.logros.map(([id, tipo, meta]) => [id, { '.write': 'auth != null && auth.uid === $uid && !data.exists() && newData.val() === true', '.validate': `newData.val() === true && ${condLogro(tipo, meta)}` }])),
+    $other: { '.validate': false }
+  } },
+
   // ---- cartera: c = pesos ganados · sp = gastados · lr = última partida cobrada · own = compras · eq = lo que llevas puesto ----
   // Los pesos solo suben cobrando UNA partida terminada (exactamente lo que valió) y cada partida se cobra una sola vez.
   wallets: { $uid: {
@@ -143,7 +195,8 @@ const rules = { rules: {
       + " && (newData.val() === (data.exists() ? data.val() : 0)"
       + ` || (${P}.child('lr').exists() && (!data.parent().child('lr').exists() || ${P}.child('lr').val() > data.parent().child('lr').val())`
       + ` && newData.val() - (data.exists() ? data.val() : 0) === ${RUN}.child('p').val())`
-      + ` || (${STR}.child('t').val() === now && newData.val() - (data.exists() ? data.val() : 0) === ${rewardExp(`${STR}.child('n').val()`)}))` },
+      + ` || (${STR}.child('t').val() === now && newData.val() - (data.exists() ? data.val() : 0) === ${rewardExp(`${STR}.child('n').val()`)})`
+      + ` || (${MIS_SUM} + ${DIA_SUM} > 0 && newData.val() - (data.exists() ? data.val() : 0) === ${MIS_SUM} + ${DIA_SUM}))` },
     sp: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && (!data.exists() || newData.val() >= data.val()) && newData.val() <= ${P}.child('c').val()` },
     lr: { '.validate': `newData.isNumber() && newData.val() === ${RUN}.child('s').val() && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val())` },
     av: { '.validate': AVATAR },                                                           // tu foto de perfil (se sincroniza entre tus dispositivos)

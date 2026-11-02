@@ -6,6 +6,25 @@ window.TIENDA = {
   eco: { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500, cMax: 1000000000000,
     // tiempo jugado (marcador «Tiempo jugado»): al terminar cada partida cobrada se suma lo que duró de verdad (el «Aguantaste 1:52 min» del final); las reglas solo dejan sumar hasta lo que tardó la partida en el servidor, con tope de 4,5 s por rebote + 6 s (así dejar el juego abierto no suma horas)
     tiempo: { msPorRebote: 4500, holguraMs: 6000, cuentaMs: 3500 },       // cuentaMs: la cuenta regresiva de cada partida (solo se descuenta de partidas viejas que no guardaron cuánto duraron)
+    // misiones: los premios los verifica el servidor (reglas de Firebase) con estadísticas que solo suben al cobrar partidas de verdad (una partida cuenta desde minRebotes rebotes).
+    // dia: 3 casillas por día (fácil / media / difícil, el premio es fijo por casilla); en cada casilla la misión del día se elige entre las 3 según la fecha (la misma para todos).
+    //      de: [tipo, meta] · g = partidas jugadas hoy · r = rebotes sumados hoy · m = rebotes en una sola partida hoy
+    // logros: [id, tipo, meta, premio] de una sola vez · g = partidas · r = rebotes totales · b = mejor partida · s = días de racha · e = tiene emblema · c = compró algo · v = correo verificado
+    misiones: {
+      minRebotes: 5,
+      dia: [
+        { premio: 80,  de: [['g', 3], ['r', 50], ['m', 20]] },
+        { premio: 180, de: [['g', 5], ['r', 150], ['m', 40]] },
+        { premio: 450, de: [['g', 10], ['r', 400], ['m', 80]] }
+      ],
+      logros: [
+        ['g1', 'g', 1, 50], ['g10', 'g', 10, 150], ['g50', 'g', 50, 500], ['g100', 'g', 100, 1000], ['g500', 'g', 500, 5000],
+        ['b10', 'b', 10, 50], ['b25', 'b', 25, 100], ['b50', 'b', 50, 250], ['b100', 'b', 100, 600], ['b150', 'b', 150, 1500], ['b200', 'b', 200, 4000], ['b300', 'b', 300, 10000],
+        ['r100', 'r', 100, 100], ['r500', 'r', 500, 300], ['r2000', 'r', 2000, 1000], ['r10000', 'r', 10000, 4000],
+        ['s3', 's', 3, 200], ['s7', 's', 7, 1000],
+        ['e1', 'e', 1, 100], ['c1', 'c', 1, 100], ['v1', 'v', 1, 300]
+      ]
+    },
     // Racha diaria: entrar cada día da premios. dias = pesos del día 1 al 7 (el 7 no da pesos: da «pesos dobles» durante dobleMs) · el día cambia a medianoche de Chile en horario de verano (huso -3)
     racha: { dias: [100, 200, 300, 400, 500, 1000, 0], dobleMs: 600000, huso: -3 } },
 
