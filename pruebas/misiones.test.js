@@ -22,7 +22,7 @@ const tab = async (p, id) => { await p.evaluate(i => document.getElementById(i).
   ok('con las reglas publicadas aparece el botón «Misiones» (sin avisos todavía)', await p.isVisible('#openMiss') && !(await p.isVisible('#missBadge')));
   await abrir(p, 'openMiss');
   const dia = await filas(p);
-  ok('«Hoy» muestra 3 misiones: fácil, media y difícil, con más premio cuanto más difícil', dia.length === 3 && dia[0].premio === '$80' && dia[1].premio === '$180' && dia[2].premio === '$450' && /Fácil/.test(dia[0].t) && /Media/.test(dia[1].t) && /Difícil/.test(dia[2].t), JSON.stringify(dia));
+  ok('«Hoy» muestra 3 misiones: fácil, media y difícil, con más premio cuanto más difícil', dia.length === 3 && dia[0].premio === '$100' && dia[1].premio === '$250' && dia[2].premio === '$500' && /Fácil/.test(dia[0].t) && /Media/.test(dia[1].t) && /Difícil/.test(dia[2].t), JSON.stringify(dia));
   const D = hoy(), esperadas = [0, 1, 2].map(k => { const de = MI.dia[k].de[pickJ(D, k)]; return de; });
   const texto = ([t, n]) => t === 'g' ? `Juega ${n} partidas hoy` : t === 'r' ? `Suma ${n} rebotes hoy` : `Llega a ${n} rebotes en una sola partida hoy`;
   ok('las misiones de hoy son las que dice la fecha (igual que en las reglas)', esperadas.every((de, k) => dia[k].t.startsWith(texto(de))), JSON.stringify([esperadas, dia.map(x => x.t)]));
@@ -65,13 +65,13 @@ const tab = async (p, id) => { await p.evaluate(i => document.getElementById(i).
   ok('con las 3 cumplidas el menú avisa con una insignia', await p.isVisible('#missBadge') && +(await p.textContent('#missBadge')) >= 3, await p.textContent('#missBadge'));
   await abrir(p, 'openMiss');
   const hoyF = await filas(p), bt = await boton(p);
-  ok('las 3 de hoy salen listas y el botón suma $710 (80 + 180 + 450)', hoyF.every(f => /ready/.test(f.cls)) && bt.t === 'Reclamar $710', JSON.stringify([bt, hoyF.map(f => f.cls)]));
+  ok('las 3 de hoy salen listas y el botón suma $850 (100 + 250 + 500)', hoyF.every(f => /ready/.test(f.cls)) && bt.t === 'Reclamar $850', JSON.stringify([bt, hoyF.map(f => f.cls)]));
   const antes2 = st.db.wallets[uid].c;
   await p.evaluate(() => document.getElementById('dailyGo').click()); await p.waitForTimeout(4500);
-  ok('se cobran las 3: los pesos suben exactamente $710 y quedan las 3 casillas marcadas', st.db.wallets[uid].c === antes2 + 710 && st.db.stats[uid].dc === 7 && st.denied.length === 0, `${antes2} → ${st.db.wallets[uid].c} dc=${st.db.stats[uid].dc} ${st.denied.join(' || ')}`);
+  ok('se cobran las 3: los pesos suben exactamente $850 y quedan las 3 casillas marcadas', st.db.wallets[uid].c === antes2 + 850 && st.db.stats[uid].dc === 7 && st.denied.length === 0, `${antes2} → ${st.db.wallets[uid].c} dc=${st.db.stats[uid].dc} ${st.denied.join(' || ')}`);
   ok('el botón queda apagado con «Vuelve en…»', (await boton(p)).off && /Vuelve en/.test((await boton(p)).t), JSON.stringify(await boton(p)));
   await p.evaluate(() => document.getElementById('dailyGo').click()); await p.waitForTimeout(800);
-  ok('no hay forma de cobrarlas otra vez el mismo día', st.db.wallets[uid].c === antes2 + 710);
+  ok('no hay forma de cobrarlas otra vez el mismo día', st.db.wallets[uid].c === antes2 + 850);
 
   console.log('Cambio de día');
   const ayer = { ...st.db.stats[uid], d: D - 1, dc: 7, dg: 9, dr: 400, dm: 80 }; st.db.stats[uid] = ayer;
