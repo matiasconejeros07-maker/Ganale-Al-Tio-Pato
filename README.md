@@ -12,3 +12,11 @@ Juego web instalable (PWA) para celulares: rebota la moneda con tu barra, junta 
 **GitHub Pages:** Settings → Pages → *Deploy from a branch* → `main` / `/ (root)`.
 
 **Firebase Hosting:** `npm install -g firebase-tools`, luego `firebase login` y `firebase deploy` (ya viene `firebase.json`; el proyecto está en `.firebaserc`, revísalo con `firebase projects:list`).
+
+## Código abierto
+
+- **Código:** licencia [MIT](LICENSE). Puedes usarlo, modificarlo y publicar tu propia versión.
+- **Arte:** las imágenes y los logos **no** están bajo MIT; lee [ARTE.md](ARTE.md) antes de reutilizarlos.
+- **Colaborar:** lee [CONTRIBUTING.md](CONTRIBUTING.md). Se trabaja con *fork* + *Pull Request* y todo cambio lo revisa quien administra el proyecto.
+- **Seguridad:** si encuentras una vulnerabilidad, avisa en privado ([SECURITY.md](SECURITY.md)).
+- **Tu propia versión:** `config.js` apunta a la base de datos del juego oficial. Crea tu proyecto de Firebase y reemplaza `config.js` y `.firebaserc` (pasos en `LEEME.md`) para no mezclarte con los jugadores del oficial.
