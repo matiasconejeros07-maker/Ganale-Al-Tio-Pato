@@ -1124,6 +1124,8 @@
   let px = 0, pw = 140, basePw = 140, keyDir = 0, dragX = null, dragId = null;
   let duckX = 0, duckShow = 0, prevShow = 0, bubbleTimer = null, bubbleW = 0, lastFace = -1, lastSay = '';
   let cdTimer = null, audio = null;
+  let playT0 = 0, playD0 = 0, lastHitT = 0, tampered = false;
+  const MIN_HIT_MS = 300;   // el ciclo real más corto posible es ~490 ms (ver LEEME)
 
   /* ---------- fases del Tío Pato (todo depende de los rebotes) ---------- */
   const devilK = () => (hits >= P_ANGRY ? 1 : 0);                              // al enojarse: fuera aureola y alas de ángel, entra la piel de diablo (el cambio se suaviza con CSS)
@@ -2179,7 +2181,10 @@
     const top = paddleTop(), tol = catchTol();
     if (vy > 0 && prevY + BY <= top + 2 && y + BY >= top && Math.abs(x - px) <= pw / 2 + tol) {      // toca si lo que se ve de la pelota toca la barra (zona de golpe: la de siempre)
       y = top - BY;
-      hits++;                                                    // ¡un rebote más: aquí se cuenta el puntaje!
+      hits++;
+      const tHit = performance.now();
+      if (lastHitT && tHit - lastHitT < MIN_HIT_MS) tampered = true;
+      lastHitT = tHit;                                                    // ¡un rebote más: aquí se cuenta el puntaje!
       const rt = rateAt(hits), val = gameRate * rt;             // lo que vale este rebote en pesos: lo que paga tu pelota × «monedas dobles»
       const off = clamp((x - px) / (pw / 2 + tol) + (Math.random() - .5) * .3, -1, 1);
       setVel(Math.sin(off * 1.05), -Math.cos(off * 1.05));       // el ángulo depende de dónde pega en la barra
@@ -2231,6 +2236,7 @@
 
   /* ---------- control: arrastrar (en el celular, relativo: el dedo no tapa la barra) · mouse · flechas ---------- */
   function movePaddle(e) {
+    if (!e.isTrusted) return;
     if (state !== 'play' && state !== 'countdown') return;
     const r = field.getBoundingClientRect();
     if (e.pointerType === 'mouse') px = e.clientX - r.left;
@@ -2240,6 +2246,7 @@
     if (state === 'countdown') draw();
   }
   arena.addEventListener('pointerdown', e => {
+    if (!e.isTrusted) return; 
     if (state !== 'play' && state !== 'countdown') return;       // en los menús los botones reciben el toque con normalidad
     hideHint(); dragX = e.clientX; dragId = e.pointerId; try { arena.setPointerCapture(e.pointerId); } catch (_) {}   // si apoyas otro dedo, la barra sigue al último
     movePaddle(e);
@@ -2248,7 +2255,7 @@
   arena.addEventListener('touchmove', e => { if (state === 'play' || state === 'countdown') e.preventDefault(); }, { passive: false });
   const endDrag = e => { if (e.pointerId === dragId) { dragX = null; dragId = null; } };
   arena.addEventListener('pointerup', endDrag); arena.addEventListener('pointercancel', endDrag);
-  const keyOf = e => (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName) ? '' : String(e.key).toLowerCase());     // escribir tu nombre no mueve la barra
+  const keyOf = e => (!e.isTrusted || (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) ? '' : String(e.key).toLowerCase());     // escribir tu nombre no mueve la barra
   addEventListener('keydown', e => {
     const k = keyOf(e);
     if (k === 'arrowleft' || k === 'a') keyDir = -1;
@@ -3154,6 +3161,7 @@
 
   function beginPlay() {
     state = 'play'; slowN = frameN = slowWins = 0;
+    playT0 = performance.now(); playD0 = Date.now(); lastHitT = 0; tampered = false;
     launch(); draw();
     target.style.visibility = 'visible';
     setBig(0);
@@ -3185,6 +3193,8 @@
     const n = Math.max(1, Math.ceil(Math.hypot(vx, vy) * dt / 10));
     for (let i = 0; i < n && state === 'play'; i++) step(dt / n);
     if (state !== 'play') return;
+    if (!tampered && elapsed > 3 && elapsed > Math.max(performance.now() - playT0, Date.now() - playD0) / 1000 * 1.1 + 1) tampered = true;
+    if (tampered) { endGame(); return; }
     trail.push([x, y]); if (trail.length > 9) trail.shift();
     drawFx(dt);
     draw();
@@ -3207,7 +3217,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v51';
+  const BUILD = 'v52';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3248,7 +3258,7 @@
     document.body.classList.remove('ingame');
     $('bubble').classList.remove('on'); big.textContent = ''; clearFx(); hideMult();
 
-    const hp = Math.min(hits, H_MAX), p = gameRate * pesosFor(hp), record = hp > player.best;
+    const hp = tampered ? 0 : Math.min(hits, H_MAX), p = gameRate * pesosFor(hp), record = hp > player.best;
     $('finalScore').textContent = hits;
     $('finalLabel').textContent = hits === 1 ? 'rebote' : 'rebotes';
     $('finalSub').textContent = `Aguantaste ${fmtClock(elapsed)} · ${curCh().name} ${curCh().g === 'p' ? 'llegaron' : 'llegó'} a ${phaseName()}\n${(itemOf('ball', wallet.eq.ball) || CAT.ball[0]).n} · ${money(gameRate)} por punto`;
@@ -3258,7 +3268,7 @@
     $('diagBtn').hidden = true; $('diagOut').hidden = true;
     tone(300, .35, 'sawtooth', .1, 120);
     show('result');
-    if (hp === 0) { cl.textContent = 'Sin pesos esta vez. ¡Rebota más!'; fetchLeader(); return; }
+    if (hp === 0) { cl.textContent = tampered ? 'Partida no válida: se detectó una alteración del tiempo.' : 'Sin pesos esta vez. ¡Rebota más!'; fetchLeader(); return; }
 
     if (!AUTH) {                                                 // modo local: todo queda en este dispositivo
       wallet.c += p; saveWallet(); renderCoins();
@@ -3336,8 +3346,8 @@
   $('tabBg').addEventListener('click', () => { shopTab = 'bg'; renderShop(); });
   $('tabPad').addEventListener('click', () => { shopTab = 'pad'; renderShop(); });
   $('tabBall').addEventListener('click', () => { shopTab = 'ball'; renderShop(); });
-  $('play').addEventListener('click', startCountdown);
-  $('again').addEventListener('click', startCountdown);
+  $('play').addEventListener('click', e => { if (e.isTrusted) startCountdown(); });
+  $('again').addEventListener('click', e => { if (e.isTrusted) startCountdown(); });
   $('close').addEventListener('click', backToMenu);
   $('soundBtn').addEventListener('click', toggleSound); $('togSound').addEventListener('click', toggleSound); $('togVib').addEventListener('click', toggleVib); paintSound();
   let setFrom = null;
@@ -3355,7 +3365,7 @@
   $('openBoard2').addEventListener('click', () => openBoard('result'));
   $('backBoard').addEventListener('click', closeBoard);
   $('refreshBoard').addEventListener('click', manualRefresh);
-  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') startCountdown(); });
+  nameInput.addEventListener('keydown', e => { if (e.isTrusted && e.key === 'Enter') startCountdown(); });
 
   /* ---------- app instalable (PWA) ---------- */
   const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
