@@ -4,8 +4,8 @@
 window.TIENDA = {
   // Economía: cada punto vale lo que paga tu pelota (ball[].rate) multiplicado por «Monedas dobles»: ×1 del punto 1 al 99, ×2 del 100 al 199, ×3 del 200 al 299…
   eco: { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500, cMax: 1000000000000,
-    // tiempo jugado (marcador «Tiempo»): de cada partida cobrada se suma lo que duró, con tope de 4,5 s por rebote + 6 s (una partida de verdad no puede durar más; así dejar el juego abierto no suma horas)
-    tiempo: { msPorRebote: 4500, holguraMs: 6000 },
+    // tiempo jugado (marcador «Tiempo jugado»): al terminar cada partida cobrada se suma lo que duró de verdad (el «Aguantaste 1:52 min» del final); las reglas solo dejan sumar hasta lo que tardó la partida en el servidor, con tope de 4,5 s por rebote + 6 s (así dejar el juego abierto no suma horas)
+    tiempo: { msPorRebote: 4500, holguraMs: 6000, cuentaMs: 3500 },       // cuentaMs: la cuenta regresiva de cada partida (solo se descuenta de partidas viejas que no guardaron cuánto duraron)
     // Racha diaria: entrar cada día da premios. dias = pesos del día 1 al 7 (el 7 no da pesos: da «pesos dobles» durante dobleMs) · el día cambia a medianoche de Chile en horario de verano (huso -3)
     racha: { dias: [100, 200, 300, 400, 500, 1000, 0], dobleMs: 600000, huso: -3 } },
 
