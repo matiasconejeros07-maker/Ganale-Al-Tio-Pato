@@ -928,6 +928,7 @@
       <div class="sub" id="finalSub"></div>
       <div class="coinsline" id="coinsLine"></div>
       <div class="status" id="saveStatus"></div>
+      <div class="status" id="timeLine"></div>
       <button class="link" id="diagBtn" hidden>Ver detalle técnico</button>
       <pre id="diagOut" hidden></pre>
       <div class="best" id="bestResult"></div>
@@ -949,7 +950,7 @@
     <!-- marcadores -->
     <section class="screen" id="board">
       <h1>🏆 Marcadores</h1>
-      <div class="seg boardseg" id="boardKind" role="tablist" hidden><button type="button" id="kindR" class="on" role="tab" aria-selected="true">🏆 Rebotes</button><button type="button" id="kindT" role="tab" aria-selected="false">⏱️ Tiempo</button></div>
+      <div class="seg boardseg" id="boardKind" role="tablist" hidden><button type="button" id="kindR" class="on" role="tab" aria-selected="true">🏆 Rebotes</button><button type="button" id="kindT" role="tab" aria-selected="false">⏱️ Tiempo jugado</button></div>
       <div class="board-note" id="boardNote"></div>
       <div class="board-note" id="boardLeft"></div>
       <ul id="list" aria-live="polite"></ul>
@@ -1707,7 +1708,7 @@
         if (sig !== lastSig) {
           lastSig = sig; const ul = $('list'), top = ul.scrollTop;
           renderBoard(rows, null, mine); ul.scrollTop = top;
-          note.textContent = `Top ${Math.min(rows.length, TOP_N)} · gana quien más tiempo lleva jugando (se cuenta desde que existe este marcador)`;
+          note.textContent = `Top ${Math.min(rows.length, TOP_N)} · gana quien más tiempo lleva jugando (la suma de todas sus partidas, desde que existe este marcador)`;
         }
         return;
       }
@@ -2267,7 +2268,7 @@
       const w = JSON.parse(localStorage.getItem(WKEY()) || 'null');
       if (w) { wallet.c = +w.c || 0; wallet.sp = +w.sp || 0; wallet.lr = +w.lr || 0; wallet.own = w.own || {}; wallet.eq = { ...DEF, ...(w.eq || {}) }; }
       const p = AUTH && session ? JSON.parse(localStorage.getItem(PKEY()) || 'null') : null;
-      if (p && +p.s > 0 && +p.h > 0) pending = { s: +p.s, h: +p.h, r: +p.r || 1, m: +p.m === 2 ? 2 : 1 };
+      if (p && +p.s > 0 && +p.h > 0) pending = { s: +p.s, h: +p.h, r: +p.r || 1, m: +p.m === 2 ? 2 : 1, t: +p.t > 0 ? Math.round(+p.t) : 0 };
     } catch (e) {}
     for (const k in DEF) if (!itemOf(k, wallet.eq[k])) wallet.eq[k] = DEF[k];
   }
@@ -2336,7 +2337,7 @@
   const TIME_KEY = () => 'gana-al-tio-pato-tiempo-' + (session ? session.uid : 'local');
   const getTimePend = () => { try { return JSON.parse(localStorage.getItem(TIME_KEY()) || 'null'); } catch (e) { return null; } };
   const setTimePend = v => { try { v ? localStorage.setItem(TIME_KEY(), JSON.stringify(v)) : localStorage.removeItem(TIME_KEY()); } catch (e) {} };
-  const markTime = s => { const o = getTimePend(); if (!o || o.s !== s) setTimePend({ s, n: 0 }); };
+  const markTime = (s, t) => { const o = getTimePend(); if (!o || o.s !== s) setTimePend({ s, t: t > 0 ? Math.round(t) : 0, n: 0 }); };
   async function syncTime() {
     const pend = AUTH && session ? getTimePend() : null; if (!pend || timing) return;
     timing = true;
@@ -2348,9 +2349,11 @@
       if (!run || run.s !== pend.s || typeof run.e !== 'number' || typeof run.h !== 'number') { setTimePend(null); return; }     // esa partida ya no está: no se puede contar
       if (!row || typeof row.s !== 'number') { setTimePend(null); return; }                                                     // aún no tienes fila en el marcador
       if (row.ml === run.s) { setTimePend(null); return; }                                                                       // ya estaba sumada
-      const inc = Math.min(run.e - run.s, run.h * TIEMPO.msPorRebote + TIEMPO.holguraMs);
-      const w = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify({ [`scores/${uid}/ms`]: (+row.ms || 0) + inc, [`scores/${uid}/ml`]: run.s }) });
-      if (w.ok) setTimePend(null);
+      // se suma lo que duró de verdad la partida (lo que dice «Aguantaste»), sin pasar de lo que tardó en el servidor ni del tope por rebotes (así lo exigen las reglas)
+      const cap = Math.min(run.e - run.s, run.h * TIEMPO.msPorRebote + TIEMPO.holguraMs);
+      const inc = Math.max(0, Math.min(pend.t > 0 ? Math.round(pend.t) : run.e - run.s - TIEMPO.cuentaMs, cap)), total = (+row.ms || 0) + inc;
+      const w = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify({ [`scores/${uid}/ms`]: total, [`scores/${uid}/ml`]: run.s }) });
+      if (w.ok) { setTimePend(null); if (state === 'over') $('timeLine').textContent = `⏱️ +${fmtClock(inc / 1000)} · en total llevas ${fmtPlayed(total)} jugando`; }
       else if (w.status === 401 || w.status === 403) { pend.n = (pend.n || 0) + 1; setTimePend(pend.n >= 3 ? null : pend); }   // (también pasa si aún no se publicaron las reglas nuevas)
     } catch (e) {} finally { timing = false; }
   }
@@ -2366,7 +2369,7 @@
       if (!wr.ok) return wr.status === 401 || wr.status === 403 ? 'denied' : 'error';
       if (!sr.ok) return 'error';                                  // sin saber tu récord no se cobra (si se asumiera 0, el servidor rechazaría la partida entera y se perdería): se reintenta
       const w = (await wr.json()) || {}, sv = await sr.json(), best = +sv || 0, rowExists = typeof sv === 'number';
-      if (+w.lr === pr.s) { pending = null; savePending(); markTime(pr.s); syncTime(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
+      if (+w.lr === pr.s) { pending = null; savePending(); markTime(pr.s, pr.t); syncTime(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
       if (!kr.ok && kr.status !== 401 && kr.status !== 403) return 'error';
       const kv = kr.ok ? await kr.json() : null, mult = boostMult(pr.s, kv && +kv.bx || 0);      // ¿la partida empezó con «pesos dobles»? lo decide la racha que guarda el servidor
       const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h) * mult, body = {}, rowSeen = rowExists;
@@ -2377,12 +2380,12 @@
       if (r.ok) {
         wallet.c = c0 + p; wallet.sp = sp0; wallet.lr = pr.s; saveWallet();
         if (pr.h > player.best) { player.best = pr.h; savePlayer(); }
-        pending = null; savePending(); markTime(pr.s); syncTime(); if (pr.h > best) syncCount(); return 'ok';
+        pending = null; savePending(); markTime(pr.s, pr.t); syncTime(); if (pr.h > best) syncCount(); return 'ok';
       }
       if (r.status === 401 || r.status === 403) {
         const g = await http(`${DB}/wallets/${uid}/lr.json?auth=${tok}`); const lr = g.ok ? await g.json() : null;
         pending = null; savePending();
-        if (lr === pr.s) { markTime(pr.s); syncTime(); await pullWallet(); return 'ok'; }
+        if (lr === pr.s) { markTime(pr.s, pr.t); syncTime(); await pullWallet(); return 'ok'; }
         return 'denied';
       }
       return 'error';
@@ -3019,7 +3022,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v48';
+  const BUILD = 'v49';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3066,7 +3069,7 @@
     $('finalSub').textContent = `Aguantaste ${fmtClock(elapsed)} · ${curCh().name} ${curCh().g === 'p' ? 'llegaron' : 'llegó'} a ${phaseName()}\n${(itemOf('ball', wallet.eq.ball) || CAT.ball[0]).n} · ${money(gameRate)} por punto`;
     $('bestResult').textContent = record ? '🎉 ¡Nuevo récord personal!' : `Tu mejor puntaje: ${player.best}`;
     renderScores(); setHero(); makeRain(hits >= P_DEVIL); setEnd(true); setThemeActive(false); document.body.classList.remove('hell', 'dark');
-    const cl = $('coinsLine'), st = $('saveStatus'); st.className = 'status'; st.textContent = ''; cl.textContent = '';
+    const cl = $('coinsLine'), st = $('saveStatus'); st.className = 'status'; st.textContent = ''; cl.textContent = ''; $('timeLine').textContent = '';
     $('diagBtn').hidden = true; $('diagOut').hidden = true;
     tone(300, .35, 'sawtooth', .1, 120);
     show('result');
@@ -3091,7 +3094,7 @@
       $('bestResult').textContent = `Tu mejor puntaje: ${player.best}`; $('diagBtn').hidden = false; return;
     }
     const mult = boostMult(rn.s, streak && streak.bx), pp = p * mult;                              // «pesos dobles» de la racha: vale si la partida empezó dentro de los 10 minutos
-    pending = { s: rn.s, h: hp, r: rn.r, m: mult }; savePending(); renderCoins();
+    pending = { s: rn.s, h: hp, r: rn.r, m: mult, t: Math.round(elapsed * 1000) }; savePending(); renderCoins();          // t = lo que duró de verdad la partida (el «Aguantaste» de abajo): es lo que se suma al tiempo jugado
     if (mult === 2) $('finalSub').textContent += '\n⚡ ¡Pesos dobles de tu racha!';
     countUp(cl, pp, n => `+${money(n)}`);
     st.textContent = 'Guardando tu partida…';
