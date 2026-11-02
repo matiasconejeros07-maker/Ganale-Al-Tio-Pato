@@ -40,6 +40,19 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
 - **Pasos en la consola de Firebase:** (1) publicar `firebase-rules.json` **antes o justo con** esta versión, o las cuentas nuevas no podrán crearse (el juego avisa que faltan las reglas); (2) Authentication → Plantillas → editar «Verificación de correo», «Restablecer contraseña» y «Cambio de correo» y poner el idioma en español (opcional, solo cambia el texto del correo). No hace falta tocar la protección contra enumeración.
 - **Límites honestos:** quien no abre el enlace queda con el correo «sin verificar»: la cuenta funciona igual, pero no hay garantía de que el correo sea suyo. Un tramposo con un programa podría reservar el nombre de una cuenta antigua que nunca volvió a abrir el juego y no está en el marcador (solo afecta cómo se ve el nombre). No pude probar el cambio de correo contra el Firebase real (mi entorno no llega a él): las pruebas usan un Firebase de mentira que imita la protección contra enumeración.
 
+## Misiones (premios por jugar)
+
+En el menú hay un botón **🎯 Misiones** (con una insignia cuando hay premios por reclamar) y la ventana de la racha tiene tres pestañas: **🔥 Racha · 🎯 Hoy · 🏅 Logros**. Hace falta cuenta (como la racha).
+
+- **Misiones de hoy (3 por día, iguales para todos):** una **fácil ($80)**, una **media ($180)** y una **difícil ($450)**: a más difícil, más premio. Cada casilla elige su misión entre 3 según la fecha (fácil: jugar 3 partidas · sumar 50 rebotes · llegar a 20 en una partida; media: 5 partidas · 150 rebotes · llegar a 40; difícil: 10 partidas · 400 rebotes · llegar a 80). Se renuevan a medianoche (hora de Chile) y se cobran todas juntas con un botón.
+- **Logros (de una sola vez):** 21, con premios de $50 a $10.000: partidas jugadas (1, 10, 50, 100, 500), mejor partida (10, 25, 50, **100 = $600**, 150, 200, 300 rebotes), rebotes totales (100 a 10.000), racha de 3 y de 7 días, crear tu emblema, comprar tu primer artículo y **verificar tu correo ($300)**. Los más difíciles pagan más. Se pueden cobrar varios a la vez. Sumados valen $30.300.
+- **Todo está en el catálogo** (`tienda.js` → `eco.misiones`): premios, metas y qué misión corresponde a cada casilla. Después de cambiarlo hay que correr `node herramientas/generar-reglas.js` y volver a publicar `firebase-rules.json` (el servidor es quien lo comprueba).
+- **Cómo se protege (las reglas de Firebase lo comprueban todo, el juego solo muestra y pide el cobro):**
+  - **Estadísticas** (`stats/<uid>`): partidas, rebotes totales y lo de hoy solo suben al cobrar una partida **verificada** (la misma del cobro de pesos), una sola vez por partida, y solo cuentan las de **5 rebotes o más** (`minRebotes`). Los contadores de hoy vuelven a 0 al cambiar el día. Se escriben **aparte del cobro**: si fallan, los pesos no se ven afectados.
+  - **Logros** (`missions/<uid>/<id>`): solo se pueden escribir una vez, solo si las estadísticas (o el dato de la cuenta: récord, racha, emblema, gasto, correo verificado) ya cumplen la meta, y no se pueden borrar para cobrar otra vez.
+  - **Pesos:** la cartera solo sube **exactamente** lo que valen las misiones que se marcan en esa misma escritura (si pides más, menos o una misión que no cumples, Firebase rechaza todo el cobro). 377 pruebas de reglas lo comprueban.
+- **Límite honesto:** un programa que juegue partidas de 5 rebotes puede cobrar las misiones fáciles; como mucho se llevaría los premios del día ($710) y los logros una vez ($30.300 por cuenta), y cada partida le exige tiempo real (mínimo 0,45 s por rebote). No hay forma de inventar estadísticas ni de cobrar dos veces.
+
 ## Pesos y tienda
 
 - **Eslogan: «¡Rebota, gana y hazte millonario! 💰»** (aparece en el menú).

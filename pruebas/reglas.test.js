@@ -11,12 +11,12 @@ const pesosFor = (h, r = 1) => { const t = Math.floor(h / E); return r * (h + E 
 const START = { s: { '.sv': 'timestamp' }, b: 'peso1', r: 1 };
 let pass = 0, fail = 0;
 const N = Date.now(), T0 = N, SV = { '.sv': 'timestamp' };
-const A = (uid, email = 'matias@tio-pato.invalid') => ({ uid, token: { email } });
+const A = (uid, email = 'matias@tio-pato.invalid', ev = false) => ({ uid, token: { email, email_verified: ev } });
 // targaryen ignora with({now}) y usa la hora real: se desplazan hacia atrás las horas guardadas y escritas para simular 'now'
-const isT = (k, v) => ['s', 'e', 'lr', 't', 'bx', 'ml'].includes(k) && typeof v === 'number' && v >= 1e12;       // horas en ms (los puntajes y rebotes son números chicos)
+const isT = (k, v) => ['s', 'e', 'lr', 't', 'bx', 'ml', 'sl'].includes(k) && typeof v === 'number' && v >= 1e12;       // horas en ms (los puntajes y rebotes son números chicos)
 function shiftObj(o, off) { if (!o || typeof o !== 'object') return o; const c = Array.isArray(o) ? [] : {}; for (const k in o) c[k] = (o[k] && typeof o[k] === 'object' && !o[k]['.sv']) ? shiftObj(o[k], off) : (isT(k, o[k]) ? o[k] - off : o[k]); return c; }
-function db(data, now, uid = 'u1', email) {
-  const off = now - Date.now(), base = () => targaryen.database(rules, shiftObj(data || {}, off)).as(A(uid, email));
+function db(data, now, uid = 'u1', email, ev) {
+  const off = now - Date.now(), base = () => targaryen.database(rules, shiftObj(data || {}, off)).as(A(uid, email, ev));
   const sh = (path, v) => (v && typeof v === 'object' && !v['.sv']) ? shiftObj(v, off) : (isT(path.split('/').pop(), v) ? v - off : v);
   return {
     write: (p, v) => base().write(p, sh(p, v)),
@@ -433,6 +433,94 @@ console.log('Tiempo jugado');
   ok('el tiempo no puede ser decimal', as(base(), inc(59999.5)), false);
   ok('el tiempo a mano, sin partida', db({ scores: { u1: fila() } }, T0).write('/scores/u1/ms', 99999999), false);
   ok('los demás pueden leer el tiempo de cada cuenta en el marcador', db({ scores: { u1: fila({ ms: 60000, ml: T0 }) } }, T0, 'u2').read('/scores'), true);
+}
+
+// ---------- misiones: estadísticas, logros y misiones del día ----------
+console.log('Misiones: estadísticas');
+const MI = ECO.misiones, DAYMS = 86400000, HUSO = -3 * 3600000;
+const hoy = () => Math.floor((Date.now() + HUSO) / DAYMS);
+const pick = (d, k) => ((d * 5 + 2 * k) % 7) % 3;
+{
+  const D = hoy();
+  const run = (h = 60, lr = T0) => ({ runs: { u1: { s: T0, b: 'peso1', r: 1, e: T0 + 60000, h, p: h } }, wallets: { u1: { c: 5000, sp: 0, lr } }, scores: { u1: { n: 'Matías', k: 'matias', s: h, t: T0 - 100, c: h } } });
+  const as = (data, upd, uid = 'u1') => db(data, T0 + 70000, uid).update('/', upd);
+  const S = (o = {}) => ({ g: 3, r: 100, sl: T0 - 900000, d: D, dg: 2, dr: 50, dm: 40, dc: 3, ...o });
+  const sync = (h, old, over = {}) => ({ 'stats/u1/g': old.g + 1, 'stats/u1/r': old.r + h, 'stats/u1/sl': T0, 'stats/u1/d': D, 'stats/u1/dg': (old.d === D ? old.dg : 0) + 1, 'stats/u1/dr': (old.d === D ? old.dr : 0) + h, 'stats/u1/dm': old.d === D ? Math.max(old.dm, h) : h, ...(old.d === D ? {} : { 'stats/u1/dc': 0 }), ...over });
+  const primera = { 'stats/u1/g': 1, 'stats/u1/r': 60, 'stats/u1/sl': T0, 'stats/u1/d': D, 'stats/u1/dg': 1, 'stats/u1/dr': 60, 'stats/u1/dm': 60, 'stats/u1/dc': 0 };
+  ok('la primera partida crea las estadísticas', as(run(), primera), true);
+  ok('otra partida del mismo día se suma (partidas, rebotes, de hoy y la mejor de hoy)', as({ ...run(70), stats: { u1: S() } }, sync(70, S())), true);
+  ok('la mejor de hoy no baja si la nueva partida fue peor', as({ ...run(30), stats: { u1: S({ dm: 40 }) } }, sync(30, S({ dm: 40 }), { 'stats/u1/dm': 40 })), true);
+  ok('la misma partida dos veces', as({ ...run(), stats: { u1: S({ sl: T0 }) } }, sync(60, S({ sl: T0 }))), false);
+  ok('contar dos partidas con una sola', as({ ...run(), stats: { u1: S() } }, sync(60, S(), { 'stats/u1/g': 5 })), false);
+  ok('rebotes inventados', as({ ...run(), stats: { u1: S() } }, sync(60, S(), { 'stats/u1/r': 9999 })), false);
+  ok('mejor de hoy inflada', as({ ...run(), stats: { u1: S() } }, sync(60, S(), { 'stats/u1/dm': 500 })), false);
+  ok('una partida que no se cobró todavía no cuenta', as({ ...run(60, T0 - 80000), stats: { u1: S() } }, sync(60, S())), false);
+  ok('una partida de menos de ' + MI.minRebotes + ' rebotes no cuenta', as({ ...run(MI.minRebotes - 1), stats: { u1: S() } }, sync(MI.minRebotes - 1, S())), false);
+  ok('una de ' + MI.minRebotes + ' rebotes sí', as({ ...run(MI.minRebotes), stats: { u1: S() } }, sync(MI.minRebotes, S())), true);
+  const ayer = S({ d: D - 1, dc: 7, dg: 9, dr: 400, dm: 80 });
+  ok('al cambiar el día los contadores de hoy vuelven a empezar (y las casillas cobradas a 0)', as({ ...run(), stats: { u1: ayer } }, sync(60, ayer)), true);
+  ok('… si se olvida poner las casillas en 0', as({ ...run(), stats: { u1: ayer } }, sync(60, ayer, { 'stats/u1/dc': undefined })), false);
+  ok('… ni arrastrar los contadores de ayer', as({ ...run(), stats: { u1: ayer } }, sync(60, ayer, { 'stats/u1/dg': 10 })), false);
+  ok('un día que no es hoy', as({ ...run(), stats: { u1: S() } }, sync(60, S(), { 'stats/u1/d': D + 1 })), false);
+  ok('las estadísticas de otra cuenta', as({ ...run(), stats: { u2: S() } }, sync(60, S()), 'u2'), false);
+  ok('borrar las estadísticas', db({ ...run(), stats: { u1: S() } }, T0).write('/stats/u1', null), false);
+  ok('borrar un contador', db({ ...run(), stats: { u1: S() } }, T0).write('/stats/u1/dg', null), false);
+  ok('subir un contador a mano', db({ ...run(), stats: { u1: S() } }, T0).write('/stats/u1/g', 999), false);
+  ok('leer tus estadísticas', db({ stats: { u1: S() } }, T0).read('/stats/u1'), true);
+  ok('leer las de otra cuenta', db({ stats: { u1: S() } }, T0, 'u2').read('/stats/u1'), false);
+
+  console.log('Misiones: logros de una sola vez');
+  const cart = (c = 5000) => ({ wallets: { u1: { c, sp: 0, lr: T0 - 99999 } } });
+  const g = { ...cart(), stats: { u1: S({ g: 12, r: 700, dc: 0 }) }, scores: { u1: { n: 'M', k: 'matias', s: 120, t: 5, c: 120 } } };
+  const cobra = (ids, extra = {}) => ({ ...Object.fromEntries(ids.map(i => [`missions/u1/${i}`, true])), 'wallets/u1/c': 5000 + ids.reduce((a, i) => a + MI.logros.find(x => x[0] === i)[3], 0), 'wallets/u1/sp': 0, ...extra });
+  ok('«Juega 1 partida» ($50) con 12 partidas jugadas', as(g, cobra(['g1'])), true);
+  ok('«Juega 10 partidas» ($150)', as(g, cobra(['g10'])), true);
+  ok('«Juega 50 partidas» con solo 12', as(g, cobra(['g50'])), false);
+  ok('«Llega a 100 rebotes» ($600) con un récord de 120', as(g, cobra(['b100'])), true);
+  ok('«Llega a 150 rebotes» con un récord de 120', as(g, cobra(['b150'])), false);
+  ok('«Suma 500 rebotes» ($300) con 700', as(g, cobra(['r500'])), true);
+  ok('varios logros a la vez (g1 + g10 + b10 + b25 + b50 + b100 + r100 + r500)', as(g, cobra(['g1', 'g10', 'b10', 'b25', 'b50', 'b100', 'r100', 'r500'])), true);
+  ok('el premio no puede ser mayor que el del logro', as(g, cobra(['b100'], { 'wallets/u1/c': 5601 })), false);
+  ok('ni menor que el del logro', as(g, cobra(['b100'], { 'wallets/u1/c': 5599 })), false);
+  ok('cobrar el logro sin subir los pesos no rompe nada', as(g, cobra(['g1'], { 'wallets/u1/c': 5000 })), true);
+  ok('subir los pesos sin ningún logro', as(g, { 'wallets/u1/c': 5050, 'wallets/u1/sp': 0 }), false);
+  ok('el mismo logro dos veces', as({ ...g, missions: { u1: { g1: true } } }, cobra(['g1'])), false);
+  ok('borrar un logro cobrado (para cobrarlo otra vez)', as({ ...g, missions: { u1: { g1: true } } }, { 'missions/u1/g1': null }), false);
+  ok('un logro que no existe', as(g, { 'missions/u1/regalo': true, 'wallets/u1/c': 9999, 'wallets/u1/sp': 0 }), false);
+  ok('un logro en la cuenta de otro', as(g, { 'missions/u1/g1': true, 'wallets/u1/c': 5050, 'wallets/u1/sp': 0 }, 'u2'), false);
+  ok('«Racha de 3 días» con la racha en 3', as({ ...g, streaks: { u1: { n: 3, t: T0 } } }, cobra(['s3'])), true);
+  ok('«Racha de 7 días» con la racha en 3', as({ ...g, streaks: { u1: { n: 3, t: T0 } } }, cobra(['s7'])), false);
+  ok('«Crea tu emblema» con emblema', as({ ...g, wallets: { u1: { c: 5000, sp: 0, lr: T0 - 99999, av: 'e41A33GGG' } } }, cobra(['e1'])), true);
+  ok('«Crea tu emblema» sin emblema', as(g, cobra(['e1'])), false);
+  ok('«Compra tu primer artículo» habiendo gastado', as({ ...g, wallets: { u1: { c: 5000, sp: 150, lr: T0 - 99999 } } }, cobra(['c1'], { 'wallets/u1/sp': 150 })), true);
+  ok('«Compra tu primer artículo» sin haber gastado', as(g, cobra(['c1'])), false);
+  const ver = (data, upd, email, ev) => db(data, T0 + 70000, 'u1', email, ev).update('/', upd);
+  ok('«Verifica tu correo» con el correo real verificado', ver(g, cobra(['v1']), 'mati@gmail.com', true), true);
+  ok('«Verifica tu correo» con el correo sin verificar', ver(g, cobra(['v1']), 'mati@gmail.com', false), false);
+  ok('«Verifica tu correo» con el correo interno', ver(g, cobra(['v1']), 'matias@tio-pato.invalid', true), false);
+
+  console.log('Misiones: las 3 del día');
+  const casilla = k => { const j = pick(D, k), de = MI.dia[k].de[j], campo = { g: 'dg', r: 'dr', m: 'dm' }[de[0]]; return { campo, meta: de[1] }; };
+  const stats = (cumple = [], extra = {}) => { const s = S({ d: D, dg: 0, dr: 0, dm: 0, dc: 0 }); cumple.forEach(k => { const c = casilla(k); s[c.campo] = c.meta; }); return { ...s, ...extra }; };
+  const cartera = { wallets: { u1: { c: 5000, sp: 0, lr: T0 - 99999 } } };
+  const dia = (st, bits, premio, extra = {}) => ({ 'stats/u1/dc': bits, 'wallets/u1/c': 5000 + premio, 'wallets/u1/sp': 0, ...extra });
+  const premio = k => MI.dia[k].premio;
+  console.log('   misiones de hoy:', [0, 1, 2].map(k => `${premio(k)} = ${casilla(k).campo} ≥ ${casilla(k).meta}`).join(' · '));
+  ok(`casilla fácil ($${premio(0)}) cumplida`, as({ ...cartera, stats: { u1: stats([0]) } }, dia(0, 1, premio(0))), true);
+  ok(`casilla media ($${premio(1)}) cumplida`, as({ ...cartera, stats: { u1: stats([1]) } }, dia(0, 2, premio(1))), true);
+  ok(`casilla difícil ($${premio(2)}) cumplida`, as({ ...cartera, stats: { u1: stats([2]) } }, dia(0, 4, premio(2))), true);
+  ok(`las tres a la vez ($${premio(0) + premio(1) + premio(2)})`, as({ ...cartera, stats: { u1: stats([0, 1, 2]) } }, dia(0, 7, premio(0) + premio(1) + premio(2))), true);
+  ok('casilla sin cumplir', as({ ...cartera, stats: { u1: stats([]) } }, dia(0, 1, premio(0))), false);
+  ok('cobrar la difícil habiendo cumplido solo la fácil', as({ ...cartera, stats: { u1: stats([0]) } }, dia(0, 4, premio(2))), false);
+  ok('premio de la casilla fácil con el monto de la difícil', as({ ...cartera, stats: { u1: stats([0]) } }, dia(0, 1, premio(2))), false);
+  ok('premio de más', as({ ...cartera, stats: { u1: stats([0]) } }, dia(0, 1, premio(0) + 1)), false);
+  ok('cobrar la misma casilla otra vez', as({ ...cartera, stats: { u1: stats([0], { dc: 1 }) } }, dia(0, 1, premio(0))), false);
+  ok('descobrar una casilla (3 → 1) para cobrarla de nuevo', as({ ...cartera, stats: { u1: stats([0, 1], { dc: 3 }) } }, { 'stats/u1/dc': 1 }), false);
+  ok('cobrar la segunda con la primera ya cobrada (1 → 3)', as({ ...cartera, stats: { u1: stats([0, 1], { dc: 1 }) } }, dia(0, 3, premio(1))), true);
+  ok('contadores de ayer: no se pueden cobrar hoy', as({ ...cartera, stats: { u1: stats([0], { d: D - 1 }) } }, dia(0, 1, premio(0))), false);
+  ok('un valor de casillas fuera de rango', as({ ...cartera, stats: { u1: stats([0, 1, 2]) } }, dia(0, 8, premio(0))), false);
+  ok('misión del día y logro en el mismo cobro', as({ ...cartera, stats: { u1: stats([0], { g: 12 }) }, scores: { u1: { n: 'M', k: 'matias', s: 120, t: 5, c: 120 } } }, { ...dia(0, 1, premio(0) + 150 + 50, {}), 'missions/u1/g10': true, 'missions/u1/g1': true }), true);
+  ok('las misiones de la casilla de otro día no las cobra otra cuenta', as({ ...cartera, stats: { u1: stats([0]) } }, dia(0, 1, premio(0)), 'u2'), false);
 }
 
 console.log(`\n${pass} correctas, ${fail} fallas`);
