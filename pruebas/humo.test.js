@@ -12,7 +12,7 @@ const ok = (nombre, cond, extra = '') => { if (cond) { pass++; console.log('  ok
 async function abrir(browser, w, h, extra = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...extra });
   await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: LOCAL }));
-  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length, pt: parts.length }), banner: () => bonusBanner(2, 2), set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
+  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length, pt: parts.length }), banner: () => bonusBanner(2, 2), bolas: () => CAT.ball.map(b => b.id), zona: (id, n) => { fitBall(CAT.ball.find(b => b.id === id)); const o = hits, op = pw; hits = n; const w = padWidth(); pw = w; const tol = catchTol(); hits = o; pw = op; return { visible: w, zona: w + 2 * tol, BH, bx: BX - K }; }, set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
   const p = await ctx.newPage(); const errs = [], csp = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (/Content.Security.Policy|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140)); });
@@ -78,6 +78,21 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     ok('sin lluvia de chispas en el rebote 100 (antes salían 70 de golpe; un rebote normal suelta unas 8-12)', vistas.every(v => v.chispas <= 30), JSON.stringify(vistas.map(v => v.chispas)));
     await p.waitForTimeout(1600);
     ok('el cartel desaparece solo y queda sin animaciones pendientes', await p.evaluate(() => document.getElementById('mult').getAnimations().length === 0 && getComputedStyle(document.getElementById('mult')).opacity === '0'));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
+  console.log('La zona de golpe es igual para todas las pelotas');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    await jugar(p); await p.waitForTimeout(3600);
+    const ids = await p.evaluate(() => window.__g.bolas());
+    const cortes = [0, 25, 50, 75, 100, 125, 150, 200, 300];
+    const tabla = await p.evaluate(([ids, cortes]) => cortes.map(n => ids.map(id => window.__g.zona(id, n))), [ids, cortes]);
+    const peor = tabla.map((fila, i) => ({ n: cortes[i], d: Math.max(...fila.map(x => Math.abs(x.zona - fila[0].zona))) })).sort((a, c) => c.d - a.d)[0];
+    ok(`las ${ids.length} pelotas tienen la misma zona de golpe (el centro de la pelota cuenta si está a ±zona/2 de la barra) con 0, 25, 50, 75, 100, 125, 150, 200 y 300 rebotes`, peor.d < 0.01, JSON.stringify(peor));
+    ok('la barra que se ve nunca baja de 26 px, con ninguna pelota', tabla.every(fila => fila.every(x => x.visible >= 26 - 1e-9)), JSON.stringify(tabla[tabla.length - 1].map(x => x.visible)));
+    ok('y a cada pelota le basta rozar la barra por la punta (la zona nunca es menor que la barra visible)', tabla.every(fila => fila.every(x => x.zona >= x.visible - 1e-9)));
     ok('sin errores de página', errs.length === 0, errs.join('|'));
     await ctx.close();
   }
