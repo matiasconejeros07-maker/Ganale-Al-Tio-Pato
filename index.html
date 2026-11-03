@@ -270,7 +270,7 @@
   body.authup #menu .slogan, body.authup #menu .tag, body.authreset #menu .slogan, body.authreset #menu .tag, body.authup #menu .rec, body.authreset #menu .rec { display: none; }
   body.authup #menu .mid, body.authreset #menu .mid { gap: 6px; }
   #menu .tile.wide[hidden] { display: none; }
-  .authbox [hidden], .mailbody [hidden], .mailbanner[hidden], #mailRow[hidden] { display: none !important; }
+  .authbox [hidden], .mailbody [hidden], .mailbanner[hidden], #mailRow[hidden], #vipRow[hidden] { display: none !important; }
   .seti-mail { font-size: 26px; line-height: 32px; text-align: center; }
   .mailbanner { display: flex; align-items: center; gap: 8px; width: min(100%, 340px); margin: 4px auto 10px; padding: 8px 8px 8px 14px; border-radius: 18px; background: #fff; border: 2px solid #ffc928; box-shadow: 0 4px 12px rgba(0, 0, 0, .12); font-size: 13px; font-weight: 800; text-align: left; line-height: 1.25; }
   .mailbanner span { flex: 1; }
@@ -280,6 +280,12 @@
   .mailbody form { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
   .mailtxt { white-space: pre-line; overflow-wrap: anywhere; margin: 0 0 6px; font-size: 15px; font-weight: 700; line-height: 1.35; color: #44411f; text-align: center; }
   #mailVer { display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: center; }
+  .vipcard { width: 100%; display: flex; flex-direction: column; gap: 4px; text-align: center; padding: 12px 14px; border-radius: 18px; border: 3px solid #c27a00; background: linear-gradient(#fff6c8, #ffe28a); box-shadow: 0 0 0 1px #c27a00, 0 6px 18px rgba(194, 122, 0, .22); }
+  .vipcard b { font-size: 20px; line-height: 1.15; color: #7a4a00; }
+  .vipcard span { font-size: 14px; font-weight: 800; line-height: 1.3; color: #44411f; }
+  .vipok { display: flex; align-items: flex-start; gap: 10px; width: 100%; text-align: left; font-size: 13px; font-weight: 700; line-height: 1.3; color: #44411f; cursor: pointer; }
+  .vipok input { flex: none; width: 22px; height: 22px; margin: 1px 0 0; accent-color: #c27a00; }
+  .vipbody .btn.out2 { width: 100%; }
   .btn.out2 { background: transparent; color: var(--ink); border: 3px solid var(--ink); font-size: 17px; padding: 12px 20px; }
   .btn.out { width: 100%; margin-top: 20px; background: transparent; color: #c0392b; border: 3px solid #c0392b; font-size: 17px; padding: 13px 20px; }
   .btn.out[hidden] { display: none; }
@@ -923,6 +929,7 @@
         <div class="rec" id="bestMenu"></div>
         <!-- con cuentas: entra con tu correo (o con tu nombre, las cuentas antiguas) o crea tu cuenta con correo + nombre de usuario + contraseña -->
         <div class="mailbanner" id="mailBanner" hidden><span id="mailBannerTxt">📧 Protege tu cuenta: agrega tu correo</span><button class="btn mini" id="mailBannerGo" type="button">Agregar</button><button class="mbx" id="mailBannerX" type="button" aria-label="Ahora no">✕</button></div>
+        <div class="mailbanner vipbanner" id="vipBanner" hidden><span>💎 Falta tu WhatsApp para entrar al grupo VIP</span><button class="btn mini" id="vipBannerGo" type="button">Enviar</button><button class="mbx" id="vipBannerX" type="button" aria-label="Ahora no">✕</button></div>
         <form class="authbox" id="authForm" hidden autocomplete="on" novalidate>
           <div class="seg" role="tablist"><button type="button" id="tabIn" class="on" role="tab">Entrar</button><button type="button" id="tabUp" role="tab">Crear cuenta</button></div>
           <input class="field" id="acctMail" name="email" type="email" maxlength="80" placeholder="Tu correo" autocomplete="email" autocapitalize="off" spellcheck="false" aria-label="Tu correo" hidden>
@@ -995,6 +1002,7 @@
       <div class="setrow"><span class="seti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.2 5.8a8.6 8.6 0 0 1 0 12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="setl" id="lblSound">Sonido</span><button class="tog" id="togSound" type="button" role="switch" aria-checked="true" aria-labelledby="lblSound"><span class="tt">SÍ</span><i></i></button></div>
       <div class="setrow"><span class="seti"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="18" rx="2.2"/><path d="M4.5 8v8M2 10.5v3M19.5 8v8M22 10.5v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="setl" id="lblVib">Vibración</span><button class="tog" id="togVib" type="button" role="switch" aria-checked="true" aria-labelledby="lblVib"><span class="tt">SÍ</span><i></i></button></div>
       <div class="setrow" id="mailRow" hidden><span class="seti seti-mail" aria-hidden="true">✉️</span><span class="setl">Correo<small id="mailSt"></small></span><button class="btn mini" id="mailBtn" type="button">Agregar</button></div>
+      <div class="setrow" id="vipRow" hidden><span class="seti seti-mail" aria-hidden="true">💎</span><span class="setl">Grupo VIP<small id="vipSt"></small></span><button class="btn mini" id="vipBtn" type="button">Enviar</button></div>
       <button class="btn out" id="logout" type="button" hidden>Cerrar sesión</button>
       <div class="setver" id="setVer">Versión</div>
     </div>
@@ -1013,6 +1021,23 @@
       </form>
       <div id="mailVer"><button class="btn" id="mResend" type="button">Reenviar enlace</button><button class="btn out2" id="mCheck" type="button">Ya lo verifiqué</button></div>
       <div class="status" id="mailMsg" role="status"></div>
+    </div>
+  </div>
+</div>
+<div class="modal" id="vipModal" role="dialog" aria-modal="true" aria-labelledby="vipTitle">
+  <div class="mcard set">
+    <div class="sethead"><h2 id="vipTitle">Grupo VIP 💎</h2></div>
+    <button class="setx" id="vipClose" type="button" aria-label="Cerrar">✕</button>
+    <div class="setbody mailbody vipbody">
+      <div class="vipcard"><b id="vipHead">¡Desbloqueaste el personaje secreto!</b><span>Ahora tienes acceso exclusivo al grupo VIP 💎</span></div>
+      <p class="mailtxt" id="vipTxt"></p>
+      <form id="vipForm" autocomplete="on" novalidate>
+        <input class="field" id="vipNum" name="tel" type="tel" inputmode="tel" maxlength="24" placeholder="+56 9 1234 5678" autocomplete="tel" aria-label="Tu número de WhatsApp">
+        <label class="vipok"><input type="checkbox" id="vipOk"><span>Acepto que me escriban por WhatsApp para sumarme al grupo VIP. Solo se usará para eso y puedo borrar mi número cuando quiera.</span></label>
+        <button class="btn" id="vipGo" type="submit">Enviar mi número</button>
+      </form>
+      <button class="btn out2" id="vipDel" type="button" hidden>Borrar mi número</button>
+      <div class="status" id="vipMsg" role="status"></div>
     </div>
   </div>
 </div>
@@ -2846,7 +2871,7 @@
       const card = document.createElement('div'); card.className = 'item' + (wallet.eq[shopTab] === it.id ? ' on' : '') + (it.secret ? ' secret' : '') + (it.vip ? ' vip' : '');
       const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = hidden ? 'Personaje secreto' : it.n;
       const nt = document.createElement('div'); nt.className = 'nt';
-      if (hidden) nt.textContent = 'Solo para millonarios. ¿Quién será?';
+      if (hidden) nt.textContent = 'Desbloquea un personaje misterioso y consigue acceso exclusivo al grupo VIP';
       else nt.textContent = shopTab === 'ball' ? `Paga ${money(it.rate)} por punto${it.note ? ' · ' + it.note : ''}` : (it.note || (it.price ? '' : 'Incluido'));
       const btn = document.createElement('button'); btn.type = 'button';
       if (wallet.eq[shopTab] === it.id) { btn.className = 'cur'; btn.textContent = 'Equipado ✓'; btn.disabled = true; }
@@ -2882,6 +2907,7 @@
       } else { wallet.sp += it.price; wallet.own[cat + '_' + it.id] = true; saveWallet(); }
       await equip(cat, it.id);
       shopMsg(`¡Compraste «${it.n}»! Ya lo llevas puesto ✨`, true);
+      if (it.secret && AUTH && session) { vipRec = null; vipFor = session.uid; openVip(true); }       // desbloqueó el personaje secreto: aviso del grupo VIP y su WhatsApp
     } catch (e) { shopMsg('No se pudo comprar. Revisa tu conexión.'); }
     finally { shopBusy = false; renderShop(); }
   }
@@ -2909,7 +2935,7 @@
     $('coinChip').hidden = AUTH && !logged; $('openShop').hidden = AUTH && !logged; $('topbar').hidden = !logged && AUTH;
     if (logged) { const n = cleanName(player.name || session.name) || 'Tú'; $('hello').textContent = n; paintAvatars(); }
     document.body.classList.toggle('authup', AUTH && !logged && authMode === 'up'); document.body.classList.toggle('authreset', AUTH && !logged && authMode === 'reset');
-    renderCoins(); renderStreak(); paintMailBanner();
+    renderCoins(); renderStreak(); paintMailBanner(); paintVip();
     $('bestMenu').textContent = player.best ? `🏆 Tu récord: ${player.best}` : '';
   }
   function setAuthMode(m) {                                        // 'in' = entrar (correo o nombre) · 'up' = crear cuenta (correo + nombre + contraseña) · 'reset' = recuperar la contraseña
@@ -2932,7 +2958,7 @@
     leaderBest = Math.max(leaderBest, player.best); renderMenu(); renderScores(); setInitial(); syncCount();
   }
   function logout() {
-    closeSettings(); session = null; saveSession(); streak = null; streakOk = false; misStats = null; statsOk = false; claimedM = {}; dailyTab = 'streak'; closeDaily(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
+    closeSettings(); closeVip(); session = null; saveSession(); vipRec = undefined; vipFor = ''; streak = null; streakOk = false; misStats = null; statsOk = false; claimedM = {}; dailyTab = 'streak'; closeDaily(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
     leaderBest = 0; loadWallet(); applyCosmetics(); setInitial(); renderScores(); setAuthMode('in'); renderMenu(); fetchLeader();
   }
   function beginSession(j, name) {                                 // guarda la sesión con lo que devolvió Firebase; email = el correo real de la cuenta ('' si aún tiene el interno)
@@ -3013,7 +3039,7 @@
       $('pass').value = ''; $('acct').value = ''; $('acctMail').value = '';
       loadWallet(); applyCosmetics(); await pullWallet(); applyCosmetics(); pullStreak().then(() => { renderStreak(); autoDaily(); }); pullMissions();
       if (pending) claimRun().then(renderCoins);                   // cobra una partida que quedó pendiente
-      setInitial(); renderMenu(); await loadMine(); fetchLeader(); mailBoot();
+      setInitial(); renderMenu(); await loadMine(); fetchLeader(); mailBoot(); vipLoad();
     } catch (err) { msg.textContent = authMode === 'in' && /INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND/.test(err.message) && !isMail(idIn) ? 'Nombre o contraseña incorrectos. Si ya agregaste tu correo a la cuenta, entra con tu correo.' : authErr(err.message); }
     finally { go.disabled = false; go.textContent = authMode === 'up' ? 'Crear cuenta' : 'Entrar'; }
   }
@@ -3217,7 +3243,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v52';
+  const BUILD = 'v53';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3335,6 +3361,12 @@
   $('mailBannerX').addEventListener('click', () => { mailNote = ''; try { localStorage.setItem(MAILX_KEY, String(Date.now())); } catch (e) {} paintMailBanner(); });
   $('mailAdd').addEventListener('submit', addMail); $('mResend').addEventListener('click', resendMail); $('mCheck').addEventListener('click', () => checkMail(false));
   $('mailClose').addEventListener('click', closeMail); $('mailModal').addEventListener('click', e => { if (e.target === $('mailModal')) closeMail(); });
+  $('vipBtn').addEventListener('click', () => { closeSettings(); openVip(false); });
+  $('vipBannerGo').addEventListener('click', () => openVip(false));
+  $('vipBannerX').addEventListener('click', () => { try { localStorage.setItem(VIPX_KEY, String(Date.now())); } catch (e) {} paintVip(); });
+  $('vipForm').addEventListener('submit', saveVip); $('vipDel').addEventListener('click', deleteVip);
+  $('vipClose').addEventListener('click', closeVip); $('vipModal').addEventListener('click', e => { if (e.target === $('vipModal')) closeVip(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && $('vipModal').classList.contains('show')) closeVip(); });
   $('tabUp').addEventListener('click', () => setAuthMode('up'));
   $('eye').addEventListener('click', () => { const p = $('pass'); const show = p.type === 'password'; p.type = show ? 'text' : 'password'; $('eye').textContent = show ? '🙈' : '👁'; });
   $('logout').addEventListener('click', logout);
@@ -3350,9 +3382,88 @@
   $('again').addEventListener('click', e => { if (e.isTrusted) startCountdown(); });
   $('close').addEventListener('click', backToMenu);
   $('soundBtn').addEventListener('click', toggleSound); $('togSound').addEventListener('click', toggleSound); $('togVib').addEventListener('click', toggleVib); paintSound();
+  /* ---------- grupo VIP: el WhatsApp de quien desbloqueó el personaje secreto (vip/<su uid>, solo él lo lee; el administrador lo ve en la consola de Firebase) ---------- */
+  let vipRec = undefined, vipFor = '', vipBusy = false;                // vipRec: undefined = aún no se sabe · null = no ha dejado su número · {w, n, t} = ya lo dejó
+  const SECRET_ID = (CAT.ch.find(c => c.secret) || {}).id || '';
+  const VIPX_KEY = 'gana-al-tio-pato-vip-oculto', VIPX_MS = 3 * 86400000;
+  const vipHidden = () => { try { return Date.now() - (+localStorage.getItem(VIPX_KEY) || 0) < VIPX_MS; } catch (e) { return false; } };
+  const vipOwner = () => !!SECRET_ID && AUTH && !!session && owns('ch', SECRET_ID);
+  const vipKnown = () => (vipFor === (session && session.uid) ? vipRec : undefined);
+  function normPhone(s) {                                          // «+56 9 1234 5678», «9 1234 5678», «56912345678» o un número de otro país con «+» → «+56912345678» ('' si no sirve)
+    let t = String(s || '').replace(/[\s().\-]/g, '');
+    if (t.startsWith('00')) t = '+' + t.slice(2);
+    if (/^9\d{8}$/.test(t)) t = '+56' + t;
+    else if (/^569\d{8}$/.test(t)) t = '+' + t;
+    if (!/^\+[1-9]\d{7,14}$/.test(t)) return '';
+    if (t.startsWith('+56') && !/^\+569\d{8}$/.test(t)) return '';        // en Chile, WhatsApp es de celular: +56 9 y 8 dígitos
+    return t;
+  }
+  const fmtPhone = w => /^\+569\d{8}$/.test(w) ? `+56 9 ${w.slice(4, 8)} ${w.slice(8)}` : String(w);
+  function paintVip() {                                            // aviso del menú y fila de Ajustes
+    const own = vipOwner(), rec = vipKnown();
+    $('vipBanner').hidden = !(own && rec === null && !vipHidden());
+    $('vipRow').hidden = !own;
+    if (own) {
+      $('vipSt').textContent = rec ? `${fmtPhone(rec.w)} · ✅ guardado` : rec === null ? 'Déjanos tu WhatsApp para sumarte' : 'Cargando…';
+      $('vipBtn').textContent = rec ? 'Ver' : 'Enviar';
+    }
+  }
+  async function vipLoad() {                                       // ¿ya dejó su número? (solo si tiene el personaje secreto)
+    if (!vipOwner()) { paintVip(); return; }
+    const uid = session.uid;
+    try {
+      const r = await http(`${DB}/vip/${uid}.json?auth=${encodeURIComponent(await idToken())}`);
+      if (!r.ok || !session || session.uid !== uid) return;
+      const v = await r.json(); vipRec = v && typeof v.w === 'string' ? v : null; vipFor = uid;
+    } catch (e) {}
+    paintVip();
+  }
+  function vipMsg(t, ok) { const m = $('vipMsg'); m.textContent = t || ''; m.className = 'status' + (ok ? '' : ' err'); }
+  function openVip(fresh) {
+    if (!vipOwner()) return;
+    const rec = vipKnown();
+    $('vipHead').parentElement.hidden = !fresh;                    // la tarjeta dorada con el mensaje solo aparece al desbloquear
+    $('vipTitle').textContent = fresh ? '¡Felicidades! 🎉' : 'Grupo VIP 💎';
+    $('vipTxt').textContent = rec ? `Tu WhatsApp: ${fmtPhone(rec.w)}\nNos pondremos en contacto por ahí para sumarte al grupo VIP. Si quieres cambiarlo, escribe otro:`
+      : 'Déjanos tu número de WhatsApp para sumarte al grupo VIP. Solo lo usaremos para invitarte.';
+    $('vipNum').value = ''; $('vipOk').checked = false; $('vipGo').textContent = rec ? 'Cambiar mi número' : 'Enviar mi número'; $('vipDel').hidden = !rec; vipMsg('');
+    $('vipModal').classList.add('show'); $('vipNum').focus();
+  }
+  function closeVip() { $('vipModal').classList.remove('show'); paintVip(); }
+  async function saveVip(e) {
+    e.preventDefault(); if (vipBusy || !vipOwner()) return;
+    const w = normPhone($('vipNum').value);
+    if (!w) { vipMsg('Escribe tu número con código de país, por ejemplo +56 9 1234 5678.'); $('vipNum').focus(); return; }
+    if (!$('vipOk').checked) { vipMsg('Marca la casilla para aceptar que te escribamos por WhatsApp.'); return; }
+    vipBusy = true; $('vipGo').disabled = true; vipMsg('Guardando…', true);
+    try {
+      const uid = session.uid, n = cleanName(player.name || session.name) || 'Jugador';
+      const r = await retrying(async () => http(`${DB}/vip/${uid}.json?auth=${encodeURIComponent(await idToken())}&print=silent`, { method: 'PUT', headers: JSONH, body: JSON.stringify({ w, n, t: SV, c: true }) }));
+      if (!r || !r.ok) { vipMsg(r && (r.status === 401 || r.status === 403) ? 'Firebase no permitió guardar tu número (revisa que las reglas nuevas estén publicadas).' : 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.'); return; }
+      vipRec = { w, n, t: Date.now() }; vipFor = uid;
+      $('vipTxt').textContent = `Tu WhatsApp: ${fmtPhone(w)}\nNos pondremos en contacto por ahí para sumarte al grupo VIP. Si quieres cambiarlo, escribe otro:`;
+      $('vipNum').value = ''; $('vipOk').checked = false; $('vipGo').textContent = 'Cambiar mi número'; $('vipDel').hidden = false;
+      vipMsg('¡Listo! Guardamos tu número 💎 Te escribiremos para sumarte al grupo VIP.', true); paintVip();
+    } catch (err) { vipMsg('No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.'); }
+    finally { vipBusy = false; $('vipGo').disabled = false; }
+  }
+  async function deleteVip() {
+    if (vipBusy || !vipOwner()) return;
+    vipBusy = true; $('vipDel').disabled = true; vipMsg('Borrando…', true);
+    try {
+      const uid = session.uid;
+      const r = await retrying(async () => http(`${DB}/vip/${uid}.json?auth=${encodeURIComponent(await idToken())}&print=silent`, { method: 'DELETE' }));
+      if (!r || !r.ok) { vipMsg('No se pudo borrar. Inténtalo de nuevo.'); return; }
+      vipRec = null; vipFor = uid;
+      $('vipTxt').textContent = 'Déjanos tu número de WhatsApp para sumarte al grupo VIP. Solo lo usaremos para invitarte.';
+      $('vipGo').textContent = 'Enviar mi número'; $('vipDel').hidden = true; vipMsg('Borramos tu número. Cuando quieras, puedes dejarlo de nuevo.', true); paintVip();
+    } catch (err) { vipMsg('No se pudo borrar. Revisa tu conexión.'); }
+    finally { vipBusy = false; $('vipDel').disabled = false; }
+  }
+
   let setFrom = null;
   function openSettings() {
-    setFrom = document.activeElement; paintSound(); paintAvState(); paintMail();
+    setFrom = document.activeElement; paintSound(); paintAvState(); paintMail(); paintVip();
     $('setVer').textContent = 'Versión ' + BUILD + (AUTH && session ? ' · ' + (cleanName(player.name || session.name) || '') : '');
     $('settings').classList.add('show'); $('setClose').focus();
   }
@@ -3389,7 +3500,7 @@
   measure(); layout(); setInitial(); duckLook(); renderMenu();
   leaderBest = player.best; renderScores();
   target.style.visibility = 'hidden';
-  if (AUTH && session) { loadMine(); mailBoot(); pullMissions(); pullWallet().then(() => { applyCosmetics(); renderMenu(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => { renderStreak(); autoDaily(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
+  if (AUTH && session) { loadMine(); mailBoot(); pullMissions(); pullWallet().then(() => { applyCosmetics(); renderMenu(); vipLoad(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => { renderStreak(); autoDaily(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
   fetchLeader();
 })();
 </script>

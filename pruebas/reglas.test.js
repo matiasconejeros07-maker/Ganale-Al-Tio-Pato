@@ -523,5 +523,35 @@ const pick = (d, k) => ((d * 5 + 2 * k) % 7) % 3;
   ok('las misiones de la casilla de otro día no las cobra otra cuenta', as({ ...cartera, stats: { u1: stats([0]) } }, dia(0, 1, premio(0)), 'u2'), false);
 }
 
+// ---------- grupo VIP: el WhatsApp de quien desbloqueó el personaje secreto ----------
+console.log('Grupo VIP (WhatsApp)');
+{
+  const SEC = cx.window.TIENDA.ch.find(c => c.secret).id, TIENE = { wallets: { u1: { c: 5e8, sp: 1e8, own: { ['ch_' + SEC]: true } } } }, SIN = { wallets: { u1: { c: 5e8, sp: 0 } } };
+  const rec = (o = {}) => ({ w: '+56912345678', n: 'Matías', t: SV, c: true, ...o });
+  const guardar = (data, v, uid = 'u1') => db(data, T0, uid).write('/vip/u1', v);
+  ok('quien tiene el personaje secreto deja su WhatsApp', guardar(TIENE, rec()), true);
+  ok('número de otro país (+54 9 11 2345 6789)', guardar(TIENE, rec({ w: '+5491123456789' })), true);
+  ok('sin el personaje secreto no se puede', guardar(SIN, rec()), false);
+  ok('sin cartera tampoco', guardar({}, rec()), false);
+  ok('comprar otro personaje no sirve', guardar({ wallets: { u1: { c: 9e6, sp: 1e6, own: { ch_conejo: true } } } }, rec()), false);
+  ok('el número de otra cuenta (u2 escribe en vip/u1)', guardar(TIENE, rec(), 'u2'), false);
+  ok('sin sesión', targaryen.database(rules, shiftObj(TIENE, 0)).as(null).write('/vip/u1', rec()), false);
+  for (const [m, w] of [['sin el «+»', '56912345678'], ['con espacios', '+56 9 1234 5678'], ['muy corto', '+5691234'], ['con letras', '+5691234abcd'], ['con 16 dígitos', '+1234567890123456'], ['que empieza en 0', '+0123456789'], ['con un texto largo', '+56912345678 llámame']])
+    ok(`número ${m}`, guardar(TIENE, rec({ w })), false);
+  ok('sin aceptar que le escriban (c)', guardar(TIENE, rec({ c: false })), false);
+  ok('sin el campo c', guardar(TIENE, { w: '+56912345678', n: 'M', t: SV }), false);
+  ok('con una hora inventada', guardar(TIENE, rec({ t: T0 - 5000 })), false);
+  ok('con un campo extra', guardar(TIENE, rec({ extra: 1 })), false);
+  ok('con un nombre vacío', guardar(TIENE, rec({ n: '' })), false);
+  ok('con un nombre larguísimo', guardar(TIENE, rec({ n: 'x'.repeat(41) })), false);
+  ok('cambiar su número por otro', guardar({ ...TIENE, vip: { u1: { w: '+56911111111', n: 'M', t: T0 - 9e5, c: true } } }, rec({ w: '+56922222222' })), true);
+  ok('borrar su número', db({ ...TIENE, vip: { u1: { w: '+56911111111', n: 'M', t: T0 - 9e5, c: true } } }, T0).write('/vip/u1', null), true);
+  ok('borrar el número de otra cuenta', db({ ...TIENE, vip: { u1: { w: '+56911111111', n: 'M', t: T0 - 9e5, c: true } } }, T0, 'u2').write('/vip/u1', null), false);
+  ok('leer su propio número', db({ ...TIENE, vip: { u1: { w: '+56911111111', n: 'M', t: T0 - 9e5, c: true } } }, T0).read('/vip/u1'), true);
+  ok('leer el número de otra cuenta', db({ ...TIENE, vip: { u1: { w: '+56911111111', n: 'M', t: T0 - 9e5, c: true } } }, T0, 'u2').read('/vip/u1'), false);
+  ok('listar todos los números', db({ ...TIENE, vip: { u1: { w: '+56911111111', n: 'M', t: T0 - 9e5, c: true } } }, T0).read('/vip'), false);
+  ok('leer los números sin sesión', targaryen.database(rules, shiftObj({ vip: { u1: { w: '+56911111111', n: 'M', t: 1, c: true } } }, 0)).as(null).read('/vip/u1'), false);
+}
+
 console.log(`\n${pass} correctas, ${fail} fallas`);
 process.exit(fail ? 1 : 0);

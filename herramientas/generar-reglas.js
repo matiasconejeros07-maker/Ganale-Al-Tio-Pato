@@ -9,6 +9,7 @@ vm.runInContext(fs.readFileSync(path.join(dir, 'tienda.js'), 'utf8'), ctx);
 const T = ctx.window.TIENDA, ECO = T.eco, E = ECO.tier;
 const CATS = ['ch', 'bg', 'pad', 'ball'];
 const MAIL = '@tio-pato.invalid';
+const SECRET = T.ch.find(c => c.secret).id;       // el personaje secreto (sus compras se guardan como own/ch_<id>)
 // pesos por punto de cada pelota (ball[].rate): se escribe como una cadena de «?:» sobre el id de la pelota que quedó anotada al empezar la partida
 const rateExp = b => '(' + T.ball.map(i => `${b} === '${i.id}' ? ${i.rate}`).join(' : ') + ' : 0)';
 
@@ -191,6 +192,21 @@ const rules = { rules: {
   missions: { $uid: {
     '.read': 'auth != null && auth.uid === $uid',
     ...Object.fromEntries(M.logros.map(([id, tipo, meta]) => [id, { '.write': 'auth != null && auth.uid === $uid && !data.exists() && newData.val() === true', '.validate': `newData.val() === true && ${condLogro(tipo, meta)}` }])),
+    $other: { '.validate': false }
+  } },
+
+  // ---- grupo VIP: vip/<uid> = el WhatsApp que deja quien desbloqueó el personaje secreto, para invitarle al grupo.
+  //      w = número con código de país (+56912345678) · n = su nombre · t = hora en que lo dejó (la pone el servidor) · c = aceptó que le escriban.
+  //      Solo su dueña lo lee y lo escribe, y solo si ya tiene el personaje secreto; puede borrarlo cuando quiera. Nadie más lo ve (ni se puede listar):
+  //      quien administra el proyecto lo lee desde la consola de Firebase. ----
+  vip: { $uid: {
+    '.read': 'auth != null && auth.uid === $uid',
+    '.write': `auth != null && auth.uid === $uid && (!newData.exists() || root.child('wallets').child($uid).child('own').child('ch_${SECRET}').val() === true)`,
+    '.validate': "newData.hasChildren(['w', 'n', 't', 'c'])",
+    w: { '.validate': "newData.isString() && newData.val().matches(/^\\+[1-9][0-9]{7,14}$/)" },
+    n: { '.validate': 'newData.isString() && newData.val().length >= 1 && newData.val().length <= 40' },
+    t: { '.validate': 'newData.isNumber() && newData.val() === now' },
+    c: { '.validate': 'newData.val() === true' },
     $other: { '.validate': false }
   } },
 

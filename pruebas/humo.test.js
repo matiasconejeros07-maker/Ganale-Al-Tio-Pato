@@ -19,7 +19,7 @@ async function abrir(browser, w, h, extra = {}) {
   await p.goto('file://' + JUEGO + 'index.html'); await p.waitForTimeout(500);
   return { ctx, p, errs, csp };
 }
-const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() => document.getElementById('play').click()); };
+const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play'); };                // con un toque de verdad: el juego ignora los clics fabricados por programa (isTrusted)
 
 (async () => {
   const b = await chromium.launch(fs.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {});
@@ -176,16 +176,16 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
   {
     const { ctx, p } = await abrir(b, 390, 844);
     await jugar(p); await p.waitForTimeout(3300);
-    const r = await p.evaluate(() => {
-      const a = document.getElementById('arena'), ev = (t, id, x, ty = 'touch') => a.dispatchEvent(new PointerEvent(t, { clientX: x, clientY: 400, pointerId: id, pointerType: ty, bubbles: true }));
-      const g = () => window.__g.st().px, o = {};
-      ev('pointerdown', 1, 100); let p0 = g(); ev('pointermove', 1, 120); o.dedo = g() - p0;
-      ev('pointerdown', 2, 200); p0 = g(); ev('pointermove', 1, 150); o.viejoIgnorado = g() - p0;
-      ev('pointerup', 1, 150); p0 = g(); ev('pointermove', 2, 220); o.nuevoSigue = g() - p0;
-      ev('pointerup', 2, 220); p0 = g(); ev('pointermove', 2, 260); o.soltado = g() - p0;
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' })); o.tecla = window.__g.st().keyDir;
-      window.dispatchEvent(new Event('blur')); o.trasBlur = window.__g.st().keyDir;
-      return o; });
+    // con toques y teclas de verdad (CDP): el juego ignora los eventos fabricados por programa (isTrusted)
+    const cdp = await ctx.newCDPSession(p), tc = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([id, x]) => ({ id, x, y: 400 })) });
+    const g = () => p.evaluate(() => window.__g.st().px), r = {};
+    let p0;
+    await tc('touchStart', [[1, 100]]); p0 = await g(); await tc('touchMove', [[1, 120]]); r.dedo = (await g()) - p0;
+    await tc('touchStart', [[1, 120], [2, 200]]); p0 = await g(); await tc('touchMove', [[1, 150], [2, 200]]); r.viejoIgnorado = (await g()) - p0;
+    await tc('touchEnd', [[1, 150]]); p0 = await g(); await tc('touchMove', [[2, 220]]); r.nuevoSigue = (await g()) - p0;
+    await tc('touchEnd', [[2, 220]]); await p.waitForTimeout(120); p0 = await g(); await p.waitForTimeout(120); r.soltado = (await g()) - p0;
+    await p.keyboard.down('ArrowLeft'); r.tecla = await p.evaluate(() => window.__g.st().keyDir);
+    await p.evaluate(() => window.dispatchEvent(new Event('blur'))); r.trasBlur = await p.evaluate(() => window.__g.st().keyDir); await p.keyboard.up('ArrowLeft');
     ok('el dedo mueve la barra (20 px × 1,25 × K)', Math.abs(r.dedo - 25) < 0.5, r.dedo);
     ok('con dos dedos manda el último y soltar el viejo no interrumpe', r.viejoIgnorado === 0 && Math.abs(r.nuevoSigue - 25) < 0.5, JSON.stringify(r));
     ok('sin dedo la barra no se mueve', r.soltado === 0);
@@ -199,7 +199,7 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     ok('el campo de nombre del modo local acepta como máximo 12', await p.evaluate(() => document.getElementById('name').maxLength) === 12);
     await p.fill('#name', 'Nombre muy largo de prueba'); 
     ok('un nombre largo se corta a 12 al jugar', true);
-    await p.evaluate(() => document.getElementById('play').click()); await p.waitForTimeout(500);
+    await p.tap('#play'); await p.waitForTimeout(500);
     await p.reload(); await p.waitForTimeout(600);
     const guardado = await p.inputValue('#name');
     ok('el nombre se recuerda al recargar y tiene 12 o menos', guardado.length > 0 && guardado.length <= 12, JSON.stringify(guardado));
@@ -212,7 +212,7 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.evaluate(() 
     const { ctx, p, errs } = await abrir(b, 390, 844);
     await jugar(p); await p.waitForTimeout(1200);
     ok('la ayuda «Arrastra el dedo» se ve en la cuenta regresiva', await p.evaluate(() => document.getElementById('hint').classList.contains('on')));
-    await p.evaluate(() => document.getElementById('arena').dispatchEvent(new PointerEvent('pointerdown', { clientX: 100, clientY: 400, pointerId: 1, pointerType: 'touch', bubbles: true })));
+    await p.touchscreen.tap(100, 400);
     ok('la ayuda desaparece al tocar', await p.evaluate(() => !document.getElementById('hint').classList.contains('on')));
     await p.evaluate(() => document.getElementById('soundBtn').click());
     const snd = await p.evaluate(() => ({ pressed: document.getElementById('soundBtn').getAttribute('aria-pressed'), ls: localStorage.getItem('gana-al-tio-pato-sonido') }));
