@@ -50,8 +50,19 @@ En el menú hay un botón **🎯 Misiones** (con una insignia cuando hay premios
 - **Cómo se protege (las reglas de Firebase lo comprueban todo, el juego solo muestra y pide el cobro):**
   - **Estadísticas** (`stats/<uid>`): partidas, rebotes totales y lo de hoy solo suben al cobrar una partida **verificada** (la misma del cobro de pesos), una sola vez por partida, y solo cuentan las de **5 rebotes o más** (`minRebotes`). Los contadores de hoy vuelven a 0 al cambiar el día. Se escriben **aparte del cobro**: si fallan, los pesos no se ven afectados.
   - **Logros** (`missions/<uid>/<id>`): solo se pueden escribir una vez, solo si las estadísticas (o el dato de la cuenta: récord, racha, emblema, gasto, correo verificado) ya cumplen la meta, y no se pueden borrar para cobrar otra vez.
-  - **Pesos:** la cartera solo sube **exactamente** lo que valen las misiones que se marcan en esa misma escritura (si pides más, menos o una misión que no cumples, Firebase rechaza todo el cobro). 377 pruebas de reglas lo comprueban.
+  - **Pesos:** la cartera solo sube **exactamente** lo que valen las misiones que se marcan en esa misma escritura (si pides más, menos o una misión que no cumples, Firebase rechaza todo el cobro). más de 400 pruebas de reglas lo comprueban.
 - **Límite honesto:** un programa que juegue partidas de 5 rebotes puede cobrar las misiones fáciles; como mucho se llevaría los premios del día ($850) y los logros una vez ($30.300 por cuenta), y cada partida le exige tiempo real (mínimo 0,45 s por rebote). No hay forma de inventar estadísticas ni de cobrar dos veces.
+
+## Grupo VIP (el WhatsApp de quien desbloquea el personaje secreto)
+
+Quien compra el **Tío Pato Dorado** ($100.000.000) ve una ventana de felicitación («¡Desbloqueaste el personaje secreto! Ahora tienes acceso exclusivo al grupo VIP») donde puede dejar su **número de WhatsApp**. La carta misteriosa de la tienda ya anuncia ese premio.
+
+- **Cómo lo deja:** escribe su número (un celular chileno como `9 1234 5678` se completa a `+56 9 1234 5678`; los de otros países van con `+` y el código) y marca la casilla de que acepta que le escriban. Si cierra la ventana sin enviarlo, el menú le recuerda con un aviso (se puede ocultar por 3 días) y en **Ajustes → Grupo VIP** puede enviarlo, cambiarlo o **borrarlo** cuando quiera. Quien ya tenía el personaje antes de esta versión recibe el mismo aviso.
+- **Dónde se guarda:** Realtime Database → `vip/<uid>` con `w` (número, formato `+56912345678`), `n` (su nombre), `t` (hora, la pone el servidor) y `c` (aceptó que le escriban). Para verlos: consola de Firebase → Realtime Database → Datos → `vip`. El `uid` es el de la cuenta: en Authentication → Usuarios aparece el correo de esa cuenta.
+- **Quién lo ve:** las reglas solo dejan **leer y escribir su propio número a su dueño**, y **solo si ya tiene el personaje secreto** (`wallets/<uid>/own/ch_millonario`). Nadie más puede leerlo ni listarlo desde el juego; tú lo ves desde la consola (que no pasa por las reglas). Las reglas exigen el formato `+` y de 8 a 15 dígitos, la aceptación (`c: true`), una hora que no se puede inventar y ningún campo extra.
+- **Datos personales:** es un dato personal. Úsalo solo para invitar al grupo (es lo que acepta quien lo envía), no lo compartas ni lo publiques, y bórralo si alguien te lo pide. Si quedó mal formateado, el jugador puede corregirlo desde Ajustes. **Al revisar pull requests de otras personas, mira con cuidado cualquier cambio que toque `vip/`, `firebase-rules.json` o envíe datos a otro sitio:** un cambio malicioso podría sacar los números.
+- **Reglas nuevas:** hay que volver a publicar `firebase-rules.json` (agrega el bloque `vip`). Si no están publicadas, el juego lo dice al intentar guardar («revisa que las reglas nuevas estén publicadas») y la compra del personaje no se ve afectada.
+- **Pruebas:** `pruebas/vip.test.js` (juego + reglas reales) y la sección «Grupo VIP» de `pruebas/reglas.test.js`.
 
 ## Pesos y tienda
 

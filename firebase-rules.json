@@ -235,6 +235,28 @@
         }
       }
     },
+    "vip": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && (!newData.exists() || root.child('wallets').child($uid).child('own').child('ch_millonario').val() === true)",
+        ".validate": "newData.hasChildren(['w', 'n', 't', 'c'])",
+        "w": {
+          ".validate": "newData.isString() && newData.val().matches(/^\\+[1-9][0-9]{7,14}$/)"
+        },
+        "n": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+        },
+        "t": {
+          ".validate": "newData.isNumber() && newData.val() === now"
+        },
+        "c": {
+          ".validate": "newData.val() === true"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
     "wallets": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",

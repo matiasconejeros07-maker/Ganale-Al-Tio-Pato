@@ -37,6 +37,9 @@ jobs:
       - name: Correo en las cuentas (crear, agregar a una antigua, verificar y recuperar)
         working-directory: pruebas
         run: node correo.test.js
+      - name: Grupo VIP (WhatsApp de quien desbloquea el personaje secreto)
+        working-directory: pruebas
+        run: node vip.test.js
       - name: Los pesos se suman (sesión vencida, saldos enormes y diagnóstico)
         working-directory: pruebas
         run: node pesos.test.js
