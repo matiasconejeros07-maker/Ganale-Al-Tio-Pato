@@ -35,7 +35,8 @@
       ".indexOn": [
         "s",
         "k",
-        "ms"
+        "ms",
+        "w"
       ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid && (!data.exists() || newData.child('s').val() >= data.child('s').val())",
@@ -64,9 +65,45 @@
         "c": {
           ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 500 && newData.val() === newData.parent().child('s').val() && (!data.exists() || newData.val() > data.val())"
         },
+        "w": {
+          ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && newData.val() === newData.parent().parent().parent().child('wallets').child($uid).child('c').val() - newData.parent().parent().parent().child('wallets').child($uid).child('sp').val()"
+        },
         "$other": {
           ".validate": false
         }
+      }
+    },
+    "weekly": {
+      ".read": true,
+      "$week": {
+        ".indexOn": [
+          "s"
+        ],
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && $week === ((((now + (-10800000) - (now + (-10800000)) % 86400000) / 86400000) + 3 - (((now + (-10800000) - (now + (-10800000)) % 86400000) / 86400000) + 3) % 7) / 7) + ''",
+          ".validate": "newData.hasChildren(['n', 's', 't'])",
+          "n": {
+            ".validate": "newData.isString() && newData.val() === newData.parent().parent().parent().parent().child('scores').child($uid).child('n').val()"
+          },
+          "s": {
+            ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && newData.val() <= 500 && newData.val() === newData.parent().parent().parent().parent().child('stats').child($uid).child('wm').val() && newData.parent().parent().parent().parent().child('stats').child($uid).child('w').val() === ((((now + (-10800000) - (now + (-10800000)) % 86400000) / 86400000) + 3 - (((now + (-10800000) - (now + (-10800000)) % 86400000) / 86400000) + 3) % 7) / 7) && (!data.exists() || newData.val() >= data.val())"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "a": {
+            ".validate": "newData.isString() && newData.val().matches(/^e[0-9A-Za-z_-]{4}([0-9A-Za-z_-]{4}){1,5}$/)"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "roles": {
+      ".read": true,
+      "$uid": {
+        ".validate": "newData.isString() && newData.val().matches(/^(tio|tia|dev)$/)"
       }
     },
     "names": {

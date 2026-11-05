@@ -1,4 +1,4 @@
-// Marcador de tiempo jugado de punta a punta (juego + reglas reales de Firebase): se suma el tiempo de cada partida cobrada, el Top 25 por tiempo
+// Marcador de tiempo jugado de punta a punta (juego + reglas reales de Firebase): se suma el tiempo de cada partida cobrada, el Top 30 por tiempo
 // tiene el mismo formato que el de rebotes y no se puede inflar. Uso:  cd pruebas && npm install && node tiempo.test.js
 const fs = require('fs');
 const { chromium, st, newPage, playHits, registrar } = require('./mockfirebase.js');
@@ -43,14 +43,14 @@ const filas = p => p.evaluate(() => [...document.querySelectorAll('#list li:not(
   ok('la nota dice Top y que es la suma de todas sus partidas', /Top 6/.test(await p.textContent('#boardNote')) && /suma de todas sus partidas/.test(await p.textContent('#boardNote')), await p.textContent('#boardNote'));
   ok('el reloj de 1 minuto sigue (no se alarga al cambiar de pestaña)', /Vuelves al inicio en (\d+) s/.test(await p.textContent('#boardLeft')) && +/(\d+) s/.exec(await p.textContent('#boardLeft'))[1] <= 58, await p.textContent('#boardLeft'));
 
-  console.log('Top 25 y actualización');
+  console.log('Top 30 y actualización');
   for (let i = 0; i < 30; i++) st.db.scores['m' + i] = { n: 'Muchos ' + i, k: 'muchos.' + i, s: 5, t: 500 + i, ms: 100000 + i * 1000, ml: 1 };
   await p.evaluate(() => document.getElementById('refreshBoard').click()); await p.waitForTimeout(1200);
   const g = await filas(p);
-  ok('muestra como máximo 25 jugadores', g.length === 25, String(g.length));
-  ok('los 25 son los de más tiempo (el de 45 s ya no entra)', g[0][1] === 'Jugador E' && !g.some(r => r[1] === 'Jugador C'), JSON.stringify(g.slice(0, 3)));
+  ok('muestra como máximo 30 jugadores', g.length === 30, String(g.length));
+  ok('los 30 son los de más tiempo (el de 45 s ya no entra)', g[0][1] === 'Jugador E' && !g.some(r => r[1] === 'Jugador C'), JSON.stringify(g.slice(0, 3)));
   const mio = await p.evaluate(() => { const b = document.getElementById('myRow'); return { visible: !b.hidden, txt: b.textContent }; });
-  ok('si no estás entre los 25, debajo salen tres puntos y tu tiempo', mio.visible && /Tiempo Uno/.test(mio.txt) && /(s|min)/.test(mio.txt), JSON.stringify(mio));
+  ok('si no estás entre los 30, debajo salen tres puntos y tu tiempo', mio.visible && /Tiempo Uno/.test(mio.txt) && /(s|min)/.test(mio.txt), JSON.stringify(mio));
   await p.evaluate(() => document.getElementById('kindR').click()); await p.waitForTimeout(1100);
   ok('al volver a «Rebotes» se ven los rebotes', (await filas(p))[0][1] === 'Sin Tiempo' && /rebotes/.test(await p.textContent('#boardNote')));
   ok('sin errores de página', errs.length === 0, errs.join('|'));

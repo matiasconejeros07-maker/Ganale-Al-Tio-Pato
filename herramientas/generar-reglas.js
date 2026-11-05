@@ -124,7 +124,7 @@ const rules = { rules: {
 
   // ---- marcadores: cada cuenta escribe solo lo suyo, nunca baja y no puede superar los rebotes de su partida terminada ----
   scores: {
-    '.read': true, '.indexOn': ['s', 'k', 'ms'],                                      // `k` sirve para ver si un nombre ya lo usa alguien en el marcador
+    '.read': true, '.indexOn': ['s', 'k', 'ms', 'w'],                                 // `k` sirve para ver si un nombre ya lo usa alguien en el marcador · `w` ordena el marcador «Millonarios»
     $uid: {
       '.write': "auth != null && auth.uid === $uid && (!data.exists() || newData.child('s').val() >= data.child('s').val())",
       '.validate': "newData.hasChildren(['n', 'k', 's', 't'])",
@@ -140,9 +140,33 @@ const rules = { rules: {
       ml: { '.validate': `newData.isNumber() && newData.val() === ${RV('s')} && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val()) && root.child('wallets').child($uid).child('lr').val() === newData.val()` },
       // c = el puntaje que ya está contado en `hist` (así cada cuenta cuenta una sola vez y se puede mover de casilla al mejorar). Solo sube y siempre es igual al puntaje de ese momento.
       c: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && newData.val() === ${P}.child('s').val() && (!data.exists() || newData.val() > data.val())` },
+      // w = la billetera (pesos ganados − gastados) que se ve en el marcador «Millonarios»: solo vale lo que la cartera dice en el momento de escribirlo (se actualiza aparte del cobro, después de cada cambio de saldo)
+      w: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.cMax} && newData.val() === ${P}.parent().parent().child('wallets').child($uid).child('c').val() - ${P}.parent().parent().child('wallets').child($uid).child('sp').val()` },
       $other: { '.validate': false }
     }
   },
+
+  // ---- marcador semanal: weekly/<semana>/<uid> = tu mejor partida de esa semana (la semana empieza el lunes, hora de Chile). Solo se escribe en la semana en curso, `s` tiene que ser
+  //      exactamente tu mejor partida de la semana que ya llevan las estadísticas (`stats/<uid>/wm`, que sale de partidas verificadas), nunca baja y el nombre es el de tu fila del marcador. ----
+  weekly: {
+    '.read': true,
+    $week: {
+      '.indexOn': ['s'],
+      $uid: {
+        '.write': `auth != null && auth.uid === $uid && $week === ${WEEK} + ''`,
+        '.validate': "newData.hasChildren(['n', 's', 't'])",
+        n: { '.validate': `newData.isString() && newData.val() === newData.parent().parent().parent().parent().child('scores').child($uid).child('n').val()` },
+        s: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && newData.val() <= ${ECO.hMax} && newData.val() === newData.parent().parent().parent().parent().child('stats').child($uid).child('wm').val() && newData.parent().parent().parent().parent().child('stats').child($uid).child('w').val() === ${WEEK} && (!data.exists() || newData.val() >= data.val())` },
+        t: { '.validate': 'newData.val() === now' },
+        a: { '.validate': AVATAR },
+        $other: { '.validate': false }
+      }
+    }
+  },
+
+  // ---- insignias del marcador: roles/<uid> = 'tio' (🦆🎩 Tío Patito) · 'tia' (🦆🎀 Tía Patita) · 'dev' (👾 desarrolladores). Lo pone el administrador desde la consola de Firebase;
+  //      nadie puede escribirlo desde el juego. Cualquiera lo lee (para dibujar la insignia junto al nombre). ----
+  roles: { '.read': true, $uid: { '.validate': "newData.isString() && newData.val().matches(/^(tio|tia|dev)$/)" } },
 
   // ---- registro de nombres: names/<nombre con las comas en lugar de puntos (Firebase no deja puntos en las claves)> = uid de la cuenta que lo tiene.
   //      Se escribe una sola vez y solo así: (1) una cuenta antigua con el correo interno de ese nombre, o (2) una cuenta con correo real que anota a la vez

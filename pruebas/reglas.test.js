@@ -648,6 +648,59 @@ console.log('Misiones de la semana');
   ok('misión de la semana y un logro en el mismo cobro', as({ ...cartera, stats: { u1: stats([0], { g: 12 }) }, scores: { u1: { n: 'M', k: 'matias', s: 60, t: 5, c: 60 } } }, cobra(1, P[0] + MI2.logros.find(x => x[0] === 'g1')[3], { 'missions/u1/g1': true })), true);
 }
 
+// ---------- marcadores: semanal, millonarios e insignias ----------
+console.log('Marcadores: semanal, millonarios e insignias');
+{
+  const D = Math.floor((Date.now() - 3 * 3600000) / 86400000), WK = Math.floor((D + 3) / 7);
+  const as = (data, upd, uid = 'u1') => db(data, T0 + 70000, uid).update('/', upd);
+  const fila = { n: 'Matías', k: 'matias', s: 90, t: T0 - 5000 };
+  const base = { scores: { u1: fila }, stats: { u1: { g: 9, r: 400, sl: T0 - 9000, d: D, dg: 2, dr: 60, dm: 40, dc: 0, w: WK, wg: 3, wr: 150, wm: 70, wc: 0 } } };
+  const sem = (o = {}) => ({ n: 'Matías', s: 70, t: SV, ...o });
+  console.log(' Semanal');
+  ok('tu mejor partida de la semana entra al marcador semanal (n, s, t)', as(base, { [`weekly/${WK}/u1`]: sem() }), true);
+  ok('… con tu foto de perfil', as(base, { [`weekly/${WK}/u1`]: sem({ a: 'e4A1aGGGG' }) }), true);
+  ok('… con una foto con formato inventado', as(base, { [`weekly/${WK}/u1`]: sem({ a: '<img src=x>' }) }), false);
+  ok('con más rebotes de los que llevan las estadísticas (s = 80, wm = 70)', as(base, { [`weekly/${WK}/u1`]: sem({ s: 80 }) }), false);
+  ok('con menos rebotes de los que llevan las estadísticas (s = 60, wm = 70)', as(base, { [`weekly/${WK}/u1`]: sem({ s: 60 }) }), false);
+  ok('sin estadísticas de la semana (no hay partidas verificadas)', as({ scores: base.scores }, { [`weekly/${WK}/u1`]: sem() }), false);
+  ok('con estadísticas de la semana pasada (w = semana − 1)', as({ ...base, stats: { u1: { ...base.stats.u1, w: WK - 1 } } }, { [`weekly/${WK}/u1`]: sem() }), false);
+  ok('en la semana pasada', as(base, { [`weekly/${WK - 1}/u1`]: sem() }), false);
+  ok('en una semana futura', as(base, { [`weekly/${WK + 1}/u1`]: sem() }), false);
+  ok('con un nombre que no es el de tu fila del marcador', as(base, { [`weekly/${WK}/u1`]: sem({ n: 'Otra Persona' }) }), false);
+  ok('sin tener fila en el marcador', as({ stats: base.stats }, { [`weekly/${WK}/u1`]: sem() }), false);
+  ok('con la hora inventada', as(base, { [`weekly/${WK}/u1`]: sem({ t: T0 - 99999 }) }), false);
+  ok('con un campo extra', as(base, { [`weekly/${WK}/u1`]: sem({ oro: 9 }) }), false);
+  ok('sin el nombre', as(base, { [`weekly/${WK}/u1`]: { s: 70, t: SV } }), false);
+  ok('la fila de otra cuenta', as(base, { [`weekly/${WK}/u1`]: sem() }, 'u2'), false);
+  const ya = { ...base, weekly: { [WK]: { u1: { n: 'Matías', s: 70, t: T0 - 60000 } } } };
+  ok('actualizar tu mejor partida de la semana (70 → 90) cuando las estadísticas ya dicen 90', as({ ...ya, stats: { u1: { ...base.stats.u1, wm: 90 } } }, { [`weekly/${WK}/u1/s`]: 90, [`weekly/${WK}/u1/t`]: SV }), true);
+  ok('bajar tu marca de la semana (70 → 50)', as({ ...ya, stats: { u1: { ...base.stats.u1, wm: 50 } } }, { [`weekly/${WK}/u1/s`]: 50, [`weekly/${WK}/u1/t`]: SV }), false);
+  ok('escribir la fila de otra cuenta en la semana actual', as({ ...base, scores: { u2: { ...fila, n: 'Otra' }, u1: fila }, stats: { u2: base.stats.u1, u1: base.stats.u1 } }, { [`weekly/${WK}/u2`]: sem({ n: 'Otra' }) }), false);
+  ok('leer el marcador semanal sin sesión', targaryen.database(rules, shiftObj(ya, 0)).as(null).read(`/weekly/${WK}`), true);
+  ok('leer cualquier semana vieja', targaryen.database(rules, shiftObj(ya, 0)).as(null).read(`/weekly/${WK - 3}`), true);
+
+  console.log(' Millonarios (la billetera en el marcador)');
+  const cart = { wallets: { u1: { c: 5000, sp: 1200, lr: T0 - 99999 } }, scores: { u1: fila } };
+  ok('tu billetera (ganado − gastado = $3.800) en tu fila del marcador', as(cart, { 'scores/u1/w': 3800 }), true);
+  ok('una billetera más grande que la real ($3.801)', as(cart, { 'scores/u1/w': 3801 }), false);
+  ok('lo ganado sin descontar lo gastado ($5.000)', as(cart, { 'scores/u1/w': 5000 }), false);
+  ok('una billetera menor que la real ($3.799)', as(cart, { 'scores/u1/w': 3799 }), false);
+  ok('billetera negativa', as(cart, { 'scores/u1/w': -1 }), false);
+  ok('billetera con decimales', as({ ...cart, wallets: { u1: { c: 5000.5, sp: 1200, lr: T0 - 99999 } } }, { 'scores/u1/w': 3800.5 }), false);
+  ok('billetera de otra cuenta', as({ ...cart, scores: { u1: fila, u2: { ...fila, n: 'Otra', k: 'otra' } } }, { 'scores/u2/w': 3800 }), false);
+  ok('billetera sin tener cartera', as({ scores: { u1: fila } }, { 'scores/u1/w': 100 }), false);
+  ok('billetera enorme de verdad ($500.000.000.000)', as({ wallets: { u1: { c: 600000000000, sp: 100000000000, lr: T0 - 99999 } }, scores: { u1: fila } }, { 'scores/u1/w': 500000000000 }), true);
+  ok('al comprar algo, la billetera vieja deja de valer ($3.800 con sp 2.000 → ahora son $3.000)', as({ wallets: { u1: { c: 5000, sp: 2000, lr: T0 - 99999 } }, scores: { u1: { ...fila, w: 3800 } } }, { 'scores/u1/w': 3800 }), false);
+  ok('actualizar la billetera tras comprar ($3.000)', as({ wallets: { u1: { c: 5000, sp: 2000, lr: T0 - 99999 } }, scores: { u1: { ...fila, w: 3800 } } }, { 'scores/u1/w': 3000 }), true);
+  ok('leer todas las filas del marcador (incluida la billetera)', targaryen.database(rules, shiftObj({ scores: { u1: { ...fila, w: 3800 } } }, 0)).as(null).read('/scores'), true);
+
+  console.log(' Insignias (roles)');
+  ok('ponerte una insignia de desarrollador desde el juego', as(base, { 'roles/u1': 'dev' }), false);
+  ok('ponerte la insignia del Tío Patito', as(base, { 'roles/u1': 'tio' }), false);
+  ok('borrar la insignia de otra cuenta', db({ roles: { u2: 'dev' } }, T0).write('/roles/u2', null), false);
+  ok('leer las insignias sin sesión', targaryen.database(rules, shiftObj({ roles: { u1: 'dev', u2: 'tio', u3: 'tia' } }, 0)).as(null).read('/roles'), true);
+}
+
 // ---------- grupo VIP: el WhatsApp de quien desbloqueó el personaje secreto ----------
 console.log('Grupo VIP (WhatsApp)');
 {
