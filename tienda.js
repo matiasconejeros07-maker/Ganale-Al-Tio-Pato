@@ -9,7 +9,7 @@ window.TIENDA = {
     // misiones: los premios los verifica el servidor (reglas de Firebase) con estadísticas que solo suben al cobrar partidas de verdad (una partida cuenta desde minRebotes rebotes).
     // dia: 3 casillas por día (fácil / media / difícil, el premio es fijo por casilla); en cada casilla la misión del día se elige entre las 3 según la fecha (la misma para todos).
     //      de: [tipo, meta] · g = partidas jugadas hoy · r = rebotes sumados hoy · m = rebotes en una sola partida hoy
-    // logros: [id, tipo, meta, premio] de una sola vez · g = partidas · r = rebotes totales · b = mejor partida · s = días de racha · e = tiene emblema · c = compró algo · v = correo verificado
+    // logros: [id, tipo, meta, premio] de una sola vez · g = partidas · r = rebotes totales · b = mejor partida · s = días de racha · t = tiempo jugado · e = tiene emblema · c = compró algo · v = correo verificado
     misiones: {
       minRebotes: 5,
       dia: [
@@ -17,12 +17,22 @@ window.TIENDA = {
         { premio: 250, de: [['g', 5], ['r', 150], ['m', 40]] },
         { premio: 500, de: [['g', 10], ['r', 400], ['m', 80]] }
       ],
+      // misiones de la semana (la semana empieza el lunes, hora de Chile): 3 casillas (fácil / media / difícil) y en cada una se elige UNA de 5 misiones al azar según la semana (igual para todos);
+      //   de: [tipo, meta] · g = partidas esta semana · r = rebotes esta semana · m = rebotes en una sola partida esta semana. El premio es fijo por casilla.
+      semana: { premios: [1000, 3000, 10000], de: [
+        [['g', 15], ['g', 20], ['r', 500], ['r', 700], ['m', 40]],
+        [['g', 35], ['g', 45], ['r', 1500], ['r', 2000], ['m', 75]],
+        [['g', 70], ['g', 90], ['r', 4000], ['r', 5500], ['m', 100]]
+      ] },
+      // logros de una sola vez: [id, tipo, meta, premio]. Cuanto más cuesta, más pagan: 100 rebotes ya es difícil, 150 es muy difícil y 200 o 300 son de leyenda.
+      // t = tiempo total jugado (ms) · el resto como arriba
       logros: [
-        ['g1', 'g', 1, 50], ['g10', 'g', 10, 150], ['g50', 'g', 50, 500], ['g100', 'g', 100, 1000], ['g500', 'g', 500, 5000],
-        ['b10', 'b', 10, 50], ['b25', 'b', 25, 100], ['b50', 'b', 50, 250], ['b100', 'b', 100, 600], ['b150', 'b', 150, 1500], ['b200', 'b', 200, 4000], ['b300', 'b', 300, 10000],
-        ['r100', 'r', 100, 100], ['r500', 'r', 500, 300], ['r2000', 'r', 2000, 1000], ['r10000', 'r', 10000, 4000],
-        ['s3', 's', 3, 200], ['s7', 's', 7, 1000],
-        ['e1', 'e', 1, 100], ['c1', 'c', 1, 100], ['v1', 'v', 1, 300]
+        ['g1', 'g', 1, 100], ['g10', 'g', 10, 250], ['g50', 'g', 50, 1000], ['g100', 'g', 100, 3000], ['g250', 'g', 250, 8000], ['g500', 'g', 500, 20000], ['g1000', 'g', 1000, 60000],
+        ['b10', 'b', 10, 100], ['b25', 'b', 25, 250], ['b50', 'b', 50, 600], ['b75', 'b', 75, 1500], ['b100', 'b', 100, 4000], ['b125', 'b', 125, 10000], ['b150', 'b', 150, 25000], ['b200', 'b', 200, 100000], ['b300', 'b', 300, 500000],
+        ['r100', 'r', 100, 150], ['r500', 'r', 500, 500], ['r2000', 'r', 2000, 2000], ['r5000', 'r', 5000, 6000], ['r10000', 'r', 10000, 20000], ['r25000', 'r', 25000, 60000], ['r50000', 'r', 50000, 150000],
+        ['s3', 's', 3, 300], ['s7', 's', 7, 1500], ['s14', 's', 14, 5000], ['s21', 's', 21, 12000], ['s28', 's', 28, 30000], ['s60', 's', 60, 100000],
+        ['t1', 't', 3600000, 1000], ['t10', 't', 36000000, 8000], ['t50', 't', 180000000, 40000],
+        ['e1', 'e', 1, 150], ['c1', 'c', 1, 150], ['v1', 'v', 1, 500]
       ]
     },
     // Racha diaria: entrar cada día da premios y la racha sigue mientras no te saltes un día. El día cambia a medianoche de Chile en horario de verano (huso -3).

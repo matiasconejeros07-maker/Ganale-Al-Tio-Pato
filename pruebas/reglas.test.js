@@ -525,21 +525,36 @@ const pick = (d, k) => ((d * 5 + 2 * k) % 7) % 3;
   const cart = (c = 5000) => ({ wallets: { u1: { c, sp: 0, lr: T0 - 99999 } } });
   const g = { ...cart(), stats: { u1: S({ g: 12, r: 700, dc: 0 }) }, scores: { u1: { n: 'M', k: 'matias', s: 120, t: 5, c: 120 } } };
   const cobra = (ids, extra = {}) => ({ ...Object.fromEntries(ids.map(i => [`missions/u1/${i}`, true])), 'wallets/u1/c': 5000 + ids.reduce((a, i) => a + MI.logros.find(x => x[0] === i)[3], 0), 'wallets/u1/sp': 0, ...extra });
-  ok('«Juega 1 partida» ($50) con 12 partidas jugadas', as(g, cobra(['g1'])), true);
-  ok('«Juega 10 partidas» ($150)', as(g, cobra(['g10'])), true);
+  ok('«Juega 1 partida» con 12 partidas jugadas', as(g, cobra(['g1'])), true);
+  ok('«Juega 10 partidas»', as(g, cobra(['g10'])), true);
   ok('«Juega 50 partidas» con solo 12', as(g, cobra(['g50'])), false);
-  ok('«Llega a 100 rebotes» ($600) con un récord de 120', as(g, cobra(['b100'])), true);
+  ok('«Llega a 100 rebotes» con un récord de 120', as(g, cobra(['b100'])), true);
   ok('«Llega a 150 rebotes» con un récord de 120', as(g, cobra(['b150'])), false);
-  ok('«Suma 500 rebotes» ($300) con 700', as(g, cobra(['r500'])), true);
+  ok('«Suma 500 rebotes» con 700', as(g, cobra(['r500'])), true);
   ok('varios logros a la vez (g1 + g10 + b10 + b25 + b50 + b100 + r100 + r500)', as(g, cobra(['g1', 'g10', 'b10', 'b25', 'b50', 'b100', 'r100', 'r500'])), true);
-  ok('el premio no puede ser mayor que el del logro', as(g, cobra(['b100'], { 'wallets/u1/c': 5601 })), false);
-  ok('ni menor que el del logro', as(g, cobra(['b100'], { 'wallets/u1/c': 5599 })), false);
+  ok('el premio no puede ser mayor que el del logro', as(g, cobra(['b100'], { 'wallets/u1/c': 5000 + MI.logros.find(x => x[0] === 'b100')[3] + 1 })), false);
+  ok('ni menor que el del logro', as(g, cobra(['b100'], { 'wallets/u1/c': 5000 + MI.logros.find(x => x[0] === 'b100')[3] - 1 })), false);
   ok('cobrar el logro sin subir los pesos no rompe nada', as(g, cobra(['g1'], { 'wallets/u1/c': 5000 })), true);
   ok('subir los pesos sin ningún logro', as(g, { 'wallets/u1/c': 5050, 'wallets/u1/sp': 0 }), false);
   ok('el mismo logro dos veces', as({ ...g, missions: { u1: { g1: true } } }, cobra(['g1'])), false);
   ok('borrar un logro cobrado (para cobrarlo otra vez)', as({ ...g, missions: { u1: { g1: true } } }, { 'missions/u1/g1': null }), false);
   ok('un logro que no existe', as(g, { 'missions/u1/regalo': true, 'wallets/u1/c': 9999, 'wallets/u1/sp': 0 }), false);
   ok('un logro en la cuenta de otro', as(g, { 'missions/u1/g1': true, 'wallets/u1/c': 5050, 'wallets/u1/sp': 0 }, 'u2'), false);
+  const gg = { ...g, scores: { u1: { n: 'M', k: 'matias', s: 130, t: 5, c: 130, ms: 40000000 } }, stats: { u1: S({ g: 300, r: 30000, dc: 0 }) } };
+  ok('los premios crecen con la dificultad (150 rebotes paga más que 100, 10.000 rebotes = $20.000, 300 rebotes es el mayor)', { allowed: MI.logros.find(x => x[0] === 'b150')[3] > MI.logros.find(x => x[0] === 'b100')[3] * 4 && MI.logros.find(x => x[0] === 'r10000')[3] === 20000
+    && ['b', 'r', 'g', 's', 't'].every(t => MI.logros.filter(x => x[1] === t).every((x, i, a) => i === 0 || x[3] > a[i - 1][3])) }, true);
+  ok('«Llega a 125 rebotes» con un récord de 130', as(gg, cobra(['b125'])), true);
+  ok('«Llega a 150 rebotes» con un récord de 130', as(gg, cobra(['b150'])), false);
+  ok('«Juega 250 partidas» con 300', as(gg, cobra(['g250'])), true);
+  ok('«Juega 500 partidas» con 300', as(gg, cobra(['g500'])), false);
+  ok('«Suma 25.000 rebotes» con 30.000', as(gg, cobra(['r25000'])), true);
+  ok('«Suma 50.000 rebotes» con 30.000', as(gg, cobra(['r50000'])), false);
+  ok('«Juega 1 hora» con 11 horas jugadas', as(gg, cobra(['t1'])), true);
+  ok('«Juega 10 horas» con 11 horas jugadas', as(gg, cobra(['t10'])), true);
+  ok('«Juega 50 horas» con 11 horas jugadas', as(gg, cobra(['t50'])), false);
+  ok('«Juega 1 hora» sin tiempo guardado', as(g, cobra(['t1'])), false);
+  ok('«Racha de 14 días» con la racha en 14', as({ ...g, streaks: { u1: { n: 14, t: T0 } } }, cobra(['s14'])), true);
+  ok('«Racha de 28 días» con la racha en 14', as({ ...g, streaks: { u1: { n: 14, t: T0 } } }, cobra(['s28'])), false);
   ok('«Racha de 3 días» con la racha en 3', as({ ...g, streaks: { u1: { n: 3, t: T0 } } }, cobra(['s3'])), true);
   ok('«Racha de 7 días» con la racha en 3', as({ ...g, streaks: { u1: { n: 3, t: T0 } } }, cobra(['s7'])), false);
   ok('«Crea tu emblema» con emblema', as({ ...g, wallets: { u1: { c: 5000, sp: 0, lr: T0 - 99999, av: 'e41A33GGG' } } }, cobra(['e1'])), true);
@@ -571,8 +586,66 @@ const pick = (d, k) => ((d * 5 + 2 * k) % 7) % 3;
   ok('cobrar la segunda con la primera ya cobrada (1 → 3)', as({ ...cartera, stats: { u1: stats([0, 1], { dc: 1 }) } }, dia(0, 3, premio(1))), true);
   ok('contadores de ayer: no se pueden cobrar hoy', as({ ...cartera, stats: { u1: stats([0], { d: D - 1 }) } }, dia(0, 1, premio(0))), false);
   ok('un valor de casillas fuera de rango', as({ ...cartera, stats: { u1: stats([0, 1, 2]) } }, dia(0, 8, premio(0))), false);
-  ok('misión del día y logro en el mismo cobro', as({ ...cartera, stats: { u1: stats([0], { g: 12 }) }, scores: { u1: { n: 'M', k: 'matias', s: 120, t: 5, c: 120 } } }, { ...dia(0, 1, premio(0) + 150 + 50, {}), 'missions/u1/g10': true, 'missions/u1/g1': true }), true);
+  ok('misión del día y logro en el mismo cobro', as({ ...cartera, stats: { u1: stats([0], { g: 12 }) }, scores: { u1: { n: 'M', k: 'matias', s: 120, t: 5, c: 120 } } }, { ...dia(0, 1, premio(0) + MI.logros.find(x => x[0] === 'g10')[3] + MI.logros.find(x => x[0] === 'g1')[3], {}), 'missions/u1/g10': true, 'missions/u1/g1': true }), true);
   ok('las misiones de la casilla de otro día no las cobra otra cuenta', as({ ...cartera, stats: { u1: stats([0]) } }, dia(0, 1, premio(0)), 'u2'), false);
+}
+
+// ---------- misiones de la semana (3 casillas, 1 de 5 misiones al azar cada semana) ----------
+console.log('Misiones de la semana');
+{
+  const MI2 = ECO.misiones, SEM = MI2.semana, DAYMS2 = 86400000, HUSO2 = -3 * 3600000;
+  const D = Math.floor((Date.now() + HUSO2) / DAYMS2), WK = Math.floor((D + 3) / 7);
+  const pickW = (w, k) => ((w * 13 + 7 * k) % 17) % SEM.de[k].length;
+  const campo = { g: 'wg', r: 'wr', m: 'wm' };
+  const as = (data, upd, uid = 'u1') => db(data, T0 + 70000, uid).update('/', upd);
+  const cartera = { wallets: { u1: { c: 5000, sp: 0, lr: T0 - 99999 } } };
+  const base = (o = {}) => ({ g: 3, r: 100, sl: T0 - 900000, d: D, dg: 2, dr: 50, dm: 40, dc: 0, w: WK, wg: 2, wr: 50, wm: 40, wc: 0, ...o });
+  const run = (h = 60, lr = T0) => ({ runs: { u1: { s: T0, b: 'peso1', r: 1, e: T0 + 60000, h, p: h } }, wallets: { u1: { c: 5000, sp: 0, lr } }, scores: { u1: { n: 'Matías', k: 'matias', s: h, t: T0 - 100, c: h } } });
+  const casilla = (k, w = WK) => { const j = pickW(w, k), de = SEM.de[k][j]; return { campo: campo[de[0]], meta: de[1], j }; };
+  console.log('   misiones de esta semana (semana ' + WK + '):', [0, 1, 2].map(k => `$${SEM.premios[k]} = ${casilla(k).campo} ≥ ${casilla(k).meta}`).join(' · '));
+  ok('en las 3 casillas hay 5 misiones posibles y a lo largo de las semanas salen todas (se reparten bien)', { allowed: [0, 1, 2].every(k => { const vistas = new Set(); for (let w = 0; w < 60; w++) vistas.add(pickW(w, k)); return SEM.de[k].length === 5 && vistas.size === 5; }) }, true);
+  ok('el premio sube con la dificultad (fácil < media < difícil)', { allowed: SEM.premios[0] < SEM.premios[1] && SEM.premios[1] < SEM.premios[2] }, true);
+  ok('dos semanas seguidas nunca repiten la misma misión en las tres casillas a la vez', { allowed: (() => { let rep = 0; for (let w = 0; w < 100; w++) if ([0, 1, 2].every(k => pickW(w, k) === pickW(w + 1, k))) rep++; return rep === 0; })() }, true);
+
+  // estadísticas de la semana
+  const sync = (h, old, over = {}) => ({ 'stats/u1/g': old.g + 1, 'stats/u1/r': old.r + h, 'stats/u1/sl': T0, 'stats/u1/d': D, 'stats/u1/dg': old.dg + 1, 'stats/u1/dr': old.dr + h, 'stats/u1/dm': Math.max(old.dm, h),
+    'stats/u1/w': WK, 'stats/u1/wg': (old.w === WK ? old.wg : 0) + 1, 'stats/u1/wr': (old.w === WK ? old.wr : 0) + h, 'stats/u1/wm': old.w === WK ? Math.max(old.wm, h) : h, ...(old.w === WK ? {} : { 'stats/u1/wc': 0 }), ...over });
+  ok('una partida suma también a la semana (partidas, rebotes y mejor partida)', as({ ...run(70), stats: { u1: base() } }, sync(70, base())), true);
+  ok('la primera partida con contadores de semana (cuentas que aún no los tenían)', as({ ...run(60), stats: { u1: (({ w, wg, wr, wm, wc, ...r }) => r)(base()) } }, sync(60, { ...base(), w: undefined }, {})), true);
+  ok('la mejor de la semana no baja si la partida fue peor', as({ ...run(30), stats: { u1: base({ wm: 90 }) } }, sync(30, base({ wm: 90 }))), true);
+  const pasada = base({ w: WK - 1, wg: 20, wr: 900, wm: 95, wc: 7 });
+  ok('al cambiar la semana los contadores vuelven a empezar y las casillas cobradas a 0', as({ ...run(60), stats: { u1: pasada } }, sync(60, pasada)), true);
+  ok('… si se olvida poner las casillas de la semana en 0', as({ ...run(60), stats: { u1: pasada } }, sync(60, pasada, { 'stats/u1/wc': undefined })), false);
+  ok('… ni arrastrar los contadores de la semana pasada', as({ ...run(60), stats: { u1: pasada } }, sync(60, pasada, { 'stats/u1/wg': 21 })), false);
+  ok('partidas de la semana infladas', as({ ...run(60), stats: { u1: base() } }, sync(60, base(), { 'stats/u1/wg': 9 })), false);
+  ok('rebotes de la semana inventados', as({ ...run(60), stats: { u1: base() } }, sync(60, base(), { 'stats/u1/wr': 5000 })), false);
+  ok('mejor partida de la semana inflada', as({ ...run(60), stats: { u1: base() } }, sync(60, base(), { 'stats/u1/wm': 300 })), false);
+  ok('una semana que no es esta', as({ ...run(60), stats: { u1: base() } }, sync(60, base(), { 'stats/u1/w': WK + 1 })), false);
+  ok('subir un contador de la semana a mano', db({ ...run(60), stats: { u1: base() } }, T0).write('/stats/u1/wg', 99), false);
+  ok('la misma partida dos veces no suma otra vez a la semana', as({ ...run(60), stats: { u1: base({ sl: T0 }) } }, sync(60, base({ sl: T0 }))), false);
+
+  // cobrar las casillas de la semana
+  const stats = (cumple = [], extra = {}) => { const st = base({ wg: 0, wr: 0, wm: 0, wc: 0 }); cumple.forEach(k => { const c = casilla(k); st[c.campo] = c.meta; }); return { ...st, ...extra }; };
+  const cobra = (bits, premio, extra = {}) => ({ 'stats/u1/wc': bits, 'wallets/u1/c': 5000 + premio, 'wallets/u1/sp': 0, ...extra });
+  const P = SEM.premios;
+  ok(`casilla fácil ($${P[0]}) cumplida`, as({ ...cartera, stats: { u1: stats([0]) } }, cobra(1, P[0])), true);
+  ok(`casilla media ($${P[1]}) cumplida`, as({ ...cartera, stats: { u1: stats([1]) } }, cobra(2, P[1])), true);
+  ok(`casilla difícil ($${P[2]}) cumplida`, as({ ...cartera, stats: { u1: stats([2]) } }, cobra(4, P[2])), true);
+  ok(`las tres a la vez ($${P[0] + P[1] + P[2]})`, as({ ...cartera, stats: { u1: stats([0, 1, 2]) } }, cobra(7, P[0] + P[1] + P[2])), true);
+  ok('casilla sin cumplir', as({ ...cartera, stats: { u1: stats([]) } }, cobra(1, P[0])), false);
+  ok('cobrar la difícil habiendo cumplido solo la fácil', as({ ...cartera, stats: { u1: stats([0]) } }, cobra(4, P[2])), false);
+  ok('el monto de la difícil por la casilla fácil', as({ ...cartera, stats: { u1: stats([0]) } }, cobra(1, P[2])), false);
+  ok('premio de más', as({ ...cartera, stats: { u1: stats([0]) } }, cobra(1, P[0] + 1)), false);
+  ok('premio de menos', as({ ...cartera, stats: { u1: stats([0]) } }, cobra(1, P[0] - 1)), false);
+  ok('cobrar la misma casilla otra vez', as({ ...cartera, stats: { u1: stats([0], { wc: 1 }) } }, cobra(1, P[0])), false);
+  ok('descobrar una casilla (3 → 1) para cobrarla de nuevo', as({ ...cartera, stats: { u1: stats([0, 1], { wc: 3 }) } }, { 'stats/u1/wc': 1 }), false);
+  ok('cobrar la segunda con la primera ya cobrada (1 → 3)', as({ ...cartera, stats: { u1: stats([0, 1], { wc: 1 }) } }, cobra(3, P[1])), true);
+  ok('contadores de la semana pasada: no se cobran esta semana', as({ ...cartera, stats: { u1: stats([0], { w: WK - 1 }) } }, cobra(1, P[0])), false);
+  ok('un valor de casillas fuera de rango', as({ ...cartera, stats: { u1: stats([0, 1, 2]) } }, cobra(8, P[0])), false);
+  ok('subir los pesos sin cobrar ninguna casilla', as({ ...cartera, stats: { u1: stats([0]) } }, { 'wallets/u1/c': 5000 + P[0], 'wallets/u1/sp': 0 }), false);
+  ok('cobrar las casillas de la semana de otra cuenta', as({ ...cartera, stats: { u1: stats([0]) } }, cobra(1, P[0]), 'u2'), false);
+  ok('misión de la semana y misión del día en el mismo cobro', as({ ...cartera, stats: { u1: stats([0], { dg: 9, dr: 999, dm: 99 }) } }, cobra(1, P[0] + ECO.misiones.dia[0].premio, { 'stats/u1/dc': 1 })), true);
+  ok('misión de la semana y un logro en el mismo cobro', as({ ...cartera, stats: { u1: stats([0], { g: 12 }) }, scores: { u1: { n: 'M', k: 'matias', s: 60, t: 5, c: 60 } } }, cobra(1, P[0] + MI2.logros.find(x => x[0] === 'g1')[3], { 'missions/u1/g1': true })), true);
 }
 
 // ---------- grupo VIP: el WhatsApp de quien desbloqueó el personaje secreto ----------

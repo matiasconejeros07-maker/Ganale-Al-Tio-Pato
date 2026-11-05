@@ -75,6 +75,12 @@ const STAT = { g: 'dg', r: 'dr', m: 'dm' };
 // misión de la casilla k del día: se elige entre 3 según la fecha ((día × 5 + 2k) % 7 % 3), igual para todos
 const pickJ = k => `(((${TODAY}) * 5 + ${2 * k}) % 7 % 3)`;
 const condDia = k => { const j = pickJ(k), d = M.dia[k].de; return `(${j} === 0 ? newData.parent().child('${STAT[d[0][0]]}').val() >= ${d[0][1]} : ${j} === 1 ? newData.parent().child('${STAT[d[1][0]]}').val() >= ${d[1][1]} : newData.parent().child('${STAT[d[2][0]]}').val() >= ${d[2][1]})`; };
+// misiones de la semana: la semana empieza el lunes (el día 0 de la cuenta es jueves); en cada casilla se elige 1 de 5 misiones según la semana, igual para todos
+const WEEK = `((${TODAY} + 3 - (${TODAY} + 3) % 7) / 7)`;
+const WSAME = `(${OLDP}.child('w').exists() && ${OLDP}.child('w').val() === newData.parent().child('w').val())`;       // el contador de la semana ya era de esta semana
+const SEM = M.semana, WSTAT = { g: 'wg', r: 'wr', m: 'wm' };
+const pickW = k => `((${WEEK} * 13 + ${7 * k}) % 17 % ${SEM.de[k].length})`;
+const condSem = k => { const j = pickW(k), d = SEM.de[k]; return d.map(([t, meta], i) => `(${j} === ${i} && newData.parent().child('${WSTAT[t]}').val() >= ${meta})`).join(' || '); };
 const condLogro = (tipo, meta) => ({
   g: `root.child('stats').child($uid).child('g').val() >= ${meta}`,
   r: `root.child('stats').child($uid).child('r').val() >= ${meta}`,
@@ -82,6 +88,7 @@ const condLogro = (tipo, meta) => ({
   s: `root.child('streaks').child($uid).child('n').val() >= ${meta}`,
   e: `${W_ROOT}.child('av').exists()`,
   c: `${W_ROOT}.child('sp').val() >= ${meta}`,
+  t: `root.child('scores').child($uid).child('ms').val() >= ${meta}`,
   v: `auth.token.email_verified === true && !auth.token.email.endsWith('${MAIL}')`
 })[tipo];
 const NEWM = "newData.parent().parent().parent().child('missions').child($uid)", OLDM = "root.child('missions').child($uid)";
@@ -89,6 +96,9 @@ const NEWDC = "(newData.parent().parent().parent().child('stats').child($uid).ch
 const OLDDC = "(root.child('stats').child($uid).child('dc').exists() ? root.child('stats').child($uid).child('dc').val() : 0)";
 const MIS_SUM = '(' + M.logros.map(([id, , , premio]) => `(${NEWM}.child('${id}').exists() && !${OLDM}.child('${id}').exists() ? ${premio} : 0)`).join(' + ') + ')';
 const DIA_SUM = '(' + M.dia.map((x, k) => `(${bit(NEWDC, k)} && !${bit(OLDDC, k)} ? ${x.premio} : 0)`).join(' + ') + ')';
+const NEWWC = "(newData.parent().parent().parent().child('stats').child($uid).child('wc').exists() ? newData.parent().parent().parent().child('stats').child($uid).child('wc').val() : 0)";
+const OLDWC = "(root.child('stats').child($uid).child('wc').exists() ? root.child('stats').child($uid).child('wc').val() : 0)";
+const SEM_SUM = '(' + SEM.premios.map((pr, k) => `(${bit(NEWWC, k)} && !${bit(OLDWC, k)} ? ${pr} : 0)`).join(' + ') + ')';
 const INV_OLD = m => `(data.exists() ? data.val() : 0)`;                                      // (se usa dentro de x<m>: su valor anterior)
 const INV_DEC = m => `(${P}.child('x${m}').exists() && data.parent().child('x${m}').exists() && ${P}.child('x${m}').val() + 1 === data.parent().child('x${m}').val())`;       // desde bx: ¿el contador x<m> bajó en 1 en esta escritura?
 const P = "newData.parent()";
@@ -195,6 +205,15 @@ const rules = { rules: {
     dc: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 7 && ((!${DSAME} && newData.val() === 0) || (${DSAME} && ${P}.child('d').val() === ${TODAY} && newData.val() >= ${'(data.exists() ? data.val() : 0)'}`
       + ' && ' + M.dia.map((x, k) => `!(${bit('(data.exists() ? data.val() : 0)', k)} && !${bit('newData.val()', k)})`).join(' && ')
       + ' && ' + M.dia.map((x, k) => `(!(${bit('newData.val()', k)} && !${bit('(data.exists() ? data.val() : 0)', k)}) || ${condDia(k)})`).join(' && ') + '))' },
+    // semana: w = semana de los contadores · wg/wr/wm = partidas, rebotes y mejor partida de esta semana · wc = casillas de la semana ya cobradas (bits 1, 2 y 4). Igual que los de hoy; son opcionales
+    //         (las cuentas que no los tienen todavía los crean con su próxima partida) y vuelven a 0 al cambiar la semana.
+    w: { '.validate': `newData.isNumber() && newData.val() === ${WEEK} && ${FRESH} && (${WSAME} || ${P}.child('wc').val() === 0)` },
+    wg: { '.validate': `newData.isNumber() && newData.val() === (${WSAME} ? ${OLDP}.child('wg').val() : 0) + 1 && ${FRESH}` },
+    wr: { '.validate': `newData.isNumber() && newData.val() === (${WSAME} ? ${OLDP}.child('wr').val() : 0) + ${RV('h')} && ${FRESH}` },
+    wm: { '.validate': `newData.isNumber() && newData.val() === (${WSAME} && ${OLDP}.child('wm').val() > ${RV('h')} ? ${OLDP}.child('wm').val() : ${RV('h')}) && ${FRESH}` },
+    wc: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 7 && ((!${WSAME} && newData.val() === 0) || (${WSAME} && ${P}.child('w').val() === ${WEEK} && newData.val() >= ${'(data.exists() ? data.val() : 0)'}`
+      + ' && ' + SEM.premios.map((x, k) => `!(${bit('(data.exists() ? data.val() : 0)', k)} && !${bit('newData.val()', k)})`).join(' && ')
+      + ' && ' + SEM.premios.map((x, k) => `(!(${bit('newData.val()', k)} && !${bit('(data.exists() ? data.val() : 0)', k)}) || (${condSem(k)}))`).join(' && ') + '))' },
     $other: { '.validate': false }
   } },
 
@@ -233,7 +252,7 @@ const rules = { rules: {
       + ` || (${P}.child('lr').exists() && (!data.parent().child('lr').exists() || ${P}.child('lr').val() > data.parent().child('lr').val())`
       + ` && newData.val() - (data.exists() ? data.val() : 0) === ${RUN}.child('p').val())`
       + ` || (${STR}.child('t').val() === now && newData.val() - (data.exists() ? data.val() : 0) === ${rewardExp(`${STR}.child('n').val()`)})`
-      + ` || (${MIS_SUM} + ${DIA_SUM} > 0 && newData.val() - (data.exists() ? data.val() : 0) === ${MIS_SUM} + ${DIA_SUM}))` },
+      + ` || (${MIS_SUM} + ${DIA_SUM} + ${SEM_SUM} > 0 && newData.val() - (data.exists() ? data.val() : 0) === ${MIS_SUM} + ${DIA_SUM} + ${SEM_SUM}))` },
     sp: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && (!data.exists() || newData.val() >= data.val()) && newData.val() <= ${P}.child('c').val()` },
     lr: { '.validate': `newData.isNumber() && newData.val() === ${RUN}.child('s').val() && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val())` },
     av: { '.validate': AVATAR },                                                     // tu foto de perfil (se sincroniza entre tus dispositivos)

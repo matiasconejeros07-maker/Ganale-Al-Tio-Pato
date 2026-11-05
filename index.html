@@ -202,7 +202,7 @@
   .mcard .msub { margin: 6px 0 0; font-size: 14px; font-weight: 700; color: #6b6840; min-height: 1.3em; }
   .mclose { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; border: 0; background: none; font-size: 20px; cursor: pointer; color: var(--ink); opacity: .6; }
   .dtabs { width: 100%; margin: 12px auto 0; }
-  .dtabs button { font-size: 13px; padding: 10px 2px; }
+  .dtabs button { font-size: 12px; padding: 10px 1px; white-space: nowrap; }
   .dtabs[hidden], .mlist[hidden], .dgrid[hidden] { display: none; }
   .mlist { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 14px; max-height: min(46vh, 380px); overflow-y: auto; overscroll-behavior: contain; text-align: left; }
   .mrow { display: flex; align-items: center; gap: 10px; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 9px 10px; }
@@ -1089,7 +1089,7 @@
     <button class="mclose" id="dailyClose" type="button" aria-label="Cerrar">✕</button>
     <h2 id="dailyTitle">Racha diaria 🔥</h2>
     <p class="msub" id="dailySub">Entra cada día y gana premios.</p>
-    <div class="seg dtabs" id="dTabs" role="tablist"><button type="button" id="tabS" class="on" role="tab" aria-selected="true">🔥 Racha</button><button type="button" id="tabD" role="tab" aria-selected="false">🎯 Hoy</button><button type="button" id="tabA" role="tab" aria-selected="false">🏅 Logros</button></div>
+    <div class="seg dtabs" id="dTabs" role="tablist"><button type="button" id="tabS" class="on" role="tab" aria-selected="true">🔥 Racha</button><button type="button" id="tabD" role="tab" aria-selected="false">🎯 Hoy</button><button type="button" id="tabW" role="tab" aria-selected="false">📅 Semana</button><button type="button" id="tabA" role="tab" aria-selected="false">🏅 Logros</button></div>
     <div class="pocket" id="pocket" aria-live="polite"><img id="pocketImg" src="skins/peso1.webp" alt=""><span>Tu bolsillo</span><b id="pocketNum">$0</b></div>
     <div class="dgrid" id="dailyGrid"></div>
     <div class="mlist" id="missList" hidden></div>
@@ -2450,13 +2450,15 @@
           const old = await qr.json(), o = old || {};
           if (o.sl === run.s) pend.st = 0;                                                                                       // ya estaba contada
           else {
-            const day = dayOf(srvNow()), same = !!old && o.d === day;
-            const body = { g: (+o.g || 0) + 1, r: (+o.r || 0) + run.h, sl: run.s, d: day, dg: (same ? +o.dg || 0 : 0) + 1, dr: (same ? +o.dr || 0 : 0) + run.h, dm: same ? Math.max(+o.dm || 0, run.h) : run.h };
+            const day = dayOf(srvNow()), same = !!old && o.d === day, wk = weekOf(day), wsame = !!old && o.w === wk;
+            const body = { g: (+o.g || 0) + 1, r: (+o.r || 0) + run.h, sl: run.s, d: day, dg: (same ? +o.dg || 0 : 0) + 1, dr: (same ? +o.dr || 0 : 0) + run.h, dm: same ? Math.max(+o.dm || 0, run.h) : run.h,
+              w: wk, wg: (wsame ? +o.wg || 0 : 0) + 1, wr: (wsame ? +o.wr || 0 : 0) + run.h, wm: wsame ? Math.max(+o.wm || 0, run.h) : run.h };
             if (!same) body.dc = 0;                                                                                              // día nuevo: las casillas de hoy vuelven a estar sin cobrar
+            if (!wsame) body.wc = 0;                                                                                             // semana nueva: lo mismo con las de la semana
             const patch = {}; for (const k in body) patch[`stats/${uid}/${k}`] = body[k];
             const w = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(patch) });
             if (w.ok) {
-              pend.st = 0; misStats = { ...body, dc: same ? (+o.dc || 0) : 0 }; statsOk = true; renderMissChip();
+              pend.st = 0; misStats = { ...body, dc: same ? (+o.dc || 0) : 0, wc: wsame ? (+o.wc || 0) : 0 }; statsOk = true; renderMissChip();
               const n = readyCount(); if (n > 0 && state === 'over') $('missLine').textContent = `🎯 Tienes ${n} misión${n === 1 ? '' : 'es'} para reclamar en Misiones`;
             } else if (denied4(w) && ++pend.ns >= 3) pend.st = 0;
           }
@@ -2645,7 +2647,7 @@
   }
   let dailyFrom = null;
   function openDaily(tab) {
-    tab = tab === 'day' || tab === 'ach' ? tab : 'streak';
+    tab = tab === 'day' || tab === 'week' || tab === 'ach' ? tab : 'streak';
     if (!AUTH || !session || (tab === 'streak' ? !streakOk : !MIS_ON())) return;
     dailyFrom = document.activeElement; setDailyTab(tab, true);
     $('daily').classList.add('show'); $('dailyGo').focus();
@@ -2720,17 +2722,22 @@
   const srvNow = () => Date.now() + srvSkew;
   const MIS_ON = () => !!(AUTH && session && MIS && statsOk);
   const pickJ = (day, k) => ((day * 5 + 2 * k) % 7) % 3;                         // qué misión le toca a la casilla k ese día (la misma fórmula que las reglas)
+  const weekOf = day => Math.floor((day + 3) / 7);                                // la semana empieza el lunes (el día 0 fue jueves)
+  const pickW = (week, k) => ((week * 13 + 7 * k) % 17) % MIS.semana.de[k].length;  // qué misión le toca a la casilla k esa semana (igual que las reglas)
+  const SEM_CAMPO = { g: 'wg', r: 'wr', m: 'wm' };
+  let playedMs = 0;                                                               // tu tiempo jugado en total (marcador «Tiempo jugado»)
   const DIA_CAMPO = { g: 'dg', r: 'dr', m: 'dm' }, NIVEL = ['Fácil', 'Media', 'Difícil'];
   const TXT_D = { g: n => `Juega ${n} partidas hoy`, r: n => `Suma ${n} rebotes hoy`, m: n => `Llega a ${n} rebotes en una sola partida hoy` };
+  const TXT_W = { g: n => `Juega ${n} partidas esta semana`, r: n => `Suma ${n.toLocaleString('es-CL')} rebotes esta semana`, m: n => `Llega a ${n} rebotes en una sola partida esta semana` };
   const TXT_L = { g: n => n === 1 ? 'Juega tu primera partida' : `Juega ${n} partidas`, r: n => `Suma ${n.toLocaleString('es-CL')} rebotes en total`, b: n => `Llega a ${n} rebotes en una partida`,
-    s: n => `Mantén una racha de ${n} días`, e: () => 'Crea tu emblema de perfil', c: () => 'Compra tu primer artículo en la tienda', v: () => 'Verifica tu correo' };
-  const ICO = { g: '🎮', r: '🔁', m: '🎯', b: '🏆', s: '🔥', e: '🎨', c: '🛍️', v: '✉️' };
+    s: n => `Mantén una racha de ${n} días`, t: n => `Juega ${fmtPlayed(n)} en total`, e: () => 'Crea tu emblema de perfil', c: () => 'Compra tu primer artículo en la tienda', v: () => 'Verifica tu correo' };
+  const ICO = { g: '🎮', r: '🔁', m: '🎯', b: '🏆', s: '🔥', t: '⏱️', e: '🎨', c: '🛍️', v: '✉️' };
   // lo que tienes hecho en cada logro (con lo que sabe el juego; al cobrar se vuelve a comprobar con lo que dice el servidor)
   function progLogro(tipo, v) {
     v = v || {}; const st = v.stats || misStats || {};
     return tipo === 'g' ? +st.g || 0 : tipo === 'r' ? +st.r || 0 : tipo === 'b' ? v.best != null ? v.best : player.best || 0
       : tipo === 's' ? v.streakN != null ? v.streakN : (streak ? streak.n : 0) : tipo === 'e' ? (v.av != null ? v.av : avParse(player.av)) ? 1 : 0
-      : tipo === 'c' ? (v.sp != null ? v.sp : wallet.sp) >= 1 ? 1 : 0 : tipo === 'v' ? (session && session.ev && session.email ? 1 : 0) : 0;
+      : tipo === 'c' ? (v.sp != null ? v.sp : wallet.sp) >= 1 ? 1 : 0 : tipo === 'v' ? (session && session.ev && session.email ? 1 : 0) : tipo === 't' ? (v.ms != null ? v.ms : playedMs) : 0;
   }
   function missionState(v) {
     v = v || {}; const day = dayOf(srvNow()), st = v.stats !== undefined ? v.stats : misStats, same = !!st && st.d === day, cl = v.claimed || claimedM;
@@ -2738,30 +2745,36 @@
       const [tipo, meta] = c.de[pickJ(day, k)], prog = same ? +st[DIA_CAMPO[tipo]] || 0 : 0, hecha = (((same ? +st.dc || 0 : 0) >> k) & 1) === 1;
       return { k, tipo, meta, premio: c.premio, prog: Math.min(prog, meta), hecha, lista: !hecha && prog >= meta, daily: true };
     });
+    const wk = weekOf(day), wsame = !!st && st.w === wk;
+    const sem = MIS.semana.premios.map((premio, k) => {
+      const [tipo, meta] = MIS.semana.de[k][pickW(wk, k)], prog = wsame ? +st[SEM_CAMPO[tipo]] || 0 : 0, hecha = (((wsame ? +st.wc || 0 : 0) >> k) & 1) === 1;
+      return { k, tipo, meta, premio, prog: Math.min(prog, meta), hecha, lista: !hecha && prog >= meta, week: true };
+    });
     const logros = MIS.logros.map(([id, tipo, meta, premio]) => {
       const prog = progLogro(tipo, { ...v, stats: st }), hecha = !!cl[id];
       return { id, tipo, meta, premio, prog: Math.min(prog, meta), hecha, lista: !hecha && prog >= meta };
     });
-    return { dia, logros, day, dc: same ? +st.dc || 0 : 0 };
+    return { dia, sem, logros, day, week: wk, dc: same ? +st.dc || 0 : 0, wc: wsame ? +st.wc || 0 : 0 };
   }
-  const readyCount = () => { if (!MIS_ON()) return 0; const m = missionState(); return m.dia.filter(x => x.lista).length + m.logros.filter(x => x.lista).length; };
+  const readyCount = () => { if (!MIS_ON()) return 0; const m = missionState(); return m.dia.filter(x => x.lista).length + m.sem.filter(x => x.lista).length + m.logros.filter(x => x.lista).length; };
   function renderMissChip() {
     const on = MIS_ON(), n = on ? readyCount() : 0, b = $('missBadge');
     $('openMiss').hidden = !on; b.hidden = n === 0; b.textContent = n;
-    $('tabD').hidden = $('tabA').hidden = !on; $('dTabs').hidden = !(on && streakOk);
+    $('tabD').hidden = $('tabW').hidden = $('tabA').hidden = !on; $('dTabs').hidden = !(on && streakOk);
   }
   async function pullMissions() {                                              // estadísticas y logros cobrados, tal como los guarda el servidor
     if (!AUTH || !session || !MIS) { statsOk = false; return false; }
     try {
       const tok = encodeURIComponent(await idToken()), uid = session.uid;
-      const [sr, mr] = await Promise.all([http(`${DB}/stats/${uid}.json?auth=${tok}`), http(`${DB}/missions/${uid}.json?auth=${tok}`)]);
-      if (!sr.ok || !mr.ok) { statsOk = false; renderMissChip(); return false; }                  // 401/403: las reglas nuevas todavía no están publicadas en Firebase
+      const [sr, mr, tr] = await Promise.all([http(`${DB}/stats/${uid}.json?auth=${tok}`), http(`${DB}/missions/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}/ms.json`)]);
+      if (!sr.ok || !mr.ok) { statsOk = false; renderMissChip(); return false; }
+      if (tr.ok) playedMs = +(await tr.json()) || 0;                  // 401/403: las reglas nuevas todavía no están publicadas en Firebase
       const v = await sr.json(); misStats = v && typeof v.g === 'number' ? v : null; claimedM = (await mr.json()) || {}; statsOk = true; renderMissChip(); return true;
     } catch (e) { return false; }
   }
   function setDailyTab(t, quiet) {
     dailyTab = t;
-    [['tabS', 'streak'], ['tabD', 'day'], ['tabA', 'ach']].forEach(([id, k]) => { $(id).classList.toggle('on', k === t); $(id).setAttribute('aria-selected', String(k === t)); });
+    [['tabS', 'streak'], ['tabD', 'day'], ['tabW', 'week'], ['tabA', 'ach']].forEach(([id, k]) => { $(id).classList.toggle('on', k === t); $(id).setAttribute('aria-selected', String(k === t)); });
     renderMissChip(); renderDaily(quiet ? { t: '', ok: true } : { t: '', ok: true });
     if (!quiet && t !== 'streak') pullMissions().then(() => { if (dailyTab !== 'streak') renderDaily(); });
   }
@@ -2769,8 +2782,8 @@
     const row = document.createElement('div'); row.className = 'mrow' + (m.hecha ? ' done' : m.lista ? ' ready' : '');
     const ic = document.createElement('span'); ic.className = 'mi'; ic.textContent = ICO[m.tipo] || '🎯';
     const tx = document.createElement('div'); tx.className = 'mt';
-    const tt = document.createElement('b'); tt.textContent = (m.daily ? TXT_D : TXT_L)[m.tipo](m.meta);
-    if (m.daily) { const lv = document.createElement('span'); lv.className = 'mlv l' + m.k; lv.textContent = NIVEL[m.k]; tt.appendChild(lv); }
+    const tt = document.createElement('b'); tt.textContent = (m.daily ? TXT_D : m.week ? TXT_W : TXT_L)[m.tipo](m.meta);
+    if (m.daily || m.week) { const lv = document.createElement('span'); lv.className = 'mlv l' + m.k; lv.textContent = NIVEL[m.k]; tt.appendChild(lv); }
     const bar = document.createElement('div'); bar.className = 'mbar'; const fill = document.createElement('i'); fill.style.width = Math.round(100 * m.prog / m.meta) + '%'; bar.appendChild(fill);
     const sm = document.createElement('small'); sm.textContent = m.hecha ? 'Cobrada ✓' : m.lista ? '¡Lista para reclamar!' : (m.meta > 1 ? `${m.prog.toLocaleString('es-CL')} / ${m.meta.toLocaleString('es-CL')}` : 'Pendiente');
     tx.append(tt, bar, sm);
@@ -2780,14 +2793,15 @@
   function missionItems(tab) {
     const st = missionState();
     if (tab === 'day') return st.dia;
+    if (tab === 'week') return st.sem;
     return st.logros.slice().sort((a, b) => (a.hecha - b.hecha) || (b.lista - a.lista) || (b.prog / b.meta - a.prog / a.meta) || (a.meta - b.meta));       // listas arriba, luego las más avanzadas, cobradas al final
   }
   function renderMissions(msg) {
     const tab = dailyTab, list = $('missList'); list.textContent = '';
-    $('dailyGrid').hidden = true; list.hidden = false; $('dailyTitle').textContent = tab === 'day' ? 'Misiones de hoy 🎯' : 'Logros 🏅';
+    $('dailyGrid').hidden = true; list.hidden = false; $('dailyTitle').textContent = tab === 'day' ? 'Misiones de hoy 🎯' : tab === 'week' ? 'Misiones de la semana 📅' : 'Logros 🏅';
     if (MIS_ON()) missionItems(tab).forEach(m => list.appendChild(missionRow(m)));
     const items = MIS_ON() ? missionItems(tab) : [], hechas = items.filter(m => m.hecha).length;
-    $('dailySub').textContent = tab === 'day' ? `Hoy llevas ${hechas} de 3 · se renuevan a medianoche (hora de Chile)` : `${hechas} de ${items.length} logros cobrados`;
+    $('dailySub').textContent = tab === 'day' ? `Hoy llevas ${hechas} de 3 · se renuevan a medianoche (hora de Chile)` : tab === 'week' ? `Esta semana llevas ${hechas} de 3 · cambian al azar cada lunes (hora de Chile)` : `${hechas} de ${items.length} logros cobrados`;
     paintMissButton(); if (!pocketBusy) setPocket(balance());
     const pi = document.querySelector('#coinChip .ci'); if (pi && pi.getAttribute('src')) $('pocketImg').src = pi.getAttribute('src');
     if (msg !== undefined) { $('dailyMsg').textContent = msg.t; $('dailyMsg').className = 'status' + (msg.ok ? ' ok' : ' err'); }
@@ -2796,7 +2810,7 @@
     const go = $('dailyGo'), items = MIS_ON() ? missionItems(dailyTab) : [], listas = items.filter(m => m.lista), v = listas.reduce((a, m) => a + m.premio, 0);
     if (missBusy) { go.disabled = true; go.textContent = 'Reclamando…'; }
     else if (listas.length) { go.disabled = false; go.textContent = `Reclamar ${money(v)}`; }
-    else { go.disabled = true; go.textContent = dailyTab === 'day' ? (items.length && items.every(m => m.hecha) ? `¡Las 3 listas! Vuelve en ${fmtWait(streakInfo().toNext)}` : 'Cumple una misión para reclamar') : 'Cumple un logro para reclamar'; }
+    else { go.disabled = true; go.textContent = dailyTab === 'day' ? (items.length && items.every(m => m.hecha) ? `¡Las 3 listas! Vuelve en ${fmtWait(streakInfo().toNext)}` : 'Cumple una misión para reclamar') : dailyTab === 'week' ? (items.length && items.every(m => m.hecha) ? `¡Las 3 listas! Nuevas el lunes (en ${fmtWait(streakInfo().toNext + (6 - (dayOf(srvNow()) + 3) % 7) * DAYMS)})` : 'Cumple una misión para reclamar') : 'Cumple un logro para reclamar'; }
   }
   // Cobra todo lo que esté listo en la pestaña (misiones de hoy o logros) en UNA escritura. Antes de armar el cobro se vuelve a leer todo del servidor.
   async function claimMissions(which) {                                        // { res: 'ok' | 'nada' | 'denied' | 'error', v }
@@ -2805,13 +2819,15 @@
     try {
       for (let intento = 0; intento < 2; intento++) {
         const tok = encodeURIComponent(await idToken()), uid = session.uid;
-        const [wr, sr, br, kr, mr] = await Promise.all([http(`${DB}/wallets/${uid}.json?auth=${tok}`), http(`${DB}/stats/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}/s.json`), http(`${DB}/streaks/${uid}.json?auth=${tok}`), http(`${DB}/missions/${uid}.json?auth=${tok}`)]);
+        const [wr, sr, br, kr, mr, tr] = await Promise.all([http(`${DB}/wallets/${uid}.json?auth=${tok}`), http(`${DB}/stats/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}/s.json`), http(`${DB}/streaks/${uid}.json?auth=${tok}`), http(`${DB}/missions/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}/ms.json`)]);
         if (!wr.ok || !sr.ok || !br.ok || !mr.ok || (!kr.ok && !denied4(kr))) return { res: [wr, sr, mr].some(denied4) ? 'denied' : 'error', v: 0 };
         const w = (await wr.json()) || {}, c0 = +w.c || 0, sp0 = +w.sp || 0, sv = await sr.json(), best = +(await br.json()) || 0, kv = kr.ok ? await kr.json() : null;
+        if (tr.ok) playedMs = +(await tr.json()) || 0;
         misStats = sv && typeof sv.g === 'number' ? sv : null; claimedM = (await mr.json()) || {};
-        const m = missionState({ stats: misStats, claimed: claimedM, best, streakN: kv && +kv.n || 0, av: !!w.av, sp: sp0 }), body = {};
+        const m = missionState({ stats: misStats, claimed: claimedM, best, streakN: kv && +kv.n || 0, av: !!w.av, sp: sp0, ms: playedMs }), body = {};
         let v = 0;
         if (which === 'day') { let dc = m.dc; m.dia.forEach(x => { if (x.lista) { dc |= 1 << x.k; v += x.premio; } }); if (v > 0) body[`stats/${uid}/dc`] = dc; }
+        else if (which === 'week') { let wc = m.wc; m.sem.forEach(x => { if (x.lista) { wc |= 1 << x.k; v += x.premio; } }); if (v > 0) body[`stats/${uid}/wc`] = wc; }
         else m.logros.forEach(x => { if (x.lista) { body[`missions/${uid}/${x.id}`] = true; v += x.premio; } });
         if (v <= 0) { renderMissChip(); return { res: 'nada', v: 0 }; }
         body[`wallets/${uid}/c`] = c0 + v; body[`wallets/${uid}/sp`] = sp0;
@@ -2825,7 +2841,7 @@
     finally { missBusy = false; }
   }
   async function onMissGo() {
-    const which = dailyTab === 'day' ? 'day' : 'ach', rect = $('dailyGo').getBoundingClientRect(), bal0 = balance();
+    const which = dailyTab === 'day' ? 'day' : dailyTab === 'week' ? 'week' : 'ach', rect = $('dailyGo').getBoundingClientRect(), bal0 = balance();
     const { res, v } = await claimMissions(which);
     if (res === 'ok') {
       pocketBusy = true; renderDaily({ t: `¡Listo! +${money(v)} 🎉`, ok: true }); celebrate(rect, v, bal0, balance());
@@ -2849,7 +2865,7 @@
   }
   $('streakChip').addEventListener('click', () => openDaily('streak'));
   $('openMiss').addEventListener('click', () => openDaily('day'));
-  $('tabS').addEventListener('click', () => setDailyTab('streak')); $('tabD').addEventListener('click', () => setDailyTab('day')); $('tabA').addEventListener('click', () => setDailyTab('ach'));
+  $('tabS').addEventListener('click', () => setDailyTab('streak')); $('tabD').addEventListener('click', () => setDailyTab('day')); $('tabW').addEventListener('click', () => setDailyTab('week')); $('tabA').addEventListener('click', () => setDailyTab('ach'));
   $('dailyGo').addEventListener('click', onDailyGo);
   $('dailyClose').addEventListener('click', closeDaily);
   $('daily').addEventListener('click', e => { if (e.target === $('daily')) closeDaily(); });
@@ -3322,7 +3338,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v54';
+  const BUILD = 'v55';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
