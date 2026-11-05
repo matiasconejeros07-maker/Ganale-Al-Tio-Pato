@@ -163,8 +163,10 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     ok('al terminar el efecto no sale otra al tiro: falta dar rebotes (al menos 3 desde que acabó)', e2.fx.wide === 0 && !e2.has && e2.nxt - e2.hits >= 2, JSON.stringify(e2));
     await p.waitForTimeout(300);
     ok('y sigue sin salir mientras no se den esos rebotes', !(await pu()).has, JSON.stringify(await pu()));
+    const sp0 = await p.evaluate(() => window.__sp.length);
     await p.evaluate(() => { const g = window.__g.pups(); window.__g.set(g.nxt); }); await p.waitForTimeout(500);
-    ok('cuando se dan esos rebotes, ahí sí sale la siguiente', (await pu()).has, JSON.stringify(await pu()));
+    const q = await pu(), sp1 = await p.evaluate(() => window.__sp.length);                  // (el juego anota cada burbuja que sale: si la pelota la agarró en el acto, también cuenta)
+    ok('cuando se dan esos rebotes, ahí sí sale la siguiente', sp1 === sp0 + 1 && (q.has || q.fx.slow > 0 || q.fx.freeze > 0 || q.fx.wide > 0), JSON.stringify([sp0, sp1, q]));
     await p.evaluate(() => { window.__g.rm(); window.__g.quiet(); });
 
     // al terminar la partida no queda nada
