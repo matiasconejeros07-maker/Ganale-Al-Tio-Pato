@@ -72,7 +72,7 @@ const pesosFor = h => h;   // hasta 99 rebotes: $1 por rebote
   await p.evaluate(() => { const b = document.getElementById('backResult'); if (b && b.offsetParent) b.click(); }); await p.waitForTimeout(800);
   await p.evaluate(() => { const b = document.getElementById('dailyClose'); if (b && b.offsetParent) b.click(); });
   await p.tap('#boostGo button', { force: true }); await p.waitForTimeout(1500);
-  ok('al tocar el botón se activa: bx y bm = 2 guardados y el guardado baja a 0', st.db.streaks[uid].bx > 0 && st.db.streaks[uid].bm === 2 && st.db.streaks[uid].x2 === 0, JSON.stringify(st.db.streaks[uid]));
+  ok('al tocar el botón se activa: bx, bm = 2 y bd = 10 minutos guardados y el guardado baja a 0', st.db.streaks[uid].bx > 0 && st.db.streaks[uid].bm === 2 && st.db.streaks[uid].bd === 600000 && st.db.streaks[uid].x2 === 0, JSON.stringify(st.db.streaks[uid]));
   ok('aparece el cartel «Pesos ×2» con la cuenta regresiva y desaparece el botón', await p.evaluate(() => !document.getElementById('boostBar').hidden && /Pesos ×2/.test(document.getElementById('boostBar').textContent) && document.getElementById('boostGo').hidden), await p.evaluate(() => document.getElementById('boostBar').textContent));
   await playHits(p, 6, async () => {}); await p.waitForTimeout(3500);
   const run = st.db.runs[uid];

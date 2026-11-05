@@ -1,7 +1,7 @@
 // Ruleta diaria de punta a punta (juego + reglas reales de Firebase): un giro por día, el resultado sale de la hora del servidor y el premio se cobra en pesos o en un multiplicador guardado.
 // Uso:  cd pruebas && npm install && node ruleta.test.js
 const fs = require('fs'), os = require('os'), path = require('path'), vm = require('vm');
-const { chromium, st, newPage, registrar, JUEGO } = require('./mockfirebase.js');
+const { chromium, st, newPage, playHits, registrar, JUEGO } = require('./mockfirebase.js');
 const DAY = 86400000;
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { if (c) { pass++; console.log('  ok  ', n); } else { fail++; console.log('  FALLA', n, x); } };
@@ -31,13 +31,13 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   await p.screenshot({ path: process.env.SHOT || '/tmp/ruleta_antes.png' });
 
   console.log('Girar y cobrar');
-  const c0 = st.db.wallets[uid].c, x0 = Object.assign({ x2: 0, x3: 0 }, st.db.streaks[uid]);
+  const c0 = st.db.wallets[uid].c, x0 = Object.assign({ y2: 0, y3: 0, y4: 0 }, st.db.streaks[uid]);
   await p.tap('#dailyGo'); await p.waitForTimeout(800);
   ok('mientras gira el botón dice «Girando…» y no se puede tocar', (await txt(p, '#dailyGo')) === 'Girando…' && await p.evaluate(() => document.getElementById('dailyGo').disabled));
   await p.waitForTimeout(6500);
   const r = st.db.ruleta[uid], pr = premioDe(r.t);
   ok('el servidor anotó el giro (t = hora del servidor) y el cobro (c = t)', r && Math.abs(r.t - Date.now()) < 60000 && r.c === r.t, JSON.stringify(r));
-  ok(`el premio es el que dice la hora del giro (${pr[0] > 0 ? money(pr[0]) : '×' + pr[1]})`, pr[0] > 0 ? st.db.wallets[uid].c === c0 + pr[0] : st.db.streaks[uid]['x' + pr[1]] === (x0['x' + pr[1]] || 0) + 1 && st.db.wallets[uid].c === c0, JSON.stringify([pr, st.db.wallets[uid], st.db.streaks[uid]]));
+  ok(`el premio es el que dice la hora del giro (${pr[0] > 0 ? money(pr[0]) : '×' + pr[1]})`, pr[0] > 0 ? st.db.wallets[uid].c === c0 + pr[0] : st.db.streaks[uid]['y' + pr[1]] === (x0['y' + pr[1]] || 0) + 1 && st.db.wallets[uid].c === c0, JSON.stringify([pr, st.db.wallets[uid], st.db.streaks[uid]]));
   ok('la pantalla dice lo que te tocó y el mensaje confirma', /Te tocó/.test(await txt(p, '#wheelRes')) && /Listo/.test(await txt(p, '#dailyMsg')), await txt(p, '#wheelRes') + ' | ' + await txt(p, '#dailyMsg'));
   ok('el botón queda apagado con «Vuelve en …» y se va el punto rojo', /^Vuelve en/.test(await txt(p, '#dailyGo')) && await p.evaluate(() => document.getElementById('dailyGo').disabled && !document.getElementById('tabR').classList.contains('dot')));
   ok('sin denegados ni errores de página', st.denied.length === 0 && errs.length === 0, st.denied.join(' || ') + errs.join('|'));
@@ -65,14 +65,14 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
   console.log('Cada casilla paga lo que dice la tabla (giros sin cobrar, con hora de cada casilla)');
   for (let i = 0; i < RU.premios.length; i++) {
-    const prem = RU.premios[i], t = tDe(i), c1 = st.db.wallets[uid].c, k1 = (st.db.streaks[uid]['x' + prem[1]] || 0);
+    const prem = RU.premios[i], t = tDe(i), c1 = st.db.wallets[uid].c, k1 = (st.db.streaks[uid]['y' + prem[1]] || 0);
     st.db.ruleta[uid] = { t };
     await p.reload(); await p.waitForTimeout(2300); await cerrarDiario(p);
     await p.evaluate(() => document.getElementById('streakChip').click()); await p.waitForTimeout(600); await p.tap('#tabR'); await p.waitForTimeout(700);
     const boton = await txt(p, '#dailyGo');
     await p.tap('#dailyGo'); await p.waitForTimeout(6800);
     ok(`casilla ${i}: giraste sin cobrar → «Cobrar mi premio» → ${prem[0] > 0 ? money(prem[0]) : '×' + prem[1] + ' guardado'}`,
-      boton === 'Cobrar mi premio' && st.db.ruleta[uid].c === t && (prem[0] > 0 ? st.db.wallets[uid].c === c1 + prem[0] : st.db.streaks[uid]['x' + prem[1]] === k1 + 1 && st.db.wallets[uid].c === c1), `${boton} ${JSON.stringify([st.db.ruleta[uid], st.db.wallets[uid], st.db.streaks[uid]])}`);
+      boton === 'Cobrar mi premio' && st.db.ruleta[uid].c === t && (prem[0] > 0 ? st.db.wallets[uid].c === c1 + prem[0] : st.db.streaks[uid]['y' + prem[1]] === k1 + 1 && st.db.wallets[uid].c === c1), `${boton} ${JSON.stringify([st.db.ruleta[uid], st.db.wallets[uid], st.db.streaks[uid]])}`);
     await cerrarDiario(p);
   }
   ok('sin denegados ni errores de página en todo el recorrido', st.denied.length === 0 && errs.length === 0, st.denied.join(' || ') + errs.join('|'));
@@ -118,6 +118,42 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     ok(`${w}×${h}: la rueda y el botón «Girar» caben en la pantalla`, r.wheel[0] >= 0 && r.wheel[1] <= r.vw && r.go[1] <= r.vh + 1, JSON.stringify(r));
     ok(`${w}×${h}: sin errores de página`, e6.length === 0, e6.join('|'));
     await c6.close();
+  }
+
+  console.log('Los multiplicadores de la ruleta duran 5 minutos (los de la racha, 10)');
+  {
+    const { ctx: c7, p: p7, errs: e7 } = await newPage(b);
+    const u7 = await registrar(p7, 'Ruleta Siete'); await cerrarDiario(p7);
+    const hoy = Date.now() - 60000;
+    st.db.streaks = { ...(st.db.streaks || {}), [u7]: { n: 1, t: hoy, y2: 1, x3: 1 } };           // uno de la ruleta (×2) y uno de la racha (×3), sin activar
+    await p7.reload(); await p7.waitForTimeout(2800); await cerrarDiario(p7);
+    const botones = () => p7.evaluate(() => [...document.querySelectorAll('#boostGo button')].map(b => [b.dataset.k, b.dataset.m, b.textContent.replace(/\s+/g, ' ').trim()]));
+    let bt = await botones();
+    ok('el inicio ofrece los dos por separado: «🤑 Activar ×3 · 10 min» (racha) y «🎡 Activar ×2 · 5 min» (ruleta)', bt.length === 2 && bt.some(x => x[0] === 'x' && x[1] === '3' && /🤑 Activar ×3.*10 min/.test(x[2])) && bt.some(x => x[0] === 'y' && x[1] === '2' && /🎡 Activar ×2.*5 min/.test(x[2])), JSON.stringify(bt));
+    await p7.tap('#boostGo button[data-k="y"]', { force: true }); await p7.waitForTimeout(1500);
+    const k7 = st.db.streaks[u7];
+    ok('activar el de la ruleta anota bd = 5 minutos, bm = 2 y gasta su contador (y2 = 0) sin tocar el de la racha', k7.bd === 300000 && k7.bm === 2 && k7.y2 === 0 && k7.x3 === 1 && Math.abs(k7.bx - Date.now()) < 120000, JSON.stringify(k7));
+    const barra = await p7.evaluate(() => ({ vis: !document.getElementById('boostBar').hidden, txt: document.getElementById('boostBar').textContent.replace(/\s+/g, ' ').trim(), go: document.getElementById('boostGo').hidden }));
+    const seg = t => { const m = /(\d+):(\d\d)/.exec(t); return m ? +m[1] * 60 + +m[2] : -1; };           // «4:58» → 298 segundos
+    ok('el cartel muestra «Pesos ×2» con 5 minutos como máximo por delante (entre 4:00 y 5:00) y los botones desaparecen', barra.vis && /Pesos ×2/.test(barra.txt) && seg(barra.txt) >= 240 && seg(barra.txt) <= 300 && barra.go, JSON.stringify(barra));
+    await playHits(p7, 6, async () => {}); await p7.waitForTimeout(3500);
+    const run = st.db.runs[u7];
+    ok('una partida dentro de los 5 minutos paga ×2 y el servidor lo acepta', run && run.p === 2 * run.h && run.h >= 6, JSON.stringify(run));
+    ok('sin denegados', st.denied.length === 0, st.denied.join(' || '));
+    await p7.evaluate(() => { const b = document.getElementById('backResult'); if (b && b.offsetParent) b.click(); }); await p7.waitForTimeout(500);
+    // 6 minutos después: el de la ruleta ya venció (a los 5), uno de la racha seguiría activo
+    st.db.streaks[u7].bx = Date.now() - 6 * 60000; await p7.reload(); await p7.waitForTimeout(2800); await cerrarDiario(p7);
+    ok('a los 6 minutos el multiplicador de la ruleta ya venció: no hay cartel y vuelve el botón del de la racha', await p7.evaluate(() => document.getElementById('boostBar').hidden) && (await botones()).some(x => x[0] === 'x' && x[1] === '3'), JSON.stringify(await botones()));
+    st.db.streaks[u7].bx = Date.now() - 4 * 60000; await p7.reload(); await p7.waitForTimeout(2800); await cerrarDiario(p7);
+    ok('a los 4 minutos todavía está activo (cartel con menos de 1 minuto)', await p7.evaluate(() => !document.getElementById('boostBar').hidden && /\b0:\d\d\b/.test(document.getElementById('boostBar').textContent)), await p7.evaluate(() => document.getElementById('boostBar').textContent));
+    st.db.streaks[u7].bx = Date.now() - 6 * 60000; await p7.reload(); await p7.waitForTimeout(2800); await cerrarDiario(p7);
+    await p7.tap('#boostGo button[data-k="x"]', { force: true }); await p7.waitForTimeout(1500);
+    const k8 = st.db.streaks[u7];
+    ok('activar el de la racha: bd = 10 minutos, bm = 3 y x3 = 0', k8.bd === 600000 && k8.bm === 3 && k8.x3 === 0, JSON.stringify(k8));
+    const t3 = await p7.evaluate(() => document.getElementById('boostBar').textContent);
+    ok('el cartel muestra «Pesos ×3» con más de 5 minutos por delante (hasta 10:00)', /Pesos ×3/.test(t3) && seg(t3) > 300 && seg(t3) <= 600, t3);
+    ok('sin denegados ni errores de página', st.denied.length === 0 && e7.length === 0, st.denied.join(' || ') + e7.join('|'));
+    await c7.close();
   }
 
   console.log('Si todavía no están publicadas las reglas nuevas');

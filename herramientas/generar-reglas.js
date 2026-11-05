@@ -35,8 +35,9 @@ const NEXT_N = "(data.parent().child('n').exists() ? (" + `${TODAY} === ${dayOf(
 // pesos del día n de la racha: la tabla de los primeros días (los de multiplicador valen 0) y, desde `fijoDesde`, el pago fijo de cada día
 const rewardExp = n => `(${n} >= ${R.fijoDesde} ? ${R.fijo} : (` + R.dias.map((v, i) => [v, i]).filter(([v]) => v > 0).map(([v, i]) => `${n} === ${i + 1} ? ${v}`).join(' : ') + ' : 0))';
 const MULTS = R.mult.map(([d, m]) => m);                                                    // multiplicadores que se pueden guardar y activar (2, 3, 4)
-// multiplicador de una partida: si empezó dentro de los dobleMs de una activación (bx), paga ×bm (las activaciones antiguas, sin bm, eran ×2)
-const BOOST = `(${STR_ROOT}.child('bx').exists() && ${P_ROOT_S()} >= ${STR_ROOT}.child('bx').val() && ${P_ROOT_S()} < ${STR_ROOT}.child('bx').val() + ${R.dobleMs} ? (${STR_ROOT}.child('bm').exists() ? ${STR_ROOT}.child('bm').val() : 2) : 1)`;
+// multiplicador de una partida: si empezó dentro de lo que dura una activación (bx + bd), paga ×bm (las activaciones antiguas, sin bm, eran ×2)
+const BOOST_MS = `(${STR_ROOT}.child('bd').exists() ? ${STR_ROOT}.child('bd').val() : ${R.dobleMs})`;      // lo que dura la activación (bd): 10 min los de la racha, 5 los de la ruleta; las antiguas (sin bd), 10
+const BOOST = `(${STR_ROOT}.child('bx').exists() && ${P_ROOT_S()} >= ${STR_ROOT}.child('bx').val() && ${P_ROOT_S()} < ${STR_ROOT}.child('bx').val() + ${BOOST_MS} ? (${STR_ROOT}.child('bm').exists() ? ${STR_ROOT}.child('bm').val() : 2) : 1)`;
 function P_ROOT_S() { return "newData.parent().child('s').val()"; }
 // contador de puestos (hist): SC = tu fila de scores antes de la escritura · NS = tu fila de scores después
 const SC = "root.child('scores').child(auth.uid)", NS = "newData.parent().parent().child('scores').child(auth.uid)";
@@ -100,11 +101,13 @@ const NEWWC = "(newData.parent().parent().parent().child('stats').child($uid).ch
 const OLDWC = "(root.child('stats').child($uid).child('wc').exists() ? root.child('stats').child($uid).child('wc').val() : 0)";
 const SEM_SUM = '(' + SEM.premios.map((pr, k) => `(${bit(NEWWC, k)} && !${bit(OLDWC, k)} ? ${pr} : 0)`).join(' + ') + ')';
 const INV_OLD = m => `(data.exists() ? data.val() : 0)`;                                      // (se usa dentro de x<m>: su valor anterior)
-const INV_DEC = m => `(${P}.child('x${m}').exists() && data.parent().child('x${m}').exists() && ${P}.child('x${m}').val() + 1 === data.parent().child('x${m}').val())`;       // desde bx: ¿el contador x<m> bajó en 1 en esta escritura?
+const INV_DEC = (k, m) => `(${P}.child('${k}${m}').exists() && data.parent().child('${k}${m}').exists() && ${P}.child('${k}${m}').val() + 1 === data.parent().child('${k}${m}').val())`;       // desde bx: ¿el contador k<m> (x = de la racha, y = de la ruleta) bajó en 1 en esta escritura?
 // ruleta diaria: el giro anota la hora del servidor (ruleta/<uid>/t) y de esa hora sale el resultado (hora en ms % 20); el cobro es otra escritura (ruleta/<uid>/c = t) que repite la cuenta.
 // Un giro y su cobro NUNCA van en la misma escritura (si no, se podría reintentar hasta acertar el premio grande): el cobro exige que `t` ya estuviera guardado y no cambie.
 const RU = ECO.ruleta, NEWR = "newData.parent().parent().parent().child('ruleta').child($uid)", OLDR = "root.child('ruleta').child($uid)";
 const RU_N = RU.premios.reduce((a, x) => a + x[2], 0);
+const RU_MULTS = [...new Set(RU.premios.filter(x => x[1] > 0).map(x => x[1]))];                  // multiplicadores que puede dar la ruleta (2, 3, 4)
+const OLD_DUR = `(data.parent().child('bd').exists() ? data.parent().child('bd').val() : ${R.dobleMs})`;      // lo que duraba la activación anterior (desde bx: puede volver a activarse cuando venció)
 const RU_ACUM = []; { let acc = 0; for (const [v, m, w] of RU.premios) { acc += w; RU_ACUM.push([acc, v, m]); } }
 const ruChain = (t, k) => '(' + RU_ACUM.map(([lim, v, m]) => `((${t}) % ${RU_N}) < ${lim} ? ${k === 'v' ? v : m}`).join(' : ') + ' : 0)';
 const RU_T = `${NEWR}.child('t').val()`;
@@ -220,8 +223,9 @@ const rules = { rules: {
     }
   },
 
-  // ---- racha diaria: n = días seguidos · t = hora del último cobro (la pone el servidor) · x2/x3/x4 = multiplicadores guardados que aún no se activaron ·
-  //      bx = hora en que se activó el último multiplicador · bm = cuál era (×2, ×3 o ×4; sin bm = ×2, de las activaciones antiguas).
+  // ---- racha diaria: n = días seguidos · t = hora del último cobro (la pone el servidor) · x2/x3/x4 = multiplicadores guardados de la RACHA (duran 10 min al activarlos) ·
+  //      y2/y3/y4 = multiplicadores guardados de la RULETA (duran 5 min) · bx = hora en que se activó el último multiplicador · bm = cuál era (×2, ×3 o ×4; sin bm = ×2, de las activaciones antiguas) ·
+  //      bd = cuánto dura esa activación en ms (600000 si gastó uno x<m>, 300000 si gastó uno y<m>; sin bd = 10 min, de las activaciones antiguas).
   //      Cada cobro mueve n y t juntos al valor exacto que toca; los días de multiplicador (7, 14, 21) suman 1 a su contador en esa misma escritura. Activar uno resta 1 a su contador
   //      (solo si hay) y pone bx = ahora y bm: solo se puede activar otro cuando el anterior ya venció. La recompensa en pesos la valida la cartera (c); no se puede borrar la racha para cobrar otra vez. ----
   streaks: { $uid: {
@@ -230,12 +234,15 @@ const rules = { rules: {
     '.validate': "newData.hasChildren(['n', 't'])",
     n: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && newData.val() <= 100000 && newData.val() === ${NEXT_N} && ${P}.child('t').val() === now` },
     t: { '.validate': `newData.isNumber() && newData.val() === now && ${P}.child('n').val() === ${NEXT_N}` },
-    bx: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (newData.val() === now && (!data.exists() || data.val() + ${R.dobleMs} <= now) && (` + MULTS.map(m => `(${P}.child('bm').val() === ${m} && ${INV_DEC(m)})`).join(' || ') + '))) ' },
+    bx: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (newData.val() === now && (!data.exists() || data.val() + ${OLD_DUR} <= now) && (` + MULTS.map(m => `(${P}.child('bm').val() === ${m} && ((${INV_DEC('x', m)} && ${P}.child('bd').val() === ${R.dobleMs})` + (RU_MULTS.includes(m) ? ` || (${INV_DEC('y', m)} && ${P}.child('bd').val() === ${RU.multMs})` : '') + '))').join(' || ') + '))) ' },
+    bd: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (${P}.child('bx').val() === now && (newData.val() === ${R.dobleMs} || newData.val() === ${RU.multMs})))` },
     bm: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (${P}.child('bx').val() === now && (` + MULTS.map(m => `newData.val() === ${m}`).join(' || ') + '))) ' },
     ...Object.fromEntries(R.mult.map(([dia, m]) => ['x' + m, { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 99 && (newData.val() === ${INV_OLD(m)}`
       + ` || (newData.val() === ${INV_OLD(m)} + 1 && ${P}.child('n').val() === ${dia} && ${P}.child('t').val() === now)`
-      + ` || (newData.val() === ${INV_OLD(m)} - 1 && ${P}.child('bm').val() === ${m} && ${P}.child('bx').val() === now)`
-      + ` || (newData.val() === ${INV_OLD(m)} + 1 && ${RU_CLAIM} && ${ruChain(RU_T, 'm')} === ${m}))` }])),
+      + ` || (newData.val() === ${INV_OLD(m)} - 1 && ${P}.child('bm').val() === ${m} && ${P}.child('bx').val() === now && ${P}.child('bd').val() === ${R.dobleMs}))` }])),
+    ...Object.fromEntries(RU_MULTS.map(m => ['y' + m, { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 99 && (newData.val() === ${INV_OLD(m)}`
+      + ` || (newData.val() === ${INV_OLD(m)} + 1 && ${RU_CLAIM} && ${ruChain(RU_T, 'm')} === ${m})`
+      + ` || (newData.val() === ${INV_OLD(m)} - 1 && ${P}.child('bm').val() === ${m} && ${P}.child('bx').val() === now && ${P}.child('bd').val() === ${RU.multMs}))` }])),
     $other: { '.validate': false }
   } },
 
@@ -277,7 +284,7 @@ const rules = { rules: {
   } },
 
   // ---- ruleta diaria: t = hora del giro (la pone el servidor; un giro por día, medianoche de Chile) · c = el giro que ya se cobró (igual a t). El premio sale de t (ver tienda.js → eco.ruleta) y se
-  //      cobra en la cartera (c) o, si toca multiplicador, en los guardados de la racha (x2/x3). No se puede cobrar dos veces ni cobrar en la misma escritura que gira. ----
+  //      cobra en la cartera (c) o, si toca multiplicador, en los guardados de la ruleta (y2/y3/y4, que duran 5 minutos al activarlos). No se puede cobrar dos veces ni cobrar en la misma escritura que gira. ----
   ruleta: { $uid: {
     '.read': 'auth != null && auth.uid === $uid',
     '.write': 'auth != null && auth.uid === $uid && newData.exists()',
