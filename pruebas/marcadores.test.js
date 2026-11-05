@@ -1,4 +1,4 @@
-// Marcadores de punta a punta (juego + reglas reales de Firebase): Top 30 en todos, «Todo el tiempo», «Semanal», «Tiempo jugado» y «Millonarios» (la billetera),
+// Marcadores de punta a punta (juego + reglas reales de Firebase): Top 30 en todos, «Todo el tiempo», «Semanal», «Tiempo jugado» y «Millonarios» (el total de pesos ganados),
 // y las insignias (🦆🎩 🦆🎀 👾) que pone el administrador en roles/<uid>. Uso:  cd pruebas && npm install && node marcadores.test.js
 const fs = require('fs'), os = require('os'), path = require('path');
 const { chromium, st, newPage, playHits, registrar, JUEGO } = require('./mockfirebase.js');
@@ -19,18 +19,18 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   const { ctx, p, errs } = await newPage(b);
   const uid = await registrar(p, 'Marc Uno'); await cerrarDiario(p);
 
-  console.log('Las partidas llenan el marcador semanal y la billetera pública');
+  console.log('Las partidas llenan el marcador semanal y el total ganado público');
   const w = WK();
   await playHits(p, 8, async () => {}); await p.waitForTimeout(6000);
   const r1 = st.db.runs[uid], s1 = st.db.weekly && st.db.weekly[w] && st.db.weekly[w][uid];
   ok(`la primera partida (${r1.h} rebotes) crea tu fila semanal: nombre, mejor de la semana y hora del servidor`, s1 && s1.n === 'Marc Uno' && s1.s === r1.h && typeof s1.t === 'number' && Object.keys(s1).length >= 3, JSON.stringify(s1));
   ok('la fila semanal coincide con tus estadísticas verificadas (wm)', st.db.stats[uid].wm === r1.h && st.db.stats[uid].w === w, JSON.stringify(st.db.stats[uid]));
-  const cartera = () => st.db.wallets[uid].c - st.db.wallets[uid].sp;
-  ok('tu billetera pública (scores/<uid>/w) es la de tu cartera (ganado − gastado)', st.db.scores[uid].w === cartera() && cartera() > 0, `${st.db.scores[uid].w} vs ${cartera()}`);
+  const cartera = () => st.db.wallets[uid].c;                       // lo que se ve en «Millonarios»: el total ganado (lo gastado no se descuenta)
+  ok('tu total ganado público (scores/<uid>/w) es el de tu cartera (wallets/<uid>/c)', st.db.scores[uid].w === cartera() && cartera() > 0, `${st.db.scores[uid].w} vs ${cartera()}`);
   await playHits(p, 5, async () => {}); await p.waitForTimeout(6000);
   const r2 = st.db.runs[uid];
   ok('una partida peor no baja la marca de la semana', r2.h < r1.h ? st.db.weekly[w][uid].s === r1.h : st.db.weekly[w][uid].s === Math.max(r1.h, r2.h), JSON.stringify(st.db.weekly[w][uid]) + ' ' + r1.h + '/' + r2.h);
-  ok('y la billetera pública se actualiza con lo que sumó la partida', st.db.scores[uid].w === cartera(), `${st.db.scores[uid].w} vs ${cartera()}`);
+  ok('y el total público se actualiza con lo que sumó la partida', st.db.scores[uid].w === cartera(), `${st.db.scores[uid].w} vs ${cartera()}`);
   await playHits(p, 12, async () => {}); await p.waitForTimeout(6000);
   const r3 = st.db.runs[uid];
   ok(`una partida mejor (${r3.h}) sube la marca de la semana`, st.db.weekly[w][uid].s === Math.max(r1.h, r2.h, r3.h) && st.db.weekly[w][uid].s >= r3.h, JSON.stringify(st.db.weekly[w][uid]));
@@ -65,11 +65,11 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
   await pestana(p, 'kindM');
   f = await filas(p);
-  ok('«Millonarios»: 30 jugadores ordenados por billetera, con el monto en pesos', f.length === 30 && f[0].n === 'Jug 40' && f[0].sc === money(40000000) && f[1].sc === money(39000000), JSON.stringify(f.slice(0, 2)));
-  ok('«Millonarios» lleva las insignias y la nota explica qué se ve', f[0].rb === '🦆🎩' && /billeteras más grandes/.test(await nota(p)), await nota(p));
+  ok('«Millonarios»: 30 jugadores ordenados por total ganado, con el monto en pesos', f.length === 30 && f[0].n === 'Jug 40' && f[0].sc === money(40000000) && f[1].sc === money(39000000), JSON.stringify(f.slice(0, 2)));
+  ok('«Millonarios» lleva las insignias y la nota explica qué se ve', f[0].rb === '🦆🎩' && /más pesos han ganado en total/.test(await nota(p)) && /no se descuenta/.test(await nota(p)), await nota(p));
   mi = await miFila(p);
-  ok('tu billetera (la tuya de verdad) aparece debajo si no estás entre los 30', mi && mi.n === 'Marc Uno' && mi.sc === money(cartera()), JSON.stringify(mi) + ' ' + cartera());
-  ok('al abrir «Millonarios» se actualiza tu billetera pública', st.db.scores[uid].w === cartera());
+  ok('tu total ganado (el tuyo de verdad) aparece debajo si no estás entre los 30', mi && mi.n === 'Marc Uno' && mi.sc === money(cartera()), JSON.stringify(mi) + ' ' + cartera());
+  ok('al abrir «Millonarios» se actualiza tu total público', st.db.scores[uid].w === cartera());
   await pestana(p, 'kindR');
   f = await filas(p);
   ok('al volver a «Todo el tiempo» se ven los rebotes otra vez', f[0].sc === '40' && /Top 30/.test(await nota(p)));
@@ -88,11 +88,11 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       const r = await fetch(`${url}/${ruta}.json?auth=${encodeURIComponent(sess.id)}`, { method: m, body: JSON.stringify(body) }); return r.status;
     }, [m, ruta, body, url]);
     const wk = WK();
-    ok('ponerte una billetera inventada en el marcador de millonarios', await hit('PATCH', `scores/${u2}`, { w: 999999999 }) === 401);
+    ok('ponerte un total inventado en el marcador de millonarios', await hit('PATCH', `scores/${u2}`, { w: 999999999 }) === 401);
     ok('ponerte 10.000 rebotes en el marcador semanal', await hit('PUT', `weekly/${wk}/${u2}`, { n: 'Marc Dos', s: 500, t: { '.sv': 'timestamp' } }) === 401);
     ok('escribir en la semana pasada', await hit('PUT', `weekly/${wk - 1}/${u2}`, { n: 'Marc Dos', s: st.db.stats[u2].wm, t: { '.sv': 'timestamp' } }) === 401);
     ok('ponerte una insignia de desarrollador', await hit('PUT', `roles/${u2}`, 'dev') === 401);
-    ok('la billetera real sí se acepta', await hit('PATCH', `scores/${u2}`, { w: st.db.wallets[u2].c - st.db.wallets[u2].sp }) === 200);
+    ok('el total real sí se acepta', await hit('PATCH', `scores/${u2}`, { w: st.db.wallets[u2].c }) === 200);
     st.denied.length = 0;
     await c2.close();
   }

@@ -1794,7 +1794,7 @@
     const r = await http(`${DB}/weekly/${weekNow()}/${session.uid}/s.json`);
     const v = r.ok ? await r.json() : 0; return typeof v === 'number' ? v : 0;
   }
-  async function fetchTopRich(limit = TOP_N) {                     // las billeteras más grandes (índice `w` de las reglas)
+  async function fetchTopRich(limit = TOP_N) {                     // los que más pesos han ganado en total (índice `w` de las reglas)
     const r = await http(`${DB}/scores.json?orderBy=%22w%22&limitToLast=${limit}`);
     if (!r.ok) throw new Error('http ' + r.status);
     const data = (await r.json()) || {};
@@ -1856,7 +1856,7 @@
     const m = Math.floor(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
     return ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : h < 1 ? `${m} min` : d < 1 ? `${h} h ${String(m % 60).padStart(2, '0')} min` : `${d} d ${h % 24} h`;
   };
-  let boardKind = 'r';                                             // 'r' = todo el tiempo (rebotes) · 'w' = semanal (rebotes) · 't' = más tiempo jugado · 'm' = millonarios (billetera)
+  let boardKind = 'r';                                             // 'r' = todo el tiempo (rebotes) · 'w' = semanal (rebotes) · 't' = más tiempo jugado · 'm' = millonarios (total de pesos ganados)
   const BOARD_TABS = [['kindR', 'r'], ['kindW', 'w'], ['kindT', 't'], ['kindM', 'm']];
   const paintKindTabs = () => BOARD_TABS.forEach(([id, k]) => { $(id).classList.toggle('on', k === boardKind); $(id).setAttribute('aria-selected', String(k === boardKind)); });
   const boardVal = (row, k = boardKind) => k === 't' ? fmtPlayed(row.ms) : k === 'm' ? money(row.w) : row.s;
@@ -1951,7 +1951,7 @@
       if (kind !== 'r') {                                         // semanal · tiempo jugado · millonarios: mismo formato, misma frecuencia y mismo límite de tiempo que el de rebotes
         if (kind === 'm') { if (first) syncWealth(true); } else syncRun();
         const [rows, mine] = await Promise.all([kind === 't' ? fetchTopTime(TOP_N) : kind === 'w' ? fetchTopWeek(TOP_N) : fetchTopRich(TOP_N),
-          (kind === 't' ? fetchMyTime() : kind === 'w' ? fetchMyWeek() : Promise.resolve(AUTH && session ? balance() : 0)).catch(() => 0), fetchRoles(), fetchMarcos()]);
+          (kind === 't' ? fetchMyTime() : kind === 'w' ? fetchMyWeek() : Promise.resolve(AUTH && session ? wallet.c : 0)).catch(() => 0), fetchRoles(), fetchMarcos()]);
         if (kind !== boardKind) return;                           // cambió de pestaña mientras cargaba
         const sig = JSON.stringify([kind, rows.map(r => [r.id, r.ms || r.s || r.w, r.n, roles[r.id], goldOf(r.id)]), mine]);
         if (sig !== lastSig) {
@@ -1960,7 +1960,7 @@
           const n = Math.min(rows.length, TOP_N);
           note.textContent = kind === 't' ? `Top ${n} · gana quien más tiempo lleva jugando (la suma de todas sus partidas, desde que existe este marcador)`
             : kind === 'w' ? `Top ${n} de la semana · gana quien llega más alto en una partida · se reinicia el lunes (en ${fmtWait(streakInfo().toNext + (6 - (dayOf(srvNow()) + 3) % 7) * DAYMS)})`
-            : `Top ${n} · las billeteras más grandes (pesos ganados menos gastados)`;
+            : `Top ${n} · quienes más pesos han ganado en total (lo que se gasta en la tienda no se descuenta)`;
         }
         return;
       }
@@ -2756,16 +2756,16 @@
         }
       }
       setTimePend(pend.tm || pend.st || pend.wk ? pend : null);
-      syncWealth();                                                                                                           // tu billetera cambió con el cobro: se actualiza en «Millonarios»
+      syncWealth();                                                                                                           // tus pesos ganados cambiaron con el cobro: se actualiza en «Millonarios»
     } catch (e) {} finally { timing = false; }
   }
-  /* Marcador «Millonarios»: tu billetera (ganado − gastado) se copia a tu fila del marcador (scores/<uid>/w). Las reglas solo aceptan el valor exacto que dice tu cartera en ese momento;
+  /* Marcador «Millonarios»: el total de pesos que has ganado (wallet.c; lo gastado no se descuenta) se copia a tu fila del marcador (scores/<uid>/w). Las reglas solo aceptan el valor exacto que dice tu cartera en ese momento;
      se hace aparte de cualquier cobro (si falla, no pasa nada) y se repite tras cada cambio de saldo, como mucho cada 15 s. */
   let wealthSent = -1, wealthAt = 0, wealthBusy = false, wealthUid = '', wealthDenied = 0;
   async function syncWealth(force) {
     if (!AUTH || !session || wealthBusy || !(player.best > 0)) return;                 // sin puntaje todavía no hay fila en el marcador donde copiarla
     if (wealthUid !== session.uid) { wealthUid = session.uid; wealthSent = -1; wealthDenied = 0; }
-    const v = balance(); if (v === wealthSent || v <= 0) return;
+    const v = wallet.c; if (v === wealthSent || v <= 0) return;
     if (!force && (Date.now() - wealthAt < 15000 || wealthDenied >= 3)) return;       // (si Firebase la rechaza 3 veces seguidas, por ejemplo sin las reglas nuevas, deja de insistir)
     wealthBusy = true; wealthAt = Date.now();
     try {

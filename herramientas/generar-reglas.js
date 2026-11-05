@@ -148,8 +148,8 @@ const rules = { rules: {
       ml: { '.validate': `newData.isNumber() && newData.val() === ${RV('s')} && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val()) && root.child('wallets').child($uid).child('lr').val() === newData.val()` },
       // c = el puntaje que ya está contado en `hist` (así cada cuenta cuenta una sola vez y se puede mover de casilla al mejorar). Solo sube y siempre es igual al puntaje de ese momento.
       c: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && newData.val() === ${P}.child('s').val() && (!data.exists() || newData.val() > data.val())` },
-      // w = la billetera (pesos ganados − gastados) que se ve en el marcador «Millonarios»: solo vale lo que la cartera dice en el momento de escribirlo (se actualiza aparte del cobro, después de cada cambio de saldo)
-      w: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.cMax} && newData.val() === ${P}.parent().parent().child('wallets').child($uid).child('c').val() - ${P}.parent().parent().child('wallets').child($uid).child('sp').val()` },
+      // w = el TOTAL de pesos ganados en el juego (wallets/<uid>/c; lo que se gasta en la tienda no se descuenta) que se ve en el marcador «Millonarios»: solo vale lo que la cartera dice en el momento de escribirlo (se actualiza aparte del cobro, después de cada cobro)
+      w: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.cMax} && newData.val() === ${P}.parent().parent().child('wallets').child($uid).child('c').val()` },
       $other: { '.validate': false }
     }
   },
