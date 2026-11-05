@@ -186,6 +186,14 @@
   @keyframes chipPulse { 50% { transform: scale(1.07); } }
   .boostbar { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #7b3ff2, #e0149f); color: #fff; font-weight: 800; font-size: 14px; padding: 5px 14px; border-radius: 999px; box-shadow: 0 4px 12px rgba(123, 63, 242, .35); font-variant-numeric: tabular-nums; }
   .boostbar[hidden] { display: none; }
+  .redes { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 14px 0 6px; }
+  .redes[hidden] { display: none; }
+  .redes .red { position: relative; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 22px; line-height: 1;
+    background: linear-gradient(#ffe56f, #ffc928); border: 3px solid #111; box-shadow: 0 3px 0 #111; transition: transform .12s; }
+  .redes .red:active { transform: translateY(3px); box-shadow: 0 0 0 #111; }
+  .redes .red::before { content: ""; position: absolute; right: -9px; bottom: 7px; width: 0; height: 0; border-left: 11px solid #ff8a1f; border-top: 5px solid transparent; border-bottom: 5px solid transparent; filter: drop-shadow(0 1px 0 #111); }      /* el piquito del patito */
+  .redes .red i { position: absolute; left: -4px; top: -9px; font-style: normal; font-size: 14px; transform: rotate(-18deg); }
+  .redes .red:focus-visible { outline: 3px solid #7b3ff2; outline-offset: 3px; }
   .boostgo { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: 100%; margin: 0 0 4px; }
   .boostgo[hidden] { display: none; }
   .boostgo button { display: inline-flex; align-items: center; gap: 6px; border: 3px solid #7b3ff2; background: linear-gradient(#fff, #f3e6ff); color: #4a1fb0; font: inherit; font-weight: 900; font-size: 13px; padding: 5px 11px; border-radius: 999px; cursor: pointer; box-shadow: 0 3px 0 #5a2ec0; white-space: nowrap; animation: chipPulse 1.6s ease-in-out infinite; }
@@ -981,6 +989,7 @@
           <button class="tile wide" id="openMiss" type="button" hidden><span>🎯</span>Misiones<b class="mbadge2" id="missBadge" hidden>0</b></button>
         </div>
       </div>
+      <nav class="redes" id="redes" hidden aria-label="Redes sociales"></nav>
       <div class="foot"><button class="link" id="openSettings" type="button">⚙️ Ajustes</button><button class="link" id="install" hidden>📲 Instalar app</button></div>
     </section>
 
@@ -2230,9 +2239,11 @@
     const u = ((x - BX + vx * t) % (2 * span) + 2 * span) % (2 * span);
     return BX + (u > span ? 2 * span - u : u);
   }
+  // El Pato NO sigue la pelota: se queda quieto mientras ella se aleja y solo sale a recibirla cuando vuelve (calcula dónde va a llegar y se desplaza justo a tiempo, sin pasarse ni llegar tarde).
   function duckTrack(dt) {
-    const want = vy < 0 ? predictX() : W / 2 + (x - W / 2) * .5;
-    const maxMove = (520 + Math.min(level(), 10) * 140) * K * dt;
+    if (vy >= 0) { duckShow += (duckX - duckShow) * Math.min(1, dt * 28); return; }       // la pelota va hacia abajo (hacia ti): quieto
+    const want = predictX(), tLeft = Math.max(.06, (y - DUCK_BOTTOM - BY) / Math.max(1, -vy));
+    const maxMove = Math.max((520 + Math.min(level(), 10) * 140) * K, Math.abs(want - duckX) / tLeft * 1.15) * dt;
     duckX = clamp(duckX + clamp(want - duckX, -maxMove, maxMove), 40 * K, W - 40 * K);
     duckShow += (duckX - duckShow) * Math.min(1, dt * 28);
   }
@@ -3530,7 +3541,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v57';
+  const BUILD = 'v58';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3764,6 +3775,20 @@
   $('backBoard').addEventListener('click', closeBoard);
   $('refreshBoard').addEventListener('click', manualRefresh);
   nameInput.addEventListener('keydown', e => { if (e.isTrusted && e.key === 'Enter') startCountdown(); });
+
+  /* ---------- redes sociales: botones con estilo patito (los links están en config.js → window.REDES; solo se ven las que tengan un https://…) ---------- */
+  const REDES = [['instagram', '📸', 'Instagram'], ['tiktok', '🎵', 'TikTok'], ['youtube', '▶️', 'YouTube'], ['facebook', '👍', 'Facebook'], ['whatsapp', '💬', 'WhatsApp'], ['x', '✖️', 'X (Twitter)']];
+  function renderRedes() {
+    const box = $('redes'), cfg = window.REDES || {}; box.textContent = '';
+    for (const [k, em, nm] of REDES) {
+      const u = String(cfg[k] || '').trim(); if (!/^https:\/\/[^\s]+$/i.test(u)) continue;      // solo enlaces https
+      const a = document.createElement('a'); a.className = 'red'; a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.title = nm; a.setAttribute('aria-label', nm + ' (se abre en otra pestaña)');
+      const e = document.createElement('span'); e.textContent = em; e.setAttribute('aria-hidden', 'true');
+      const d = document.createElement('i'); d.textContent = '🦆'; d.setAttribute('aria-hidden', 'true'); a.append(e, d); box.appendChild(a);
+    }
+    box.hidden = !box.childNodes.length;
+  }
+  renderRedes();
 
   /* ---------- app instalable (PWA) ---------- */
   const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;

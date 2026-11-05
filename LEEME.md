@@ -286,6 +286,11 @@ Cada jugador arma su **emblema** (tocando su nombre en el inicio, o en Ajustes �
 - **Ajustes → Mi emblema** dice en qué estado está: «✅ Todos lo ven en el marcador», «⏳ Guardando…», «⏳ Sin conexión» o «⚠️ faltan publicar las reglas nuevas». Si no se pudo subir, queda pendiente y **se reintenta solo cada vez que abres el juego**; también se sube si tu fila del marcador no tiene emblema (por ejemplo, el récord se hizo antes).
 - **Hay que publicar las reglas nuevas** (`firebase-rules.json`): sin ellas el emblema se ve en tu celular pero no se guarda en la cuenta ni en el marcador.
 
+## El Pato que responde y los botones de redes
+
+- **El Pato no sigue la pelota:** se queda quieto mientras la pelota se aleja (hacia ti) y **solo sale a recibirla cuando vuelve**: calcula dónde va a llegar (con los rebotes en las paredes) y se desplaza justo a tiempo para golpearla. Es solo el movimiento del personaje: la pelota le llega igual y él siempre la devuelve, así que la dificultad y los límites de las reglas no cambian. Una prueba (`humo.test.js`) mide que mientras la pelota se aleja el Pato no se mueve ni un píxel y que cuando vuelve se desplaza sin saltos.
+- **Botones de redes sociales** (inicio, sobre «Ajustes»): círculos amarillos con su piquito y un patito encima, uno por red (📸 Instagram · 🎵 TikTok · ▶️ YouTube · 👍 Facebook · 💬 WhatsApp · ✖️ X). Los links se ponen en **`config.js` → `window.REDES`** (`instagram`, `tiktok`, `youtube`, `facebook`, `whatsapp`, `x`) con el enlace completo `https://…`; las redes que dejes vacías **no se muestran** y, si no hay ninguna, no aparece nada. Solo se aceptan enlaces `https://` (se descartan `javascript:`, `http:` y los que tengan espacios); abren en otra pestaña con `noopener noreferrer`. Para WhatsApp pon el link de tu comunidad o grupo (`https://chat.whatsapp.com/…`).
+
 ## Interfaz y accesibilidad
 
 - **Ajustes** (⚙️ al pie del inicio): interruptores de **Sonido** y **Vibración** (SÍ/NO, se recuerdan en el dispositivo), **Cerrar sesión** y la versión del juego. Además, el botón 🔊/🔇 arriba a la derecha durante la partida silencia rápido.
