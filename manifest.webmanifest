@@ -13,8 +13,8 @@
     "minimal-ui"
   ],
   "orientation": "portrait",
-  "background_color": "#fff7c2",
-  "theme_color": "#fff7c2",
+  "background_color": "#003454",
+  "theme_color": "#00223b",
   "categories": [
     "games",
     "entertainment"

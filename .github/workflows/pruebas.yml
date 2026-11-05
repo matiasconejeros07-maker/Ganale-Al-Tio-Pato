@@ -37,7 +37,7 @@ jobs:
       - name: Ruleta diaria (un giro por día, premio que decide el servidor)
         working-directory: pruebas
         run: node ruleta.test.js
-      - name: Marcadores (Top 30, semanal, millonarios e insignias)
+      - name: Marcadores (Top 30, semanal, tiempo jugado e insignias)
         working-directory: pruebas
         run: node marcadores.test.js
       - name: Correo en las cuentas (crear, agregar a una antigua, verificar y recuperar)
@@ -46,6 +46,9 @@ jobs:
       - name: Grupo VIP (WhatsApp de quien desbloquea el personaje secreto)
         working-directory: pruebas
         run: node vip.test.js
+      - name: Colores del juego (azul de siempre, tienda de colores y que se lean bien)
+        working-directory: pruebas
+        run: node colores.test.js
       - name: Marco dorado (quién tiene el personaje secreto y su marco en los marcadores)
         working-directory: pruebas
         run: node dorado.test.js

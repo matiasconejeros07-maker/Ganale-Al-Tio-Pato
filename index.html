@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Gánale al Tío Pato</title>
 <meta name="description" content="¡Rebota, gana y hazte millonario! Rebota la moneda contra el Tío Pato: empieza como un ángel amistoso y termina convertido en diablo. Juega en línea o instálalo en tu celular.">
-<meta name="theme-color" content="#fff7c2" id="themeColor">
+<meta name="theme-color" content="#00223b" id="themeColor">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Tío Pato">
@@ -21,7 +21,11 @@
 <script>if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.style.display = 'none'; } }</script>
 <style>
   :root {
-    --bg: #fff7c2;
+    --bg: #003454;                               /* fondo base (el tema elegido en la tienda cambia estas variables: ver applyTheme) */
+    --screen-bg: linear-gradient(180deg, #00223b 0%, #003454 48%, #001d35 100%);
+    --stage-bg: radial-gradient(circle at 50% 40%, #0a6b8a 0%, #0a4e65 55%, #06384d 100%);
+    --on: #fff; --on2: rgba(255, 255, 255, .72);     /* texto que va directo sobre el fondo */
+    --g1: #ffd54a; --g2: #f2a900; --t1: #fff; --t2: #cfe8ff;
     --ink: #111;
     --score: #6f6a3a;
     --ghost: rgba(140, 130, 50, .38);
@@ -463,7 +467,7 @@
     position: absolute; inset: 0; z-index: 5; display: none; flex-direction: column;
     align-items: center; justify-content: center; gap: 10px; text-align: center;
     padding: calc(env(safe-area-inset-top) + 60px) max(20px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 20px) max(20px, env(safe-area-inset-left));
-    background: rgba(255, 247, 194, .96); overflow-y: auto; -webkit-overflow-scrolling: touch;
+    background: var(--screen-bg); overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   .screen > * { flex-shrink: 0; }
   .screen::before, .screen::after { content: ""; margin: auto; }
@@ -551,8 +555,9 @@
   #list .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #list .sc { font-weight: 800; font-variant-numeric: tabular-nums; }
   #list li.top .rk { font-size: 22px; }
-  .boardseg { flex: none; width: min(100%, 340px); display: grid; grid-template-columns: 1fr 1fr; gap: 2px; border-radius: 24px; }
-  .boardseg button { font-size: 14px; padding: 7px 4px; min-height: 38px; }
+  .boardseg { flex: none; width: min(100%, 380px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; border-radius: 24px; }
+  .boardseg button { font-size: 12.5px; padding: 6px 2px; min-height: 40px; line-height: 1.15; }
+  @media (max-width: 360px) { .boardseg button { font-size: 11.5px; } }
   .rb { display: inline-block; margin-left: 5px; font-size: .9em; line-height: 1; vertical-align: 1px; }
   #list .nm .rb, #myRow .nm .rb { flex: none; margin-left: -6px; }
   #list .sc.tm, #myRow .sc.tm { font-size: 15px; white-space: nowrap; }
@@ -593,7 +598,7 @@
   .sheet ol { margin: 0 0 14px; padding-left: 22px; font-size: 16px; line-height: 1.5; }
   .sheet .btn { width: 100%; margin: 0; }
   /* el juego es vertical: en horizontal se pausa y pide girar el celular */
-  #rotate, #tiny { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: #fff7c2; color: #111; text-align: center; padding: 24px; font-weight: 700; }
+  #rotate, #tiny { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: var(--screen-bg); color: var(--on); text-align: center; padding: 24px; font-weight: 700; }
   #rotate .ico, #tiny .ico { font-size: 48px; animation: turn 2.4s ease-in-out infinite; }
   body.tiny #tiny { display: flex; }
   @keyframes turn { 0%, 30% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0); } }
@@ -945,7 +950,7 @@
   #shopBack { margin-top: 2px; }
 
   /* ---------- menú: ordenado y limpio ---------- */
-  #menu { justify-content: flex-start; gap: 0; background: radial-gradient(120% 70% at 50% 0%, rgba(255,236,150,.95), rgba(255,247,194,.98) 60%); }
+  #menu { justify-content: flex-start; gap: 0; }
   #menu::before, #menu::after { display: none; }
   #menu .topbar { width: min(100%, 380px); min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   #menu .topbar[hidden] { display: none; }
@@ -955,12 +960,12 @@
   .chip[hidden] { display: none; }
   #userBox { cursor: pointer; font: inherit; color: var(--ink); }
   .chip #hello { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #menu .stage { --st: clamp(150px, 25vh, 205px); position: relative; display: grid; place-items: center; flex: none; width: var(--st); height: var(--st); border-radius: 50%; background: radial-gradient(circle at 50% 40%, #fffef0 0%, #fff1a8 55%, rgba(255,224,110,.55) 100%); box-shadow: 0 0 0 1px rgba(150,130,40,.14), 0 14px 34px rgba(150,120,20,.22), inset 0 -10px 24px rgba(255,190,60,.25); }
+  #menu .stage { --st: clamp(150px, 25vh, 205px); position: relative; display: grid; place-items: center; flex: none; width: var(--st); height: var(--st); border-radius: 50%; background: var(--stage-bg); box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 14px 34px rgba(0,0,0,.28), inset 0 -10px 24px rgba(0,0,0,.14); }
   #menu .stage .hero { height: calc(var(--st) * .8); animation: float 2.4s ease-in-out infinite; filter: drop-shadow(0 8px 8px rgba(0,0,0,.16)); }
   #menu .ttl { margin: 0; font-size: clamp(26px, 8vw, 32px); line-height: 1.08; font-weight: 900; letter-spacing: -.01em; }
-  #menu .ttl em { display: block; font-style: normal; background: linear-gradient(90deg, #111, #5b3b00 70%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+  #menu .ttl em { display: block; font-style: normal; background: linear-gradient(90deg, var(--t1), var(--t2) 70%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
   #menu .slogan { margin: -4px 0 0; font-size: clamp(15px, 4.6vw, 18px); font-weight: 900; line-height: 1.2; }
-  #menu .slogan span { background: linear-gradient(90deg, #a86a00, #e0a000 50%, #8a5a00); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+  #menu .slogan span { background: linear-gradient(90deg, var(--g1), var(--g2) 50%, var(--g1)); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
   #menu .tag { margin: 0; max-width: 28ch; font-size: 14.5px; line-height: 1.4; color: #6b6840; }
   #menu .rec { min-height: 28px; display: flex; align-items: center; justify-content: center; font-size: 13.5px; font-weight: 800; color: #7a5a00; }
   #menu .rec:not(:empty) { background: rgba(255,255,255,.7); border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; }
@@ -978,6 +983,26 @@
   #menu .foot .link { font-size: 13.5px; }
   #menu .authbox { margin-top: 2px; }
   #menu #name { margin-top: 0; border-radius: 16px; }
+
+
+  /* ---------- colores del juego (tema elegido en la tienda): lo que va directo sobre el fondo del inicio, la tienda y los marcadores ---------- */
+  #menu, #shop, #board { color: var(--on); }
+  #menu .chip, #menu .tile, #menu .rec, #menu .coins, .coins, #shop .item, #list, #myRow, #menu .field, #menu #name { color: var(--ink); }
+  #menu .tag, #menu p, #shop p, #board p, #menu .status, #shop .status, #board .status, #menu .best, #board .best, #menu .link, #shop .link, #board .link, .board-note, #boardLeft { color: var(--on2); }
+  #menu .btn.ghost, #shop .btn.ghost, #board .btn.ghost { color: var(--on); border-color: var(--on); }
+  body.th-dark #menu .status.err, body.th-dark #shop .status.err, body.th-dark #board .status.err { color: #ff9b91; }
+  body.th-dark #shopMsg.ok { color: #7ee2a0; }
+  body.th-dark #menu .seg, body.th-dark #shop .seg, body.th-dark #board .seg { background: rgba(255, 255, 255, .14); }
+  body.th-dark #menu .seg button, body.th-dark #shop .seg button, body.th-dark #board .seg button { color: var(--on); }
+  body.th-dark #menu .seg button.on, body.th-dark #shop .seg button.on, body.th-dark #board .seg button.on { background: #fff; color: #0a2a40; }
+  body.th-dark .vipHead { color: #ffd54a; }
+  body.th-dark #menu .rec:not(:empty) { background: #fff8dc; border-color: rgba(255, 255, 255, .4); }
+  #shop .seg { grid-auto-flow: column; }
+  @media (max-width: 380px) { #shop .seg button { font-size: 11.5px; padding: 12px 0; } }
+  .item .pv.thpv { display: grid; place-items: center; align-content: center; gap: 6px; }
+  .item .pv.thpv .thc { width: 44px; height: 44px; border-radius: 50%; background: var(--sc); box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 4px 10px rgba(0,0,0,.25); }
+  .item .pv.thpv .thl { display: block; height: 7px; width: 62%; border-radius: 4px; background: var(--ton); }
+  .item .pv.thpv .thl.s { width: 40%; background: linear-gradient(90deg, var(--tg1), var(--tg2)); }
 
   @media (max-height: 700px) {
     #menu .mid { gap: 8px; }
@@ -1001,7 +1026,7 @@
   }
 </style>
 </head>
-<body>
+<body class="th-dark">
 <div id="theme" class="bgx" data-bg="clasico" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
 <div id="hellfx" aria-hidden="true"></div>
 <div id="app">
@@ -1094,7 +1119,7 @@
     <!-- tienda -->
     <section class="screen" id="shop">
       <div class="shophead"><h1>🛍️ Tienda</h1><div class="coins"><img class="ci" src="skins/peso1.webp" alt=""><span id="shopBal">$0</span></div></div>
-      <div class="seg" role="tablist" aria-label="Categorías de la tienda"><button type="button" id="tabCh" class="on" role="tab">Personajes</button><button type="button" id="tabBg">Fondos</button><button type="button" id="tabPad">Barras</button><button type="button" id="tabBall">Pelotas</button></div>
+      <div class="seg" role="tablist" aria-label="Categorías de la tienda"><button type="button" id="tabCh" class="on" role="tab">Personajes</button><button type="button" id="tabBg">Fondos</button><button type="button" id="tabPad">Barras</button><button type="button" id="tabBall">Pelotas</button><button type="button" id="tabTh">Colores</button></div>
       <div class="status" id="shopMsg" role="status"></div>
       <div id="shopGrid"></div>
       <button class="btn ghost" id="shopBack">Volver</button>
@@ -1103,7 +1128,7 @@
     <!-- marcadores -->
     <section class="screen" id="board">
       <h1>🏆 Marcadores</h1>
-      <div class="seg boardseg" id="boardKind" role="tablist" hidden><button type="button" id="kindR" class="on" role="tab" aria-selected="true">🏆 Todo el tiempo</button><button type="button" id="kindW" role="tab" aria-selected="false">📅 Semanal</button><button type="button" id="kindT" role="tab" aria-selected="false">⏱️ Tiempo jugado</button><button type="button" id="kindM" role="tab" aria-selected="false">💰 Millonarios</button></div>
+      <div class="seg boardseg" id="boardKind" role="tablist" hidden><button type="button" id="kindR" class="on" role="tab" aria-selected="true">🏆 Todo el tiempo</button><button type="button" id="kindW" role="tab" aria-selected="false">📅 Semanal</button><button type="button" id="kindT" role="tab" aria-selected="false">⏱️ Tiempo jugado</button></div>
       <div class="board-note" id="boardNote"></div>
       <div class="board-note" id="boardLeft"></div>
       <ul id="list" aria-live="polite"></ul>
@@ -1794,15 +1819,6 @@
     const r = await http(`${DB}/weekly/${weekNow()}/${session.uid}/s.json`);
     const v = r.ok ? await r.json() : 0; return typeof v === 'number' ? v : 0;
   }
-  async function fetchTopRich(limit = TOP_N) {                     // los que más pesos han ganado en total (índice `w` de las reglas)
-    const r = await http(`${DB}/scores.json?orderBy=%22w%22&limitToLast=${limit}`);
-    if (!r.ok) throw new Error('http ' + r.status);
-    const data = (await r.json()) || {};
-    return Object.entries(data)
-      .filter(([, v]) => v && typeof v.w === 'number' && v.w > 0 && typeof v.n === 'string')
-      .map(([id, v]) => ({ id, n: cleanName(v.n) || '—', a: typeof v.a === 'string' ? v.a : '', w: v.w, t: +v.t || 0 }))
-      .sort((a, b) => b.w - a.w || a.t - b.t);
-  }
   // Insignias junto al nombre (roles/<uid> en Firebase, solo editables desde la consola): 🦆🎩 Tío Patito · 🦆🎀 Tía Patita · 👾 desarrolladores
   let roles = {}, rolesAt = 0;
   const ROLE = { tio: ['🦆🎩', 'Tío Patito'], tia: ['🦆🎀', 'Tía Patita'], dev: ['👾', 'Desarrollador'] };
@@ -1856,15 +1872,15 @@
     const m = Math.floor(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
     return ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : h < 1 ? `${m} min` : d < 1 ? `${h} h ${String(m % 60).padStart(2, '0')} min` : `${d} d ${h % 24} h`;
   };
-  let boardKind = 'r';                                             // 'r' = todo el tiempo (rebotes) · 'w' = semanal (rebotes) · 't' = más tiempo jugado · 'm' = millonarios (total de pesos ganados)
-  const BOARD_TABS = [['kindR', 'r'], ['kindW', 'w'], ['kindT', 't'], ['kindM', 'm']];
+  let boardKind = 'r';                                             // 'r' = todo el tiempo (rebotes) · 'w' = semanal (rebotes) · 't' = más tiempo jugado
+  const BOARD_TABS = [['kindR', 'r'], ['kindW', 'w'], ['kindT', 't']];
   const paintKindTabs = () => BOARD_TABS.forEach(([id, k]) => { $(id).classList.toggle('on', k === boardKind); $(id).setAttribute('aria-selected', String(k === boardKind)); });
-  const boardVal = (row, k = boardKind) => k === 't' ? fmtPlayed(row.ms) : k === 'm' ? money(row.w) : row.s;
+  const boardVal = (row, k = boardKind) => k === 't' ? fmtPlayed(row.ms) : row.s;
   function renderBoard(rows, me, myVal) {
-    const K = boardKind, small = K === 't' || K === 'm', ul = $('list'); ul.textContent = '';
+    const K = boardKind, small = K === 't', ul = $('list'); ul.textContent = '';
     if (!rows.length) {
       const li = document.createElement('li'); li.className = 'empty';
-      li.textContent = K === 't' ? 'Todavía nadie suma tiempo. ¡Juega una partida y sé el primero!' : K === 'm' ? 'Todavía no hay millonarios. ¡Junta pesos y sé el primero!' : K === 'w' ? 'Esta semana nadie le ha ganado al Tío Pato todavía. ¡Sé el primero!' : 'Todavía nadie le gana al Tío Pato. ¡Sé el primero!';
+      li.textContent = K === 't' ? 'Todavía nadie suma tiempo. ¡Juega una partida y sé el primero!' : K === 'w' ? 'Esta semana nadie le ha ganado al Tío Pato todavía. ¡Sé el primero!' : 'Todavía nadie le gana al Tío Pato. ¡Sé el primero!';
       ul.appendChild(li);
     }
     const medals = ['🥇', '🥈', '🥉'];
@@ -1894,7 +1910,7 @@
       const tx = document.createElement('span'); tx.className = 't'; tx.textContent = cleanName(player.name || (session && session.name)) || 'Tú';
       const you = document.createElement('small'); you.textContent = '(tú)'; nm.append(pv, tx, you);
       const rb = roleBadge(player.id); if (rb) nm.appendChild(rb);
-      const sc = document.createElement('span'); sc.className = small ? 'sc tm' : 'sc'; sc.textContent = K === 't' ? fmtPlayed(myVal) : K === 'm' ? money(myVal) : K === 'w' ? myVal : player.best;
+      const sc = document.createElement('span'); sc.className = small ? 'sc tm' : 'sc'; sc.textContent = K === 't' ? fmtPlayed(myVal) : K === 'w' ? myVal : player.best;
       li.append(rk, nm, sc); list.appendChild(li); box.append(dots, list);
     }
     const mine = ul.querySelector('.mine');
@@ -1948,19 +1964,18 @@
     const note = $('boardNote'), kind = boardKind;
     if (first) note.textContent = ONLINE ? 'Actualizando…' : 'Modo local: aquí solo aparece tu mejor puntaje en este dispositivo.';
     try {
-      if (kind !== 'r') {                                         // semanal · tiempo jugado · millonarios: mismo formato, misma frecuencia y mismo límite de tiempo que el de rebotes
-        if (kind === 'm') { if (first) syncWealth(true); } else syncRun();
-        const [rows, mine] = await Promise.all([kind === 't' ? fetchTopTime(TOP_N) : kind === 'w' ? fetchTopWeek(TOP_N) : fetchTopRich(TOP_N),
-          (kind === 't' ? fetchMyTime() : kind === 'w' ? fetchMyWeek() : Promise.resolve(AUTH && session ? wallet.c : 0)).catch(() => 0), fetchRoles(), fetchMarcos()]);
+      if (kind !== 'r') {                                         // semanal · tiempo jugado: mismo formato, misma frecuencia y mismo límite de tiempo que el de rebotes
+        syncRun();
+        const [rows, mine] = await Promise.all([kind === 't' ? fetchTopTime(TOP_N) : fetchTopWeek(TOP_N),
+          (kind === 't' ? fetchMyTime() : fetchMyWeek()).catch(() => 0), fetchRoles(), fetchMarcos()]);
         if (kind !== boardKind) return;                           // cambió de pestaña mientras cargaba
-        const sig = JSON.stringify([kind, rows.map(r => [r.id, r.ms || r.s || r.w, r.n, roles[r.id], goldOf(r.id)]), mine]);
+        const sig = JSON.stringify([kind, rows.map(r => [r.id, r.ms || r.s, r.n, roles[r.id], goldOf(r.id)]), mine]);
         if (sig !== lastSig) {
           lastSig = sig; const ul = $('list'), top = ul.scrollTop;
           renderBoard(rows, null, mine); ul.scrollTop = top;
           const n = Math.min(rows.length, TOP_N);
           note.textContent = kind === 't' ? `Top ${n} · gana quien más tiempo lleva jugando (la suma de todas sus partidas, desde que existe este marcador)`
-            : kind === 'w' ? `Top ${n} de la semana · gana quien llega más alto en una partida · se reinicia el lunes (en ${fmtWait(streakInfo().toNext + (6 - (dayOf(srvNow()) + 3) % 7) * DAYMS)})`
-            : `Top ${n} · quienes más pesos han ganado en total (lo que se gasta en la tienda no se descuenta)`;
+            : `Top ${n} de la semana · gana quien llega más alto en una partida · se reinicia el lunes (en ${fmtWait(streakInfo().toNext + (6 - (dayOf(srvNow()) + 3) % 7) * DAYMS)})`;
         }
         return;
       }
@@ -2008,7 +2023,7 @@
   function openBoard(from) {
     boardFrom = from; delete $('list').dataset.scrolled;
     boardKind = 'r'; paintKindTabs(); $('boardKind').hidden = !(ONLINE && AUTH);
-    setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
+    setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = themeBase(); setTheme(themeOf().c[0]);
     lastSig = ''; lastMe = null; lastMeAt = 0; boardOpenAt = Date.now(); show('board'); refreshBoard(true);
     $('refreshBoard').disabled = false; paintLeft();
     stopBoardTimers(); boardTick(); boardClock = setInterval(boardClockTick, 1000);
@@ -2610,7 +2625,8 @@
     bg: [{ id: 'clasico', n: 'Clásico', price: 0 }], pad: [{ id: 'clasica', n: 'Clásica', price: 0 }],
     ball: [{ id: 'peso1', n: 'Moneda $1', price: 0, img: 'skins/peso1.webp', fx: 'spin', w: 1, trail: '#d5dbe8' }]
   };
-  const DEF = { ch: CAT.ch[0].id, bg: CAT.bg[0].id, pad: CAT.pad[0].id, ball: CAT.ball[0].id };
+  if (!CAT.th) CAT.th = [{ id: 'oceano', n: 'Azul profundo', price: 0, dark: true, c: ['#00223b', '#003454', '#001d35'], s: ['#0a6b8a', '#0a4e65', '#06384d'] }];      // (por si el catálogo es de una versión anterior)
+  const DEF = { ch: CAT.ch[0].id, bg: CAT.bg[0].id, pad: CAT.pad[0].id, ball: CAT.ball[0].id, th: CAT.th[0].id };
   const themeEl = $('theme');
   // wallet: c = pesos ganados · sp = gastados · lr = última partida cobrada · own = compras · eq = lo que llevas puesto (todo en la nube con cuenta)
   let wallet = { c: 0, sp: 0, lr: 0, own: {}, eq: { ...DEF } };
@@ -2757,22 +2773,7 @@
         }
       }
       setTimePend(pend.tm || pend.st || pend.wk ? pend : null);
-      syncWealth();                                                                                                           // tus pesos ganados cambiaron con el cobro: se actualiza en «Millonarios»
     } catch (e) {} finally { timing = false; }
-  }
-  /* Marcador «Millonarios»: el total de pesos que has ganado (wallet.c; lo gastado no se descuenta) se copia a tu fila del marcador (scores/<uid>/w). Las reglas solo aceptan el valor exacto que dice tu cartera en ese momento;
-     se hace aparte de cualquier cobro (si falla, no pasa nada) y se repite tras cada cambio de saldo, como mucho cada 15 s. */
-  let wealthSent = -1, wealthAt = 0, wealthBusy = false, wealthUid = '', wealthDenied = 0;
-  async function syncWealth(force) {
-    if (!AUTH || !session || wealthBusy || !(player.best > 0)) return;                 // sin puntaje todavía no hay fila en el marcador donde copiarla
-    if (wealthUid !== session.uid) { wealthUid = session.uid; wealthSent = -1; wealthDenied = 0; }
-    const v = wallet.c; if (v === wealthSent || v <= 0) return;
-    if (!force && (Date.now() - wealthAt < 15000 || wealthDenied >= 3)) return;       // (si Firebase la rechaza 3 veces seguidas, por ejemplo sin las reglas nuevas, deja de insistir)
-    wealthBusy = true; wealthAt = Date.now();
-    try {
-      const r = await http(`${DB}/scores/${session.uid}.json?auth=${encodeURIComponent(await idToken())}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify({ w: v }) });
-      if (r.ok) { wealthSent = v; wealthDenied = 0; } else if (r.status === 401 || r.status === 403) wealthDenied++;
-    } catch (e) {} finally { wealthBusy = false; }
   }
   let claiming = null;
   const claimRun = () => claiming || (claiming = doClaim().finally(() => { claiming = null; }));
@@ -3023,7 +3024,7 @@
         if (m) body[`streaks/${uid}/x${m}`] = (streak && streak.x[m] || 0) + 1;     // día de multiplicador: se guarda uno (lo activas tú con el botón del inicio)
         if (v > 0) { body[`wallets/${uid}/c`] = c0 + v; body[`wallets/${uid}/sp`] = sp0; }       // la cartera nueva necesita c y sp
         const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
-        if (r.ok) { if (v > 0) { wallet.c = c0 + v; saveWallet(); } await pullStreak(); renderCoins(); syncWealth(); return 'ok'; }
+        if (r.ok) { if (v > 0) { wallet.c = c0 + v; saveWallet(); } await pullStreak(); renderCoins(); return 'ok'; }
         if (r.status !== 401 && r.status !== 403) return 'error';
         if (intento === 1) return 'denied';                                      // se reintenta una vez (otra partida pudo cobrarse justo en medio)
       }
@@ -3137,7 +3138,7 @@
     const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
     if (!r.ok) return denied4(r) ? 'denied' : 'error';
     const bal0 = balance(); if (pr[0] > 0) { wallet.c = c0 + pr[0]; saveWallet(); }
-    await Promise.all([pullStreak(), pullRuleta()]); renderCoins(); syncWealth();
+    await Promise.all([pullStreak(), pullRuleta()]); renderCoins();
     pocketBusy = true; renderStreak();
     celebrate(rect, pr[0], bal0, balance(), pr[1]);
     [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .12), 300 + i * 90)); vib([20, 30, 20, 30, 50]);
@@ -3284,7 +3285,7 @@
         if (v <= 0) { renderMissChip(); return { res: 'nada', v: 0 }; }
         body[`wallets/${uid}/c`] = c0 + v; body[`wallets/${uid}/sp`] = sp0;
         const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
-        if (r.ok) { wallet.c = c0 + v; saveWallet(); await pullMissions(); renderCoins(); syncWealth(); return { res: 'ok', v }; }
+        if (r.ok) { wallet.c = c0 + v; saveWallet(); await pullMissions(); renderCoins(); return { res: 'ok', v }; }
         if (!denied4(r)) return { res: 'error', v: 0 };
         if (intento === 1) return { res: 'denied', v: 0 };                                // se reintenta una vez (otra partida pudo cobrarse justo en medio)
       }
@@ -3351,7 +3352,22 @@
       im.src = b.img; el.appendChild(im);
     } else { el.className = 'ball emoji'; el.textContent = b.e || '💸'; }
   }
+  /* Colores del juego: el tema elegido en la tienda pone las variables de color del inicio, la tienda y los marcadores (el fondo de la partida es aparte: «Fondos»). */
+  const themeOf = () => itemOf('th', wallet.eq.th) || CAT.th[0];
+  const themeBase = () => themeOf().c[1];                                    // color de fondo de las pantallas
+  function applyTheme() {
+    const t = themeOf(), d = !!t.dark, st = document.documentElement.style;
+    const on = t.on || (d ? '#fff' : '#111'), on2 = t.on2 || (d ? 'rgba(255, 255, 255, .72)' : '#6b6840');
+    const g = t.g || (d ? ['#ffd54a', '#f2a900'] : ['#a86a00', '#e0a000']), tt = t.t || (d ? ['#fff', '#cfe8ff'] : ['#111', '#5b3b00']);
+    st.setProperty('--bg', t.c[1]);
+    st.setProperty('--screen-bg', `linear-gradient(180deg, ${t.c[0]} 0%, ${t.c[1]} 48%, ${t.c[2]} 100%)`);
+    st.setProperty('--stage-bg', `radial-gradient(circle at 50% 40%, ${t.s[0]} 0%, ${t.s[1]} 55%, ${t.s[2]} 100%)`);
+    st.setProperty('--on', on); st.setProperty('--on2', on2); st.setProperty('--g1', g[0]); st.setProperty('--g2', g[1]); st.setProperty('--t1', tt[0]); st.setProperty('--t2', tt[1]);
+    document.body.classList.toggle('th-dark', d);
+    if (!document.body.classList.contains('ingame')) setTheme(t.c[0]);       // color de la barra del navegador (en la partida lo maneja el fondo del juego)
+  }
   function applyCosmetics() {
+    applyTheme();
     const bg = itemOf('bg', wallet.eq.bg) || CAT.bg[0];
     themePremium = bg.id !== DEF.bg; themeDark = !!bg.dark; themeEl.dataset.bg = bg.id;
     paddle.className = (paddle.className.replace(/\bp-\S+/g, '') + ' p-' + wallet.eq.pad).trim();
@@ -3360,7 +3376,7 @@
 
   /* tienda */
   let shopTab = 'ch', shopFrom = 'menu', shopBusy = false;
-  const TABS = [['tabCh', 'ch'], ['tabBg', 'bg'], ['tabPad', 'pad'], ['tabBall', 'ball']];
+  const TABS = [['tabCh', 'ch'], ['tabBg', 'bg'], ['tabPad', 'pad'], ['tabBall', 'ball'], ['tabTh', 'th']];
   function shopMsg(t, ok) { const m = $('shopMsg'); m.textContent = t || ''; m.className = 'status' + (ok ? ' ok' : t ? ' err' : ''); }
   function previewFor(it) {
     const pv = document.createElement('div');
@@ -3374,6 +3390,13 @@
     } else if (shopTab === 'bg') {
       pv.className = 'pv bgx'; pv.dataset.bg = it.id; pv.innerHTML = '<i></i><i></i><i></i><i></i><i></i>';
       if (it.id === DEF.bg) pv.style.background = 'linear-gradient(135deg, #fff6c0 0%, #ffb978 35%, #f478fd 65%, #c2312f 100%)';
+    } else if (shopTab === 'th') {                                               // el color: un inicio en miniatura (fondo, círculo del Pato y dos renglones)
+      pv.className = 'pv thpv';
+      const d = !!it.dark, g = it.g || (d ? ['#ffd54a', '#f2a900'] : ['#a86a00', '#e0a000']);
+      pv.style.background = `linear-gradient(180deg, ${it.c[0]} 0%, ${it.c[1]} 48%, ${it.c[2]} 100%)`;
+      pv.style.setProperty('--sc', `radial-gradient(circle at 50% 40%, ${it.s[0]} 0%, ${it.s[1]} 55%, ${it.s[2]} 100%)`);
+      pv.style.setProperty('--ton', it.on || (d ? '#fff' : '#111')); pv.style.setProperty('--tg1', g[0]); pv.style.setProperty('--tg2', g[1]);
+      pv.innerHTML = '<i class="thc"></i><b class="thl"></b><b class="thl s"></b>';
     } else if (shopTab === 'pad') {
       pv.className = 'pv padpv'; const cv = document.createElement('canvas'); cv.className = 'pvfx'; cv.dataset.id = it.id; const b = document.createElement('div'); b.className = 'pvbar p-' + it.id; pv.append(cv, b);
     } else {
@@ -3436,7 +3459,7 @@
   async function equip(cat, id) {
     if (!owns(cat, id)) return;
     wallet.eq[cat] = id; saveWallet(); applyCosmetics(); renderShop();
-    if (AUTH && session) { try { await http(await wurlW(), { method: 'PATCH', headers: JSONH, body: JSON.stringify({ eq: wallet.eq }) }); } catch (e) {} }
+    if (AUTH && session) { try { await http(await wurlW(), { method: 'PATCH', headers: JSONH, body: JSON.stringify({ ['eq/' + cat]: id }) }); } catch (e) {} }
   }
   const marcoPut = async (uid, tok, on) => http(`${DB}/marco/${uid}.json?auth=${tok}&print=silent`, on ? { method: 'PUT', headers: JSONH, body: 'true' } : { method: 'DELETE' });
   /* Con el personaje secreto: queda anotado en compradores/<uid> (la primera vez, y con el marco puesto) y se trae si lleva el marco. choose = el jugador acaba de elegir ponérselo o sacárselo (esa elección manda sobre lo que diga la nube). */
@@ -3492,7 +3515,7 @@
         if (!r.ok) { shopMsg(r.status === 401 || r.status === 403 ? 'Firebase no permitió la compra (revisa que las reglas estén publicadas).' : 'No se pudo comprar. Inténtalo de nuevo.'); return; }
         await pullWallet();
       } else { wallet.sp += it.price; wallet.own[cat + '_' + it.id] = true; saveWallet(); }
-      await equip(cat, it.id); syncWealth(true);
+      await equip(cat, it.id);
       shopMsg(`¡Compraste «${it.n}»! Ya lo llevas puesto ✨`, true);
       if (it.secret && AUTH && session) { vipRec = null; vipFor = session.uid; openVip(true); }       // desbloqueó el personaje secreto: aviso del grupo VIP y su WhatsApp
     } catch (e) { shopMsg('No se pudo comprar. Revisa tu conexión.'); }
@@ -3500,11 +3523,11 @@
   }
   function openShop(from) {
     shopFrom = from; stopBoardTimers(); shopMsg('');
-    setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = PALETTE[0]; setTheme(PALETTE[0]);
+    setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = themeBase(); setTheme(themeOf().c[0]);
     show('shop'); renderShop();
     if (AUTH && session) pullWallet().then(() => { applyCosmetics(); renderShop(); });
   }
-  function closeShop() { if (shopFrom === 'result') { setEnd(true); show('result'); } else { setTheme('#fff7c2'); document.body.style.backgroundColor = ''; show('menu'); renderMenu(); } }
+  function closeShop() { if (shopFrom === 'result') { setEnd(true); show('result'); } else { setTheme(themeOf().c[0]); document.body.style.backgroundColor = ''; show('menu'); renderMenu(); } }
   let countStop = () => {};                                        // detiene la cuenta animada (si la partida no se pudo cobrar, no debe seguir mostrando «+$»)
   function countUp(el, n, fmt) {
     countStop(); let live = true; countStop = () => { live = false; };
@@ -3831,7 +3854,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v65';
+  const BUILD = 'v66';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3935,14 +3958,14 @@
     target.style.visibility = 'hidden'; paddle.style.visibility = 'hidden'; duck.style.visibility = 'hidden';
     document.body.classList.remove('ingame'); hideMult();
     $('bubble').classList.remove('on'); big.textContent = ''; clearFx();
-    setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = ''; setTheme('#fff7c2'); unlockScreen();
+    setEnd(false); setThemeActive(false); document.body.classList.remove('hell', 'dark'); document.body.style.backgroundColor = ''; setTheme(themeOf().c[0]); unlockScreen();
     hits = 0; elapsed = 0; duckLook(); renderScores(); fetchLeader(); renderMenu();
     show('menu');
   }
 
   $('authForm').addEventListener('submit', submitAuth);
   $('tabIn').addEventListener('click', () => setAuthMode('in'));
-  $('kindR').addEventListener('click', () => setBoardKind('r')); $('kindW').addEventListener('click', () => setBoardKind('w')); $('kindT').addEventListener('click', () => setBoardKind('t')); $('kindM').addEventListener('click', () => setBoardKind('m'));
+  $('kindR').addEventListener('click', () => setBoardKind('r')); $('kindW').addEventListener('click', () => setBoardKind('w')); $('kindT').addEventListener('click', () => setBoardKind('t'));
   $('forgot').addEventListener('click', () => { setAuthMode('reset'); $('acctMail').focus(); });
   $('mailBtn').addEventListener('click', () => { closeSettings(); openMail(); });
   $('mailBannerGo').addEventListener('click', openMail);
@@ -3963,6 +3986,7 @@
   $('openShop2').addEventListener('click', () => openShop('result'));
   $('shopBack').addEventListener('click', closeShop);
   $('tabCh').addEventListener('click', () => { shopTab = 'ch'; renderShop(); });
+  $('tabTh').addEventListener('click', () => { shopTab = 'th'; renderShop(); });
   $('tabBg').addEventListener('click', () => { shopTab = 'bg'; renderShop(); });
   $('tabPad').addEventListener('click', () => { shopTab = 'pad'; renderShop(); });
   $('tabBall').addEventListener('click', () => { shopTab = 'ball'; renderShop(); });
@@ -4102,7 +4126,7 @@
   measure(); layout(); setInitial(); duckLook(); renderMenu();
   leaderBest = player.best; renderScores();
   target.style.visibility = 'hidden';
-  if (AUTH && session) { loadMine(); mailBoot(); pullMissions(); pullWallet().then(() => { applyCosmetics(); renderMenu(); vipLoad(); syncWealth(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => pullRuleta()).then(() => { renderStreak(); autoDaily(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
+  if (AUTH && session) { loadMine(); mailBoot(); pullMissions(); pullWallet().then(() => { applyCosmetics(); renderMenu(); vipLoad(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => pullRuleta()).then(() => { renderStreak(); autoDaily(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
   fetchLeader();
 })();
 </script>
