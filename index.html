@@ -85,6 +85,19 @@
   #arena { position: absolute; inset: 0; z-index: 1; touch-action: none; overflow: hidden; }
   /* El campo de juego mide siempre lo mismo (390 × 844 unidades) y solo cambia de escala: en una ventana chica, corta o ancha el juego es igual de difícil. Si sobra espacio se ve como marco. */
   #field { position: absolute; left: 0; top: 0; }
+  /* ---------- potenciadores: burbujas que flotan en la cancha y se activan al tocarlas con la pelota ---------- */
+  .pup { position: absolute; left: 0; top: 0; z-index: 4; border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none; will-change: transform;
+    background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .95), rgba(255, 255, 255, .38) 36%, rgba(130, 195, 255, .3) 68%, rgba(255, 255, 255, .6)); border: 2px solid rgba(255, 255, 255, .92); box-shadow: 0 0 14px rgba(120, 200, 255, .75); }
+  .pup i { font-style: normal; font-size: 58%; line-height: 1; animation: pupBob 1.5s ease-in-out infinite; }
+  .pup.freeze { box-shadow: 0 0 18px rgba(150, 232, 255, 1); }
+  .pup.wide { box-shadow: 0 0 16px rgba(120, 232, 120, .95); background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .95), rgba(255, 255, 255, .38) 36%, rgba(130, 230, 140, .3) 68%, rgba(255, 255, 255, .6)); }
+  .pup.fade { animation: pupFade .5s steps(2) infinite; }
+  @keyframes pupBob { 50% { transform: translateY(-3px) scale(1.12); } }
+  @keyframes pupFade { 50% { opacity: .3; } }
+  #field.frozen::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(circle at 50% 50%, rgba(160, 225, 255, 0) 38%, rgba(160, 225, 255, .38) 100%); }
+  #paddle.wide { filter: drop-shadow(0 0 7px #7be07b); }
+  #pups { position: absolute; left: 8px; top: 40%; z-index: 5; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+  #pups span { background: rgba(0, 0, 0, .58); color: #fff; font-weight: 800; font-size: 13px; line-height: 1; padding: 4px 9px; border-radius: 999px; font-variant-numeric: tabular-nums; }
   #field.boxed { box-shadow: 0 0 0 1px rgba(255, 255, 255, .4), 0 0 0 100vmax rgba(0, 0, 0, .2); }
   body.end #field.boxed, body:not(.ingame) #field.boxed { box-shadow: none; }                /* el marco solo se ve mientras juegas */
   #arena.jolt { animation: jolt .16s linear; }
@@ -921,6 +934,7 @@
     #arena.jolt { animation: none; }
     .screen.show, #hint.on, .chip.streak.go, .dcard.today, .mcard, .modal.show, .pocket.bump, .dcard.mx .mxe span, .boostgo button { animation: none; }
     .wheel { transition: none; }
+    .pup i, .pup.fade { animation: none; }
     .tog, .tog i { transition: none; }
     .btn, .tile, .seg button, .link { transition: none; }
   }
@@ -950,6 +964,7 @@
       <div id="duck" aria-hidden="true" data-face="0"><div class="rig" id="rig"></div><div id="bubble"></div></div>
       <div id="target"><div class="ball"></div></div>
       <div id="mult" aria-hidden="true"><b></b><span></span><small></small></div>
+      <div id="pups" aria-hidden="true"></div>
       <div id="paddle" aria-hidden="true"></div>
       <div id="hint" aria-hidden="true">👆 Arrastra el dedo para mover la barra</div>
     </div>
@@ -1196,6 +1211,7 @@
   let x = 0, y = 0, vx = 0, vy = 0, last = 0;
   let px = 0, pw = 140, basePw = 140, keyDir = 0, dragX = null, dragId = null;
   let duckX = 0, duckShow = 0, prevShow = 0, bubbleTimer = null, bubbleW = 0, lastFace = -1, lastSay = '';
+  let pup = null, pupFx = { slow: 0, freeze: 0, wide: 0 }, pupWait = 8, slowK = 1, padBoost = 1, pupHud = 0;      // potenciadores (ver más abajo)
   let cdTimer = null, audio = null;
   let playT0 = 0, playD0 = 0, lastHitT = 0, tampered = false;
   const MIN_HIT_MS = 300;   // el ciclo real más corto posible es ~490 ms (ver LEEME)
@@ -1304,7 +1320,7 @@
   // Una pelota más ancha que la moneda cuenta con más ancho a cada lado, así que su barra se ve más angosta (padWidth): la suma no cambia. GRAZE es cuánto puede rozar
   // la punta una pelota que no cuenta como golpe (11,2 px, igual que la moneda de siempre); la punta de la barra es sólida y la pelota rebota contra ella.
   const OLD_TOL = .7 * 24, GRAZE = 11.2, PAD_MIN = 26;                        // en px a escala K = 1 (PAD_MIN: la barra nunca se ve más angosta que eso)
-  const oldWindow = () => basePw * shrink() + 2 * OLD_TOL * K;               // zona de golpe total que tenía el juego
+  const oldWindow = () => basePw * shrink() * padBoost + 2 * OLD_TOL * K;    // zona de golpe total que tenía el juego (con «Barra grande» se agranda un 50%)
   const padWidth = () => Math.max(PAD_MIN * K, oldWindow() - 2 * BC);        // lo que se ve de la barra
   const catchTol = () => clamp((oldWindow() - pw) / 2, 0, BH);               // cuánto más allá de la punta cuenta como golpe (BC, salvo que la barra ya no pueda achicarse más)
   function fitBall(b = ballItem || CAT.ball[0]) {
@@ -2234,15 +2250,56 @@
 
   // Dónde llegará el billete a la altura del Tío Pato (con rebotes en las paredes), para que salga a recibirlo.
   function predictX() {
-    const t = Math.max(0, (y - DUCK_BOTTOM - BY) / Math.max(1, -vy));
+    const t = Math.max(0, (y - DUCK_BOTTOM - BY) / Math.max(1, -vy * slowK));      // (con un potenciador de lentitud la pelota tarda más)
     const span = W - 2 * BX;
-    const u = ((x - BX + vx * t) % (2 * span) + 2 * span) % (2 * span);
+    const u = ((x - BX + vx * t * slowK) % (2 * span) + 2 * span) % (2 * span);
     return BX + (u > span ? 2 * span - u : u);
   }
   // El Pato NO sigue la pelota: se queda quieto mientras ella se aleja y solo sale a recibirla cuando vuelve (calcula dónde va a llegar y se desplaza justo a tiempo, sin pasarse ni llegar tarde).
+  /* ---------- potenciadores: burbujas que flotan en la cancha; al tocarlas con la pelota se activa su efecto ----------
+     🫧 Burbuja lenta: la pelota va al 70% durante 6 s · ❄️ Tiempo congelado: la pelota casi se detiene 2,5 s (da tiempo a ubicar la barra) · 📏 Barra grande: la barra mide un 50% más durante 8 s.
+     Aparecen desde el rebote 8, una a la vez (cada 9 a 16 s) y duran 8 s en pantalla. Solo ayudan a seguir vivo: no cambian lo que paga la partida y las reglas de Firebase ya aceptan partidas más lentas. */
+  const PUPS = { slow: { em: '🫧', n: '¡Burbuja lenta!', ms: 6000, w: 45 }, freeze: { em: '❄️', n: '¡Tiempo congelado!', ms: 2500, w: 20 }, wide: { em: '📏', n: '¡Barra grande!', ms: 8000, w: 35 } };
+  const PUP_FIRST = 8, PUP_LIFE = 8;
+  function removePup() { if (pup) { pup.el.remove(); pup = null; } }
+  function clearPups() {                                                       // al empezar y al terminar la partida: nada queda activo
+    removePup(); pupFx = { slow: 0, freeze: 0, wide: 0 }; slowK = 1; padBoost = 1; pupWait = 6 + Math.random() * 4; pupHud = 0;
+    field.classList.remove('frozen'); paddle.classList.remove('wide'); $('pups').textContent = '';
+  }
+  function spawnPup(type, ax, ay) {                                            // ax, ay: dónde (si no, al azar entre el Pato y la barra, lejos de la pelota)
+    removePup(); const T = PUPS[type]; if (!T) return;
+    const r = 27 * K, top = DUCK_BOTTOM + 70 * K, bot = paddleTop() - 110 * K;
+    let px0 = ax, py0 = ay;
+    if (px0 === undefined) for (let i = 0; i < 12; i++) { px0 = BX * 2 + Math.random() * (W - 4 * BX); py0 = top + Math.random() * Math.max(10, bot - top); if (Math.hypot(px0 - x, py0 - y) > 120 * K) break; }
+    const el = document.createElement('div'); el.className = 'pup ' + type; el.style.width = el.style.height = 2 * r + 'px'; el.style.fontSize = 2 * r + 'px';
+    el.style.transform = `translate(${px0 - r}px, ${py0 - r}px)`;
+    const i = document.createElement('i'); i.textContent = T.em; el.appendChild(i); field.appendChild(el);
+    pup = { type, el, x: px0, y: py0, r, life: PUP_LIFE };
+  }
+  function collectPup() {
+    const t = pup.type, T = PUPS[t]; pupFx[t] = T.ms;
+    spawn('pop gold', pup.x, pup.y - 24, T.n); tone(t === 'freeze' ? 1200 : t === 'wide' ? 700 : 880, .12, 'triangle', .12); setTimeout(() => tone(t === 'freeze' ? 1500 : 1100, .12, 'triangle', .1), 90); vib(14);
+    removePup();
+  }
+  function paintPupHud() {
+    const box = $('pups'); let html = '';
+    for (const k of ['slow', 'freeze', 'wide']) if (pupFx[k] > 0) html += `<span>${PUPS[k].em} ${Math.ceil(pupFx[k] / 1000)}</span>`;
+    if (box.innerHTML !== html) box.innerHTML = html;
+  }
+  function pupTick(dt) {
+    for (const k in pupFx) if (pupFx[k] > 0) pupFx[k] = Math.max(0, pupFx[k] - dt * 1000);
+    slowK += ((pupFx.freeze > 0 ? .04 : pupFx.slow > 0 ? .7 : 1) - slowK) * Math.min(1, dt * 8);
+    padBoost += ((pupFx.wide > 0 ? 1.5 : 1) - padBoost) * Math.min(1, dt * 6);
+    if (pup) { pup.life -= dt; if (pup.life < 2 && !pup.el.classList.contains('fade')) pup.el.classList.add('fade'); if (pup.life <= 0) removePup(); }
+    else if (hits >= PUP_FIRST) {
+      pupWait -= dt;
+      if (pupWait <= 0) { let r = Math.random() * 100, t = 'slow'; for (const k in PUPS) { if (r < PUPS[k].w) { t = k; break; } r -= PUPS[k].w; } spawnPup(t); pupWait = 9 + Math.random() * 7; }
+    }
+    pupHud += dt; if (pupHud > .2) { pupHud = 0; paintPupHud(); field.classList.toggle('frozen', pupFx.freeze > 0); paddle.classList.toggle('wide', pupFx.wide > 0); }
+  }
   function duckTrack(dt) {
-    if (vy >= 0) { duckShow += (duckX - duckShow) * Math.min(1, dt * 28); return; }       // la pelota va hacia abajo (hacia ti): quieto
-    const want = predictX(), tLeft = Math.max(.06, (y - DUCK_BOTTOM - BY) / Math.max(1, -vy));
+    if (vy >= 0 || slowK < .25) { duckShow += (duckX - duckShow) * Math.min(1, dt * 28); return; }       // la pelota va hacia abajo (hacia ti), o el tiempo está congelado: quieto
+    const want = predictX(), tLeft = Math.max(.06, (y - DUCK_BOTTOM - BY) / Math.max(1, -vy * slowK));
     const maxMove = Math.max((520 + Math.min(level(), 10) * 140) * K, Math.abs(want - duckX) / tLeft * 1.15) * dt;
     duckX = clamp(duckX + clamp(want - duckX, -maxMove, maxMove), 40 * K, W - 40 * K);
     duckShow += (duckX - duckShow) * Math.min(1, dt * 28);
@@ -2296,7 +2353,7 @@
   // Un paso corto de física (el billete nunca avanza más de ~10 px, así no atraviesa nada).
   function step(h) {
     const prevY = y, prevX = x;
-    x += vx * h; y += vy * h;
+    x += vx * h * slowK; y += vy * h * slowK;                    // slowK: 1 normal · 0,7 con «Burbuja lenta» · casi 0 con «Tiempo congelado»
     if (x < BX) { x = BX; vx = Math.abs(vx); wallBounce(); }
     else if (x > W - BX) { x = W - BX; vx = -Math.abs(vx); wallBounce(); }
 
@@ -2329,6 +2386,7 @@
         vx = side * Math.abs(vx);
       }
     }
+    if (pup && Math.hypot(x - pup.x, y - pup.y) < pup.r + BH * .9) collectPup();       // la pelota tocó una burbuja
     if (y - BY > H) endGame();                                   // se cayó por abajo (ya no se ve): fin
   }
 
@@ -3485,7 +3543,7 @@
 
   function beginPlay() {
     state = 'play'; slowN = frameN = slowWins = 0;
-    playT0 = performance.now(); playD0 = Date.now(); lastHitT = 0; tampered = false;
+    playT0 = performance.now(); playD0 = Date.now(); lastHitT = 0; tampered = false; clearPups();
     launch(); draw();
     target.style.visibility = 'visible';
     setBig(0);
@@ -3513,6 +3571,7 @@
     if (keyDir) px = clamp(px + keyDir * 760 * K * dt, pw / 2, W - pw / 2);
     const wantPw = padWidth();                                     // la barra se achica suavemente con cada rebote
     if (Math.abs(pw - wantPw) > .3) { pw += (wantPw - pw) * Math.min(1, dt * 5); paddle.style.width = pw + 'px'; px = clamp(px, pw / 2, W - pw / 2); }
+    pupTick(dt);
     duckTrack(dt);
     const n = Math.max(1, Math.ceil(Math.hypot(vx, vy) * dt / 10));
     for (let i = 0; i < n && state === 'play'; i++) step(dt / n);
@@ -3541,7 +3600,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v58';
+  const BUILD = 'v59';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3580,7 +3639,7 @@
     state = 'over'; hideHint();
     target.style.visibility = 'hidden'; paddle.style.visibility = 'hidden'; duck.style.visibility = 'hidden'; unlockScreen();
     document.body.classList.remove('ingame');
-    $('bubble').classList.remove('on'); big.textContent = ''; clearFx(); hideMult();
+    $('bubble').classList.remove('on'); big.textContent = ''; clearFx(); hideMult(); clearPups();
 
     const hp = tampered ? 0 : Math.min(hits, H_MAX), p = gameRate * pesosFor(hp), record = hp > player.best;
     $('finalScore').textContent = hits;
