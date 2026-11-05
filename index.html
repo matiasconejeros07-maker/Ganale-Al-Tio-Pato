@@ -47,12 +47,12 @@
   header {
     position: absolute; left: 0; right: 0; top: 0; z-index: 3; pointer-events: none;
     display: flex; align-items: center; justify-content: center; gap: 12px;
-    padding: calc(env(safe-area-inset-top) + 20px) 16px 0;
-    height: calc(env(safe-area-inset-top) + 66px);
+    padding: max(calc(env(safe-area-inset-top) + 2px), 18px) 16px 0;                 /* lo más arriba posible (debajo de la barra de estado) para no tapar la cabeza del Pato */
+    height: max(calc(env(safe-area-inset-top) + 48px), 64px);
   }
   body:not(.ingame) header { display: none; }
   #close {
-    position: absolute; left: max(10px, env(safe-area-inset-left)); top: calc(env(safe-area-inset-top) + 16px); pointer-events: auto;
+    position: absolute; left: max(10px, env(safe-area-inset-left)); top: max(env(safe-area-inset-top), 16px); pointer-events: auto;
     width: 44px; height: 44px; border: 0; background: none; cursor: pointer; padding: 10px;
   }
   #close svg { width: 100%; height: 100%; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
@@ -62,7 +62,7 @@
     transition: color .2s, transform .15s;
   }
   .num.bump { transform: scale(1.22); color: #3a3711; }
-  .avatars { display: flex; position: relative; }
+  .avatars { display: flex; position: relative; transform: scale(.85); transform-origin: 50% 0; }      /* un poco más chicos (en la partida) para que tapen menos al Pato */
   .avatar {
     position: relative; width: 44px; height: 44px; border-radius: 50%;
     display: grid; place-items: center; font-size: 24px;
@@ -207,7 +207,7 @@
   .btn, .tile, .seg button, .link { transition: transform .12s, background-color .15s, opacity .15s; }
   @keyframes screenIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   #soundBtn {
-    position: absolute; right: max(10px, env(safe-area-inset-right)); top: calc(env(safe-area-inset-top) + 16px); pointer-events: auto;
+    position: absolute; right: max(10px, env(safe-area-inset-right)); top: max(env(safe-area-inset-top), 16px); pointer-events: auto;
     width: 44px; height: 44px; border: 0; background: none; cursor: pointer; font-size: 22px; line-height: 1; padding: 0; opacity: .75;
   }
   #soundBtn[aria-pressed="false"] { opacity: .45; }
@@ -3831,7 +3831,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v64';
+  const BUILD = 'v65';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
