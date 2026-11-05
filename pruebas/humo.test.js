@@ -13,7 +13,7 @@ async function abrir(browser, w, h, extra = {}) {
   const { config = '', ...ctxOpts } = extra;                                             // config: líneas de JavaScript que se suman al config.js de la prueba
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...ctxOpts });
   await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: LOCAL + config }));
-  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, duckX, vy, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length, pt: parts.length }), banner: () => bonusBanner(2, 2), bolas: () => CAT.ball.map(b => b.id), zona: (id, n) => { fitBall(CAT.ball.find(b => b.id === id)); const o = hits, op = pw; hits = n; const w = padWidth(); pw = w; const tol = catchTol(); hits = o; pw = op; return { visible: w, zona: w + 2 * tol, BH, bx: BX - K }; }, set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), pup: (t, ax, ay) => spawnPup(t, ax, ay), quiet: () => { pupWait = 1e9; }, pups: () => ({ slowK, padBoost, fx: { ...pupFx }, has: !!pup, pw, hits, n: document.querySelectorAll(".pup").length, hud: document.getElementById("pups").textContent, frozen: field.classList.contains("frozen"), bubbly: field.classList.contains("bubbly"), wide: paddle.classList.contains("wide"), snow: document.querySelectorAll("#fxice .snow").length, bub: document.querySelectorAll("#fxbub i").length, ring: document.querySelectorAll(".widering").length, iceOp: +getComputedStyle(document.getElementById("fxice")).opacity, bubOp: +getComputedStyle(document.getElementById("fxbub")).opacity }), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
+  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__sp = []; { const o = spawnPup; spawnPup = (t, ax, ay) => { if (ax === undefined) window.__sp.push(hits); return o(t, ax, ay); }; }\n  window.__g = { st: () => ({ state, x, y, px, hits, duckX, vy, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length, pt: parts.length }), banner: () => bonusBanner(2, 2), bolas: () => CAT.ball.map(b => b.id), zona: (id, n) => { fitBall(CAT.ball.find(b => b.id === id)); const o = hits, op = pw; hits = n; const w = padWidth(); pw = w; const tol = catchTol(); hits = o; pw = op; return { visible: w, zona: w + 2 * tol, BH, bx: BX - K }; }, set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), pup: (t, ax, ay) => spawnPup(t, ax, ay), quiet: () => { pupNext = 1e9; }, due: () => { pupNext = hits; }, rm: () => { removePup(); pupFx = { slow: 0, freeze: 0, wide: 0 }; }, gap: h => nextPupAt(h) - h, pups: () => ({ nxt: pupNext, slowK, padBoost, fx: { ...pupFx }, has: !!pup, pw, hits, n: document.querySelectorAll(".pup").length, hud: document.getElementById("pups").textContent, frozen: field.classList.contains("frozen"), bubbly: field.classList.contains("bubbly"), wide: paddle.classList.contains("wide"), snow: document.querySelectorAll("#fxice .snow").length, bub: document.querySelectorAll("#fxbub i").length, ring: document.querySelectorAll(".widering").length, iceOp: +getComputedStyle(document.getElementById("fxice")).opacity, bubOp: +getComputedStyle(document.getElementById("fxbub")).opacity }), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
   const p = await ctx.newPage(); const errs = [], csp = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (/Content.Security.Policy|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140)); });
@@ -65,12 +65,27 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
       })(t0);
     }), ms);
     const recorrido = async ms => { const a0 = await p.evaluate(() => window.__g.st()); await p.waitForTimeout(ms); const a1 = await p.evaluate(() => window.__g.st()); return Math.hypot(a1.x - a0.x, a1.y - a0.y); };
-    ok('antes del rebote 8 no hay burbujas ni efectos', await p.evaluate(() => window.__g.pups().hits < 8) && !(await pu()).has && (await pu()).slowK === 1, JSON.stringify(await pu()));
-    await p.evaluate(() => window.__g.set(12)); await p.waitForTimeout(400);
-    let vio = false, maxN = 0, ult = null;                                              // (si la pelota la toca enseguida, se nota por el efecto que queda activo unos segundos)
-    for (let i = 0; i < 110 && !vio; i++) { ult = await pu(); maxN = Math.max(maxN, ult.n); vio = ult.has || ult.fx.slow > 0 || ult.fx.freeze > 0 || ult.fx.wide > 0; await p.waitForTimeout(250); }
-    ok('desde el rebote 8 aparece una burbuja flotando en la cancha (nunca más de una a la vez)', vio && maxN <= 1, JSON.stringify(ult));
-    await p.evaluate(() => { window.__g.quiet(); window.__g.pup('slow', 6, 6); });          // (a partir de aquí no salen burbujas solas, para que cada prueba sea exacta; esta va al rincón de arriba: la pelota no llega y se prueba que desaparece sola)
+    ok('antes del rebote 10 no hay burbujas ni efectos', await p.evaluate(() => window.__g.pups().hits < 10) && !(await pu()).has && (await pu()).slowK === 1, JSON.stringify(await pu()));
+    // Calendario por REBOTES (no por tiempo): se avanza el marcador de a uno y se mira en qué rebote sale cada burbuja (el registro lo anota el propio juego)
+    await p.evaluate(() => { window.__sp.length = 0; });
+    await p.evaluate(hasta => new Promise(res => {
+      const g = window.__g, raf2 = f => requestAnimationFrame(() => requestAnimationFrame(f)); let h = g.pups().hits;
+      (function s() { g.set(h); raf2(() => { if (g.pups().has) g.rm(); if (++h > hasta) res(); else s(); }); })();
+    }), 150);
+    const sp = await p.evaluate(() => window.__sp.slice()), dif = sp.slice(1).map((v, i) => v - sp[i]);
+    ok('la primera burbuja sale entre los rebotes 10 y 14', sp.length > 0 && sp[0] >= 10 && sp[0] <= 14, JSON.stringify(sp));
+    ok('del rebote 1 al 55 salen al menos 3 burbujas', sp.filter(v => v <= 55).length >= 3, JSON.stringify(sp));
+    ok('hasta el rebote 55 la siguiente sale 10 a 14 rebotes después de la anterior', dif.every((d, i) => sp[i + 1] > 55 || (d >= 10 && d <= 14)), JSON.stringify(dif));
+    ok('de ahí en adelante salen cada 10, 15 o 20 rebotes (nunca una tras otra)', dif.every((d, i) => sp[i + 1] <= 55 || [10, 15, 20].includes(d)) && sp.filter(v => v > 55).length >= 3, JSON.stringify(sp));
+    ok('en 150 rebotes salen pocas: entre 7 y 14 (nunca más de una cada 10 rebotes)', sp.length >= 7 && sp.length <= 14, `${sp.length} burbujas`);
+    const dist = await p.evaluate(() => { const r = { a: [], b: [], c: [] }; for (let i = 0; i < 3000; i++) { r.a.push(window.__g.gap(0)); r.b.push(window.__g.gap(50)); r.c.push(window.__g.gap(120)); } return r; });
+    const uniq = a => [...new Set(a)].sort((x, y) => x - y), prom = a => a.reduce((x, y) => x + y, 0) / a.length;
+    ok('el primer plazo es de 10 a 14 rebotes (y salen los 5 valores)', JSON.stringify(uniq(dist.a)) === '[10,11,12,13,14]', JSON.stringify(uniq(dist.a)));
+    ok('cuando el plazo pasa del rebote 55 se usa 10, 15 o 20 (los tres salen, promedio cerca de 15)', JSON.stringify(uniq(dist.b)) === '[10,15,20]' && JSON.stringify(uniq(dist.c)) === '[10,15,20]' && Math.abs(prom(dist.c) - 15) < 1, `${JSON.stringify(uniq(dist.b))} · promedio ${prom(dist.c).toFixed(2)}`);
+    await p.evaluate(() => { window.__g.rm(); window.__g.quiet(); window.__g.set(12); }); await p.waitForTimeout(400);
+    await p.evaluate(() => window.__g.pup('slow', 6, 6)); await p.evaluate(() => window.__g.due()); await p.waitForTimeout(500);
+    ok('mientras flota una burbuja no sale otra, aunque ya toque', (await pu()).n === 1, JSON.stringify(await pu()));
+    await p.evaluate(() => { window.__g.quiet(); });                                    // (a partir de aquí no salen burbujas solas, para que cada prueba sea exacta; la del rincón de arriba no la alcanza la pelota: se prueba que desaparece sola)
     ok('una burbuja que la pelota no toca desaparece sola a los 8 s', (await pu()).has && (await (async () => { await p.waitForTimeout(8600); return !(await pu()).has; })()), JSON.stringify(await pu()));
     await p.waitForTimeout(10600);                                                      // por si la pelota alcanzó a tocar alguna antes de apagarlas: que no quede ningún efecto
 
@@ -110,6 +125,47 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     const w2 = await pu();
     ok('a los 10 s la barra vuelve a su tamaño', w2.fx.wide === 0 && Math.abs(w2.pw - w0) / w0 < .08 && !w2.wide, `${JSON.stringify(w2)} · antes ${w0}`);
     ok('la partida siguió en juego todo el tiempo (los efectos no activan el antitrampas)', (await p.evaluate(() => window.__g.st().state)) === 'play');
+
+    // apagar un efecto tocando su cuadrito (el del emoji y los segundos)
+    for (const [t, nombre, apagado] of [['slow', 'burbujas', a => !a.bubbly && a.slowK > .9], ['freeze', 'hielo', a => !a.frozen && a.slowK > .9], ['wide', 'barra grande', a => !a.wide && Math.abs(a.pw - w0) / w0 < .1]]) {
+      await p.evaluate(t => { const g = window.__g.st(); window.__g.pup(t, g.x, g.y); }, t); await p.waitForTimeout(900);
+      await p.evaluate(() => window.__g.due());                                  // (ya «toca» otra burbuja: si el respiro fallara, saldría justo al apagar)
+      const caja = await p.evaluate(t => { const b = document.querySelector('#pups button[data-k="' + t + '"]'); if (!b) return null; const r = b.getBoundingClientRect(); return { w: r.width, h: r.height, pe: getComputedStyle(b).pointerEvents, txt: b.textContent }; }, t);
+      ok(`el efecto de ${nombre} muestra su cuadrito como botón (con emoji y segundos) y se puede tocar con el dedo (alto ≥ 36 px)`, caja && caja.pe === 'auto' && caja.h >= 36 && /\d/.test(caja.txt), JSON.stringify(caja));
+      if (t === 'slow') { const c = await p.evaluate(() => { const r = document.querySelector('#pups button').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }); await p.touchscreen.tap(c[0], c[1]); }      // con el dedo...
+      else {
+        const c = await p.evaluate(t => { const r = document.querySelector('#pups button[data-k="' + t + '"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }, t);
+        for (let i = 0; i < 100; i++) { if ((await p.evaluate(() => window.__g.st().vy)) < 0) break; await p.waitForTimeout(20); }      // (justo cuando la pelota se aleja, para no perderla mientras la barra queda quieta)
+        await p.evaluate(() => { window.__auto = false; }); await p.mouse.move(300, c[1]); await p.waitForTimeout(60);
+        const px0 = await p.evaluate(() => window.__g.st().px); await p.mouse.move(c[0], c[1]); await p.waitForTimeout(60);
+        const px1 = await p.evaluate(() => window.__g.st().px); await p.evaluate(() => { window.__auto = true; });
+        ok('con el mouse, pasar por encima del cuadrito no mueve la barra (y fuera de él sí la sigue)', Math.abs(px1 - px0) < 1 && Math.abs(px0 - 300) < 40, `antes ${px0.toFixed(0)} · encima del cuadrito ${px1.toFixed(0)}`);
+        await p.mouse.down(); await p.mouse.up();                                                                       // ...y con el mouse
+      }
+      await p.waitForTimeout(300);
+      const ya = await pu();
+      ok(`al apagar ${nombre} no sale otra burbuja al tiro: faltan rebotes (respiro de 3)`, ya.fx[t] === 0 && !ya.has && ya.nxt - ya.hits >= 2, JSON.stringify(ya));
+      await p.waitForTimeout(1200);
+      const ap = await pu();
+      ok(`al tocarlo se apaga ${nombre} al tiro (sin esperar los 10 s) y el cuadrito desaparece`, ap.fx[t] === 0 && apagado(ap) && ap.hud === '', JSON.stringify(ap));
+      ok(`y la partida sigue en juego (${nombre})`, (await p.evaluate(() => window.__g.st().state)) === 'play', JSON.stringify(ap));
+      await p.evaluate(() => { window.__g.rm(); window.__g.quiet(); });
+      await p.waitForTimeout(1200);                                               // (deja que termine la transición de hielo/burbujas antes de seguir)
+    }
+    ok('tocar un cuadrito no arrastra la barra: la partida sigue en juego sin errores', errs.length === 0, errs.join('|'));
+
+    // sin ráfagas: con un efecto activo no sale otra burbuja y, al terminar, tampoco al tiro
+    await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('wide', g.x, g.y); }); await p.waitForTimeout(300);
+    await p.evaluate(() => window.__g.due()); await p.waitForTimeout(1200);
+    const e1 = await pu();
+    ok('con un efecto activo no sale otra burbuja, aunque ya toque', e1.fx.wide > 0 && !e1.has && e1.n === 0, JSON.stringify(e1));
+    let e2 = null; for (let i = 0; i < 160; i++) { e2 = await pu(); if (e2.fx.wide === 0) break; await p.waitForTimeout(100); }
+    ok('al terminar el efecto no sale otra al tiro: falta dar rebotes (al menos 3 desde que acabó)', e2.fx.wide === 0 && !e2.has && e2.nxt - e2.hits >= 2, JSON.stringify(e2));
+    await p.waitForTimeout(300);
+    ok('y sigue sin salir mientras no se den esos rebotes', !(await pu()).has, JSON.stringify(await pu()));
+    await p.evaluate(() => { const g = window.__g.pups(); window.__g.set(g.nxt); }); await p.waitForTimeout(500);
+    ok('cuando se dan esos rebotes, ahí sí sale la siguiente', (await pu()).has, JSON.stringify(await pu()));
+    await p.evaluate(() => { window.__g.rm(); window.__g.quiet(); });
 
     // al terminar la partida no queda nada
     await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('freeze', g.x, g.y); window.__g.pup('wide', 6, 6); });
