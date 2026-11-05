@@ -13,7 +13,7 @@ async function abrir(browser, w, h, extra = {}) {
   const { config = '', ...ctxOpts } = extra;                                             // config: líneas de JavaScript que se suman al config.js de la prueba
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...ctxOpts });
   await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: LOCAL + config }));
-  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, duckX, vy, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length, pt: parts.length }), banner: () => bonusBanner(2, 2), bolas: () => CAT.ball.map(b => b.id), zona: (id, n) => { fitBall(CAT.ball.find(b => b.id === id)); const o = hits, op = pw; hits = n; const w = padWidth(); pw = w; const tol = catchTol(); hits = o; pw = op; return { visible: w, zona: w + 2 * tol, BH, bx: BX - K }; }, set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), pup: (t, ax, ay) => spawnPup(t, ax, ay), quiet: () => { pupWait = 1e9; }, pups: () => ({ slowK, padBoost, fx: { ...pupFx }, has: !!pup, pw, hits, n: document.querySelectorAll(".pup").length, hud: document.getElementById("pups").textContent, frozen: field.classList.contains("frozen"), wide: paddle.classList.contains("wide") }), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
+  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, duckX, vy, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length, pt: parts.length }), banner: () => bonusBanner(2, 2), bolas: () => CAT.ball.map(b => b.id), zona: (id, n) => { fitBall(CAT.ball.find(b => b.id === id)); const o = hits, op = pw; hits = n; const w = padWidth(); pw = w; const tol = catchTol(); hits = o; pw = op; return { visible: w, zona: w + 2 * tol, BH, bx: BX - K }; }, set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), pup: (t, ax, ay) => spawnPup(t, ax, ay), quiet: () => { pupWait = 1e9; }, pups: () => ({ slowK, padBoost, fx: { ...pupFx }, has: !!pup, pw, hits, n: document.querySelectorAll(".pup").length, hud: document.getElementById("pups").textContent, frozen: field.classList.contains("frozen"), bubbly: field.classList.contains("bubbly"), wide: paddle.classList.contains("wide"), snow: document.querySelectorAll("#fxice .snow").length, bub: document.querySelectorAll("#fxbub i").length, ring: document.querySelectorAll(".widering").length, iceOp: +getComputedStyle(document.getElementById("fxice")).opacity, bubOp: +getComputedStyle(document.getElementById("fxbub")).opacity }), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
   const p = await ctx.newPage(); const errs = [], csp = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (/Content.Security.Policy|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140)); });
@@ -50,7 +50,7 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     await ctx.close();
   }
 
-  console.log('Potenciadores: burbuja lenta, tiempo congelado y barra grande');
+  console.log('Potenciadores (10 s cada uno): burbujas, hielo cristal y barra grande');
   {
     const { ctx, p, errs } = await abrir(b, 390, 844);
     await jugar(p); await p.waitForTimeout(3600);
@@ -64,6 +64,7 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
         else { const v = []; for (let i = 1; i < pts.length; i++) { const dt = (pts[i][0] - pts[i - 1][0]) / 1000; if (dt > 0) v.push(Math.hypot(pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]) / dt); } v.sort((a, c) => a - c); res(v[Math.floor(v.length / 2)]); }
       })(t0);
     }), ms);
+    const recorrido = async ms => { const a0 = await p.evaluate(() => window.__g.st()); await p.waitForTimeout(ms); const a1 = await p.evaluate(() => window.__g.st()); return Math.hypot(a1.x - a0.x, a1.y - a0.y); };
     ok('antes del rebote 8 no hay burbujas ni efectos', await p.evaluate(() => window.__g.pups().hits < 8) && !(await pu()).has && (await pu()).slowK === 1, JSON.stringify(await pu()));
     await p.evaluate(() => window.__g.set(12)); await p.waitForTimeout(400);
     let vio = false, maxN = 0, ult = null;                                              // (si la pelota la toca enseguida, se nota por el efecto que queda activo unos segundos)
@@ -71,40 +72,52 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     ok('desde el rebote 8 aparece una burbuja flotando en la cancha (nunca más de una a la vez)', vio && maxN <= 1, JSON.stringify(ult));
     await p.evaluate(() => { window.__g.quiet(); window.__g.pup('slow', 6, 6); });          // (a partir de aquí no salen burbujas solas, para que cada prueba sea exacta; esta va al rincón de arriba: la pelota no llega y se prueba que desaparece sola)
     ok('una burbuja que la pelota no toca desaparece sola a los 8 s', (await pu()).has && (await (async () => { await p.waitForTimeout(8600); return !(await pu()).has; })()), JSON.stringify(await pu()));
+    await p.waitForTimeout(10600);                                                      // por si la pelota alcanzó a tocar alguna antes de apagarlas: que no quede ningún efecto
 
-    // burbuja lenta
+    // burbujas
     const v0 = await vel();
-    await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('slow', g.x, g.y); }); await p.waitForTimeout(900);
-    let a1 = await pu(); const v1 = await vel();
-    ok('al tocar la burbuja lenta la pelota va al 70% (la rapidez baja a ~0,7 de la de antes)', a1.fx.slow > 4000 && a1.slowK < .8 && v1 / v0 > .55 && v1 / v0 < .88, `${JSON.stringify(a1)} · antes ${Math.round(v0)} px/s · ahora ${Math.round(v1)} px/s · razón ${(v1 / v0).toFixed(2)}`);
-    ok('la burbuja desaparece al tocarla y el cuadro del efecto muestra 🫧 con los segundos', !a1.has && /🫧 \d/.test(a1.hud), JSON.stringify(a1));
-    await p.waitForTimeout(6000);
-    ok('a los 6 s el efecto termina y la pelota vuelve a su rapidez', (await pu()).fx.slow === 0 && (await pu()).slowK > .97, JSON.stringify(await pu()));
+    await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('slow', g.x, g.y); }); await p.waitForTimeout(1100);
+    const a1 = await pu(), v1 = await vel();
+    ok('al tocar la burbuja dura 10 s y la pelota baja al 60% (rapidez ~0,6 de la de antes)', a1.fx.slow > 8000 && a1.fx.slow <= 10000 && a1.slowK > .55 && a1.slowK < .66 && v1 / v0 > .45 && v1 / v0 < .78, `${JSON.stringify(a1)} · antes ${Math.round(v0)} px/s · ahora ${Math.round(v1)} px/s · razón ${(v1 / v0).toFixed(2)}`);
+    ok('se ve la animación: el campo se tiñe de agua y suben burbujas de jabón (16) con el cuadro 🫧 y los segundos', a1.bubbly && a1.bub === 16 && a1.bubOp > .9 && /🫧 \d/.test(a1.hud) && !a1.has, JSON.stringify(a1));
+    await p.waitForTimeout(9900);
+    const a2 = await pu();
+    ok('a los 10 s termina: la pelota vuelve a su rapidez y desaparecen las burbujas', a2.fx.slow === 0 && a2.slowK > .96 && !a2.bubbly, JSON.stringify(a2));
+    await p.waitForTimeout(1300);
+    ok('y ya no quedan burbujas en el campo', (await pu()).bub === 0, JSON.stringify(await pu()));
 
-    // tiempo congelado
-    await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('freeze', g.x, g.y); }); await p.waitForTimeout(700);
-    const f1 = await pu(), q0 = await p.evaluate(() => window.__g.st()); await p.waitForTimeout(900); const q1 = await p.evaluate(() => window.__g.st());
-    ok('con el tiempo congelado la pelota casi no se mueve (menos de 40 px en casi 1 s) y el campo se tiñe de hielo', f1.fx.freeze > 0 && f1.slowK < .1 && Math.hypot(q1.x - q0.x, q1.y - q0.y) < 40 && f1.frozen, `${JSON.stringify(f1)} · movió ${Math.hypot(q1.x - q0.x, q1.y - q0.y).toFixed(1)} px`);
-    await p.waitForTimeout(2600);
+    // hielo cristal
+    const h0 = await vel();
+    await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('freeze', g.x, g.y); }); await p.waitForTimeout(1100);
+    const f1 = await pu(), hv = await vel(), rec = await recorrido(1000);
+    ok('al tocar el hielo dura 10 s y la pelota baja lento pero sin detenerse (~0,4 de la rapidez de antes, se sigue moviendo)', f1.fx.freeze > 8000 && f1.slowK > .35 && f1.slowK < .47 && hv / h0 > .28 && hv / h0 < .56 && rec > 120, `${JSON.stringify(f1)} · antes ${Math.round(h0)} · ahora ${Math.round(hv)} · razón ${(hv / h0).toFixed(2)} · recorrió ${rec.toFixed(0)} px en 1 s`);
+    ok('se ve la animación: el fondo se cubre de cristales de hielo con copos que caen y el cuadro ❄️', f1.frozen && f1.iceOp > .9 && f1.snow === 14 && /❄️ \d/.test(f1.hud), JSON.stringify(f1));
+    await p.screenshot({ path: process.env.SHOT_HIELO || '/tmp/hielo.png' });
+    await p.waitForTimeout(9000);
     const f2 = await pu();
-    ok('a los 2,5 s el tiempo vuelve a correr', f2.fx.freeze === 0 && f2.slowK > .9 && !f2.frozen, JSON.stringify(f2));
+    ok('al final se derrite (el hielo se desvanece) y el tiempo vuelve a correr', f2.fx.freeze === 0 && f2.slowK > .93 && !f2.frozen, JSON.stringify(f2));
+    await p.waitForTimeout(1300);
+    ok('y no quedan copos', (await pu()).snow === 0, JSON.stringify(await pu()));
 
     // barra grande
     const w0 = (await pu()).pw;
-    await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('wide', g.x, g.y); }); await p.waitForTimeout(1500);
+    await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('wide', g.x, g.y); }); await p.waitForTimeout(150);
+    const r1 = await pu();
+    await p.waitForTimeout(1400);
     const w1 = await pu(), anch = await p.evaluate(() => document.getElementById('paddle').offsetWidth);
-    ok('con la barra grande mide ~50% más (y se ve el brillo verde)', w1.fx.wide > 0 && w1.pw / w0 > 1.4 && w1.pw / w0 < 1.6 && w1.wide && Math.abs(anch - w1.pw) < 2, `${JSON.stringify(w1)} · antes ${w0} · ancho real ${anch}`);
-    await p.waitForTimeout(8200);
+    ok('con la barra grande dura 10 s, mide ~50% más (y se ve el brillo verde con un aro que se expande)', w1.fx.wide > 8000 && w1.pw / w0 > 1.4 && w1.pw / w0 < 1.6 && w1.wide && r1.ring >= 1 && Math.abs(anch - w1.pw) < 2, `${JSON.stringify(w1)} · antes ${w0} · ancho real ${anch} · aros ${r1.ring}`);
+    await p.waitForTimeout(9800);
     const w2 = await pu();
-    ok('a los 8 s la barra vuelve a su tamaño', w2.fx.wide === 0 && Math.abs(w2.pw - w0) / w0 < .08 && !w2.wide, `${JSON.stringify(w2)} · antes ${w0}`);
+    ok('a los 10 s la barra vuelve a su tamaño', w2.fx.wide === 0 && Math.abs(w2.pw - w0) / w0 < .08 && !w2.wide, `${JSON.stringify(w2)} · antes ${w0}`);
     ok('la partida siguió en juego todo el tiempo (los efectos no activan el antitrampas)', (await p.evaluate(() => window.__g.st().state)) === 'play');
 
     // al terminar la partida no queda nada
-    await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('slow', g.x, g.y); window.__g.pup('wide', 6, 6); });
+    await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('freeze', g.x, g.y); window.__g.pup('wide', 6, 6); });
+    await p.waitForTimeout(400);
     await p.evaluate(() => { window.__auto = false; });
-    await p.waitForSelector('#result.show', { timeout: 30000 });
+    await p.waitForSelector('#result.show', { timeout: 40000 });
     const fin = await pu();
-    ok('al terminar la partida se limpian las burbujas, los efectos y los cuadros', fin.n === 0 && !fin.has && fin.slowK === 1 && fin.padBoost === 1 && fin.hud === '' && !fin.frozen && !fin.wide, JSON.stringify(fin));
+    ok('al terminar la partida se limpian las burbujas, los efectos, el hielo y los cuadros', fin.n === 0 && !fin.has && fin.slowK === 1 && fin.padBoost === 1 && fin.hud === '' && !fin.frozen && !fin.bubbly && !fin.wide && fin.snow === 0 && fin.bub === 0, JSON.stringify(fin));
     ok('sin errores de página', errs.length === 0, errs.join('|'));
     await ctx.close();
   }

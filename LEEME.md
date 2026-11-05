@@ -253,24 +253,27 @@ Con cuenta, al entrar cada día aparece la **Racha diaria** (también desde el c
 
 ## Ruleta diaria (un giro por día)
 
-En la ventana de la racha hay una pestaña **🎡 Ruleta** (aparece cuando ya reclamaste tu racha; con un punto rojo si tienes el giro del día disponible, y el chip 🔥 del inicio también avisa). Un giro por día (el día cambia a medianoche de Chile). Los premios de la rueda (`eco.ruleta` de `tienda.js`, 20 casillas en total):
+En la ventana de la racha hay una pestaña **🎡 Ruleta** (con punto rojo cuando tienes el giro del día; el chip 🔥 del inicio también avisa). Un giro por día (el día cambia a medianoche de Chile). **Aparece sola cada día nuevo:** al entrar, si ya cobraste la racha de hoy y no has girado, se abre la ruleta; y si aún no la cobraste, apenas cobras la racha la ventana pasa sola a la ruleta. Los premios (`eco.ruleta` de `tienda.js`, 20 casillas en total):
 
 | Premio | Casillas | Probabilidad |
 |---|---|---|
-| $300 | 6 | 30% |
-| $500 | 5 | 25% |
-| $1.000 | 3 | 15% |
-| $2.000 | 2 | 10% |
+| $500 | 4 | 20% |
+| $1.000 | 4 | 20% |
+| $2.500 | 3 | 15% |
+| $5.000 | 2 | 10% |
+| $10.000 | 1 | 5% |
+| 💰 **$25.000** (premio gordo) | 1 | 5% |
 | 🤑 Multiplicador ×2 (se guarda, lo activas tú) | 2 | 10% |
-| $5.000 | 1 | 5% |
-| 🤑 Multiplicador ×3 (se guarda) | 1 | 5% |
+| 🤑 Multiplicador ×3 | 2 | 10% |
+| 🤑 Multiplicador ×4 | 1 | 5% |
 
-Es lo que se espera ganar por giro: unos $815 en pesos más los multiplicadores. Los multiplicadores caen en los mismos guardados de la racha (`x2`, `x3`) y se activan con el mismo botón del inicio (10 min).
+En promedio un giro vale unos **$2.900** en pesos y, una de cada cuatro veces, un multiplicador. Los multiplicadores caen en los guardados de la racha (`x2`, `x3`, `x4`) y se activan con el mismo botón del inicio (10 min).
 
+- **Diseño:** rueda dibujada en SVG (nítida en cualquier pantalla) con marco dorado de focos que parpadean (más rápido al girar), clavitos entre premios, brillo de cristal, centro con el patito y un puntero rojo que **chasquea (suena y vibra) cada vez que pasa por un clavito**. Al caer muestra el premio, la rueda brilla y salen confeti y monedas. El tamaño de cada trozo es su probabilidad y la rueda nunca es más alta que un tercio de la pantalla (el botón siempre se ve). Las cinco pestañas de la ventana (Racha, Hoy, Semana, Ruleta y Logros) son del mismo ancho y no se salen de la tarjeta ni en celulares de 320 px.
 - **El jugador no puede elegir ni reintentar el resultado.** El giro y el cobro son **dos escrituras distintas**: (1) girar anota la hora del servidor en `ruleta/<uid>/t` y (2) cobrar escribe `ruleta/<uid>/c = t` junto con los pesos o el multiplicador. El premio sale de la hora guardada (`t` en ms % 20), así que el jugador no sabe cuál será hasta que el servidor la anota, y las reglas **rechazan girar y cobrar en la misma escritura** (si no, se podría repetir una escritura rechazada hasta acertar el premio grande), un segundo giro el mismo día, cobrar dos veces el mismo giro, un monto distinto al de la tabla y borrar el giro.
 - Si se corta la conexión entre girar y cobrar, el premio **sigue guardado**: el botón pasa a «Cobrar mi premio» (también al día siguiente, mientras no se gire de nuevo).
-- La rueda es solo un dibujo: gira hasta donde ya dijo el servidor (el tamaño de cada trozo es su probabilidad). Si cambias la tabla en `tienda.js`, las casillas deben seguir sumando 20 (hay una prueba) y hay que volver a correr `node herramientas/generar-reglas.js` y a publicar las reglas.
-- **Pruebas:** la sección «Ruleta diaria» de `pruebas/reglas.test.js` (hora congelada: prueba cada casilla, los bordes y los intentos de trampa) y `pruebas/ruleta.test.js` de punta a punta (giro, cobro de cada casilla, trampas, al día siguiente y sin reglas nuevas).
+- La rueda es solo un dibujo: gira hasta donde ya dijo el servidor. Si cambias la tabla en `tienda.js`, las casillas deben seguir sumando 20 (hay una prueba) y hay que volver a correr `node herramientas/generar-reglas.js` y a publicar las reglas.
+- **Pruebas:** la sección «Ruleta diaria» de `pruebas/reglas.test.js` (hora congelada: prueba cada casilla, los bordes y los intentos de trampa) y `pruebas/ruleta.test.js` de punta a punta (giro, cobro de cada casilla, trampas, aparición automática cada día, pestañas dentro de la tarjeta a 390, 360 y 320 px y sin reglas nuevas).
 - **Hay que publicar las reglas nuevas** (nodo `ruleta`). Sin ellas la pestaña no aparece y todo lo demás sigue igual.
 
 ## Foto de perfil: el emblema (editor libre)
@@ -288,19 +291,19 @@ Cada jugador arma su **emblema** (tocando su nombre en el inicio, o en Ajustes �
 
 ## Potenciadores en la partida (burbujas)
 
-Desde el **rebote 8** aparece en la cancha, de vez en cuando (cada 9 a 16 s), **una burbuja** flotando entre el Pato y tu barra. Dura 8 s en pantalla (parpadea los últimos 2) y se activa cuando **la pelota la toca** (así que conviene apuntar con la barra: el ángulo del rebote depende de dónde pega la pelota en ella). Solo hay una a la vez.
+Desde el **rebote 8** aparece en la cancha, de vez en cuando (cada 10 a 18 s), **una burbuja** flotando entre el Pato y tu barra. Dura 8 s en pantalla (parpadea los últimos 2) y se activa cuando **la pelota la toca** (así que conviene apuntar con la barra: el ángulo del rebote depende de dónde pega la pelota en ella). Solo hay una a la vez. **Todos los efectos duran 10 s** y están pensados para que hagas más rebotes:
 
-| Burbuja | Efecto | Duración | Probabilidad |
+| Burbuja | Efecto | Animación | Probabilidad |
 |---|---|---|---|
-| 🫧 **Burbuja lenta** | La pelota va al **70%** de su rapidez | 6 s | 45% |
-| ❄️ **Tiempo congelado** | La pelota **casi se detiene** (da tiempo a ubicar la barra); el campo se tiñe de hielo | 2,5 s | 20% |
-| 📏 **Barra grande** | La barra y su zona de golpe miden un **50% más** (brillo verde) | 8 s | 35% |
+| 🫧 **Burbujas** | La pelota baja al **60%** de su rapidez | El campo se tiñe de agua y suben burbujas de jabón | 40% |
+| ❄️ **Hielo cristal** | La pelota baja al **40%** (lenta, pero sin detenerse) | Destello blanco y el fondo se cubre de cristales de hielo y escarcha, con copos que caen; en el último segundo se derrite | 30% |
+| 📏 **Barra grande** | La barra y su zona de golpe miden un **50% más** | Brillo verde y un aro que se expande desde la barra | 30% |
 
-Los efectos activos se ven como cuadritos con la cuenta regresiva a la izquierda de la cancha (🫧 4 · ❄️ 2 · 📏 6) y se limpian al empezar y al terminar cada partida.
+Los efectos activos se ven como cuadritos con la cuenta regresiva a la izquierda de la cancha (🫧 8 · ❄️ 9 · 📏 6) y se limpian (burbujas, copos y hielo incluidos) al empezar y al terminar cada partida. Si dos efectos de lentitud coinciden, manda el más lento. En celulares que van justos el juego pasa solo al «modo liviano» y no dibuja copos ni burbujas.
 
 - **No cambian lo que paga la partida ni los límites del servidor:** solo ayudan a seguir vivo. Las reglas de Firebase solo limitan cuántos rebotes caben en el tiempo de la partida (como mucho 1 cada 0,45 s); una pelota más lenta nunca pasa ese límite, y el antitrampas del juego (rebotes demasiado rápidos o reloj alterado) no se activa por los efectos. Una barra más grande tampoco acelera los rebotes.
-- **Dónde se ajusta:** `PUPS` (efectos, duración y probabilidad), `PUP_FIRST` (desde qué rebote) y `PUP_LIFE` (cuánto dura la burbuja) en `index.html`.
-- **Pruebas:** `humo.test.js` («Potenciadores»): no hay burbujas antes del rebote 8, aparecen después, desaparecen solas, cada efecto hace lo que dice (rapidez ×0,7, pelota casi quieta, barra ×1,5), vuelven a la normalidad y no queda nada al terminar la partida.
+- **Dónde se ajusta:** `PUPS` (duración `ms`, factor de rapidez `k` y probabilidad `w`), `PUP_FIRST` (desde qué rebote) y `PUP_LIFE` (cuánto dura la burbuja en pantalla) en `index.html`.
+- **Pruebas:** `humo.test.js` («Potenciadores»): no hay burbujas antes del rebote 8, aparecen después, desaparecen solas, cada efecto dura 10 s y hace lo que dice (rapidez ×0,6, ×0,4 sin detenerse, barra ×1,5), se ven sus animaciones, vuelven a la normalidad y no queda nada al terminar la partida. `CPU=3 node humo.test.js` la corre con el procesador frenado, como en la CI.
 
 ## El Pato que responde y los botones de redes
 

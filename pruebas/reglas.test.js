@@ -728,7 +728,7 @@ console.log('Ruleta diaria');
     ok('borrar el giro de hoy para girar otra vez', db({ ruleta: { u1: { t: tSeg(0), c: tSeg(0) } } }, NOW).write('/ruleta/u1', null), false);
     ok('cambiar la hora del giro de hoy hacia atrás (para volver a girar o a cobrar)', as({ ruleta: { u1: { t: tSeg(0) } } }, { 'ruleta/u1/t': tSeg(0, DAYMS) }), false);
     ok('girar y cobrar en la misma escritura (c = hora del servidor)', as({}, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV }), false);
-    for (const [v, m] of [[300, 0], [500, 0], [1000, 0], [2000, 0], [5000, 0]]) ok(`girar y cobrar $${v} en la misma escritura (reintentar hasta acertar)`, as({ ...cart(), ruleta: {} }, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV, 'wallets/u1/c': 1000 + v, 'wallets/u1/sp': 0 }), false);
+    for (const [v] of RU.premios.filter(x => x[0] > 0)) ok(`girar y cobrar $${v} en la misma escritura (reintentar hasta acertar)`, as({ ...cart(), ruleta: {} }, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV, 'wallets/u1/c': 1000 + v, 'wallets/u1/sp': 0 }), false);
     ok('girar y guardar un multiplicador en la misma escritura', as({ ...strk }, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV, 'streaks/u1/x2': 2 }), false);
     ok('girar y subir los pesos sin cobrar el giro', as({ ...cart() }, { 'ruleta/u1/t': SV, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
 
@@ -752,7 +752,7 @@ console.log('Ruleta diaria');
     { const lim = RU.premios[0][2], tA = tSeg(lim - 1), tB = tSeg(lim), a = premioDe(tA), b = premioDe(tB);
       ok(`la casilla ${lim - 1} y la ${lim} (borde entre dos premios) pagan lo que dice la tabla`, as({ ...cart(), ruleta: { u1: { t: tA } } }, { 'ruleta/u1/c': tA, 'wallets/u1/c': 1000 + a.v, 'wallets/u1/sp': 0 }).allowed && as({ ...cart(), ruleta: { u1: { t: tB } } }, { 'ruleta/u1/c': tB, 'wallets/u1/c': 1000 + b.v, 'wallets/u1/sp': 0 }).allowed ? { allowed: true } : { allowed: false }, true); }
     const t300 = tSeg(0), g0 = { ...cart(1000), ruleta: { u1: { t: t300 } } };
-    ok('cobrar el premio grande ($5.000) con una casilla de $300', as(g0, { 'ruleta/u1/c': t300, 'wallets/u1/c': 6000, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar el premio grande ($5.000) con la casilla 0 ($500)', as(g0, { 'ruleta/u1/c': t300, 'wallets/u1/c': 6000, 'wallets/u1/sp': 0 }), false);
     ok('cobrar el mismo giro dos veces', as({ ...cart(1300), ruleta: { u1: { t: t300, c: t300 } } }, { 'ruleta/u1/c': t300, 'wallets/u1/c': 1600, 'wallets/u1/sp': 0 }), false);
     ok('cobrar con una hora distinta a la del giro (c ≠ t)', as(g0, { 'ruleta/u1/c': t300 + 1, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
     ok('cobrar cambiando también la hora del giro (para que toque otra casilla)', as(g0, { 'ruleta/u1/t': tSeg(RU.premios[0][2] + 5), 'ruleta/u1/c': tSeg(RU.premios[0][2] + 5), 'wallets/u1/c': 1000 + premioDe(tSeg(RU.premios[0][2] + 5)).v, 'wallets/u1/sp': 0 }), false);
@@ -760,7 +760,7 @@ console.log('Ruleta diaria');
     ok('cobrar el giro de otra cuenta', as({ ...cart(), ruleta: { u1: { t: t300 } } }, { 'ruleta/u1/c': t300, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }, 'u2'), false);
     ok('subir los pesos con la ruleta sin cobrar el giro', as(g0, { 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
     ok('cobrar solo marcando el giro (sin pesos) vale: no se gana nada', as(g0, { 'ruleta/u1/c': t300 }), true);
-    ok('cobrar un giro de hace días (sigue siendo el último giro y no se había cobrado)', as({ ...cart(), ruleta: { u1: { t: tSeg(0, 3 * DAYMS) } } }, { 'ruleta/u1/c': tSeg(0, 3 * DAYMS), 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), true);
+    ok('cobrar un giro de hace días (sigue siendo el último giro y no se había cobrado)', as({ ...cart(), ruleta: { u1: { t: tSeg(0, 3 * DAYMS) } } }, { 'ruleta/u1/c': tSeg(0, 3 * DAYMS), 'wallets/u1/c': 1000 + premioDe(tSeg(0, 3 * DAYMS)).v, 'wallets/u1/sp': 0 }), true);
     ok('leer tu ruleta', db({ ruleta: { u1: { t: t300 } } }, NOW).read('/ruleta/u1'), true);
     ok('leer la de otra cuenta', db({ ruleta: { u1: { t: t300 } } }, NOW, 'u2').read('/ruleta/u1'), false);
     ok('leer todas', db({ ruleta: { u1: { t: t300 } } }, NOW).read('/ruleta'), false);
