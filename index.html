@@ -2360,11 +2360,12 @@
   // El Pato NO sigue la pelota: se queda quieto mientras ella se aleja y solo sale a recibirla cuando vuelve (calcula dónde va a llegar y se desplaza justo a tiempo, sin pasarse ni llegar tarde).
   /* ---------- potenciadores: burbujas que flotan en la cancha; al tocarlas con la pelota se activa su efecto ----------
      Todos duran 10 s. 🫧 Burbujas: la pelota baja al 60% y suben burbujas de jabón · ❄️ Hielo cristal: la pelota baja al 40% y el fondo se cubre de cristales y escarcha · 📏 Barra grande: la barra mide un 50% más.
-     La idea es hacer más rebotes con ellos, pero que sean un privilegio y no una costumbre: salen por REBOTES (no por tiempo). Del rebote 1 al 55 sale una cada 10 a 14 rebotes (siempre al menos 3); de ahí en adelante, una cada 10, 15 o 20 rebotes.
-     Nunca sale otra mientras haya una burbuja flotando o un efecto activo, ni tampoco justo cuando termina uno (hay que dar al menos 3 rebotes más). La burbuja dura 8 s en pantalla. Solo ayudan a seguir vivo: no cambian lo que paga la partida y las reglas de Firebase ya aceptan partidas más lentas. */
+     La idea es hacer más rebotes con ellos, pero que sean un privilegio y no una costumbre: salen en REBOTES FIJOS (PUP_POINTS: 20, 60, 100, 140, 180, 220, 250, 280, 310, 340, 370, 400, 430, 450 y 480), no por tiempo ni al azar (lo único al azar es cuál de los tres es).
+     Nunca sale otra mientras haya una burbuja flotando o un efecto activo, ni tampoco justo cuando termina uno (si un punto llega con un efecto activo, la burbuja sale cuando termina más 3 rebotes). La burbuja dura 8 s en pantalla. Solo ayudan a seguir vivo: no cambian lo que paga la partida y las reglas de Firebase ya aceptan partidas más lentas. */
   const PUPS = { slow: { em: '🫧', n: '¡Burbujas!', ms: 10000, k: .6, w: 40 }, freeze: { em: '❄️', n: '¡Hielo cristal!', ms: 10000, k: .4, w: 30 }, wide: { em: '📏', n: '¡Barra grande!', ms: 10000, w: 30 } };
-  const PUP_LIFE = 8, PUP_EARLY = 55, PUP_BREATH = 3;
-  const nextPupAt = h => { const e = 10 + Math.floor(Math.random() * 5); return h + (h + e <= PUP_EARLY ? e : [10, 15, 20][Math.floor(Math.random() * 3)]); };   // en qué rebote sale la siguiente (desde el h en que salió la anterior)
+  const PUP_LIFE = 8, PUP_BREATH = 3;
+  const PUP_POINTS = [20, 60, 100, 140, 180, 220, 250, 280, 310, 340, 370, 400, 430, 450, 480];          // en qué rebotes sale una burbuja (15 por partida como mucho)
+  const nextPupAt = h => PUP_POINTS.find(p => p > h) || 1e9;                                              // el siguiente punto de la lista después del rebote h (después del último no sale más)
   const pupBusy = () => pupFx.slow > 0 || pupFx.freeze > 0 || pupFx.wide > 0;
   const pupRest = () => { pupNext = Math.max(pupNext, hits + PUP_BREATH); };    // al terminar (o apagar) un efecto no sale otra al tiro: al menos 3 rebotes de respiro
   function removePup() { if (pup) { pup.el.remove(); pup = null; } }
@@ -3830,7 +3831,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v63';
+  const BUILD = 'v64';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
