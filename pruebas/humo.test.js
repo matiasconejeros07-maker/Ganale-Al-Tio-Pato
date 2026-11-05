@@ -17,6 +17,7 @@ async function abrir(browser, w, h, extra = {}) {
   const p = await ctx.newPage(); const errs = [], csp = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (/Content.Security.Policy|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140)); });
+  if (process.env.CPU) await (await ctx.newCDPSession(p)).send('Emulation.setCPUThrottlingRate', { rate: +process.env.CPU });       // CPU=3 node humo.test.js: simula un servidor lento (como el de la CI)
   await p.goto('file://' + JUEGO + 'index.html'); await p.waitForTimeout(500);
   return { ctx, p, errs, csp };
 }
@@ -55,12 +56,14 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     await jugar(p); await p.waitForTimeout(3600);
     await p.evaluate(() => { window.__auto = true; });                                  // una barra perfecta mantiene viva la partida
     const pu = () => p.evaluate(() => window.__g.pups());
-    const vel = async (ms = 700) => {                                                   // rapidez mediana de la pelota (px por segundo) en una ventana de tiempo
-      const pts = []; const t0 = Date.now();
-      while (Date.now() - t0 < ms) { pts.push([Date.now(), ...(await p.evaluate(() => { const g = window.__g.st(); return [g.x, g.y]; }))]); await p.waitForTimeout(24); }
-      const v = []; for (let i = 1; i < pts.length; i++) v.push(Math.hypot(pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]) / ((pts[i][0] - pts[i - 1][0]) / 1000));
-      v.sort((a, c) => a - c); return v[Math.floor(v.length / 2)];
-    };
+    const vel = (ms = 700) => p.evaluate(ms => new Promise(res => {                    // rapidez mediana de la pelota (px por segundo), medida DENTRO de la página en cada cuadro (así la lentitud del navegador de la CI no mete ruido)
+      const pts = [], t0 = performance.now();
+      (function f(t) {
+        const g = window.__g.st(); pts.push([t, g.x, g.y]);
+        if (t - t0 < ms) requestAnimationFrame(f);
+        else { const v = []; for (let i = 1; i < pts.length; i++) { const dt = (pts[i][0] - pts[i - 1][0]) / 1000; if (dt > 0) v.push(Math.hypot(pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]) / dt); } v.sort((a, c) => a - c); res(v[Math.floor(v.length / 2)]); }
+      })(t0);
+    }), ms);
     ok('antes del rebote 8 no hay burbujas ni efectos', await p.evaluate(() => window.__g.pups().hits < 8) && !(await pu()).has && (await pu()).slowK === 1, JSON.stringify(await pu()));
     await p.evaluate(() => window.__g.set(12)); await p.waitForTimeout(400);
     let vio = false, maxN = 0, ult = null;                                              // (si la pelota la toca enseguida, se nota por el efecto que queda activo unos segundos)
@@ -73,7 +76,7 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     const v0 = await vel();
     await p.evaluate(() => { const g = window.__g.st(); window.__g.pup('slow', g.x, g.y); }); await p.waitForTimeout(900);
     let a1 = await pu(); const v1 = await vel();
-    ok('al tocar la burbuja lenta la pelota va al 70% (la rapidez baja a ~0,7 de la de antes)', a1.fx.slow > 4000 && a1.slowK < .8 && v1 / v0 > .5 && v1 / v0 < .9, `${JSON.stringify(a1)} · antes ${Math.round(v0)} px/s · ahora ${Math.round(v1)} px/s · razón ${(v1 / v0).toFixed(2)}`);
+    ok('al tocar la burbuja lenta la pelota va al 70% (la rapidez baja a ~0,7 de la de antes)', a1.fx.slow > 4000 && a1.slowK < .8 && v1 / v0 > .55 && v1 / v0 < .88, `${JSON.stringify(a1)} · antes ${Math.round(v0)} px/s · ahora ${Math.round(v1)} px/s · razón ${(v1 / v0).toFixed(2)}`);
     ok('la burbuja desaparece al tocarla y el cuadro del efecto muestra 🫧 con los segundos', !a1.has && /🫧 \d/.test(a1.hud), JSON.stringify(a1));
     await p.waitForTimeout(6000);
     ok('a los 6 s el efecto termina y la pelota vuelve a su rapidez', (await pu()).fx.slow === 0 && (await pu()).slowK > .97, JSON.stringify(await pu()));
