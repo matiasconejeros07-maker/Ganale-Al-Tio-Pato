@@ -42,16 +42,17 @@ Firebase Realtime Database (gratis, aguanta miles de jugadores) y toma unos 5 mi
 
 ## Misiones (premios por jugar)
 
-En el menú hay un botón **🎯 Misiones** (con una insignia cuando hay premios por reclamar) y la ventana de la racha tiene tres pestañas: **🔥 Racha · 🎯 Hoy · 🏅 Logros**. Hace falta cuenta (como la racha).
+En el menú hay un botón **🎯 Misiones** (con una insignia cuando hay premios por reclamar) y la ventana de la racha tiene cuatro pestañas: **🔥 Racha · 🎯 Hoy · 📅 Semana · 🏅 Logros**. Hace falta cuenta (como la racha).
 
 - **Misiones de hoy (3 por día, iguales para todos):** una **fácil ($100)**, una **media ($250)** y una **difícil ($500)**: a más difícil, más premio. Cada casilla elige su misión entre 3 según la fecha (fácil: jugar 3 partidas · sumar 50 rebotes · llegar a 20 en una partida; media: 5 partidas · 150 rebotes · llegar a 40; difícil: 10 partidas · 400 rebotes · llegar a 80). Se renuevan a medianoche (hora de Chile) y se cobran todas juntas con un botón.
-- **Logros (de una sola vez):** 21, con premios de $50 a $10.000: partidas jugadas (1, 10, 50, 100, 500), mejor partida (10, 25, 50, **100 = $600**, 150, 200, 300 rebotes), rebotes totales (100 a 10.000), racha de 3 y de 7 días, crear tu emblema, comprar tu primer artículo y **verificar tu correo ($300)**. Los más difíciles pagan más. Se pueden cobrar varios a la vez. Sumados valen $30.300.
+- **Misiones de la semana (3, iguales para todos, cambian al azar cada lunes):** una **fácil ($1.000)**, una **media ($3.000)** y una **difícil ($10.000)**. Cada casilla tiene **5 misiones posibles** y la semana elige una (como la fecha elige las de hoy, con la misma fórmula en el juego y en las reglas): fácil = 15 o 20 partidas · 500 o 700 rebotes · llegar a 40; media = 35 o 45 partidas · 1.500 o 2.000 rebotes · llegar a 75; difícil = 70 o 90 partidas · 4.000 o 5.500 rebotes · llegar a 100 en una sola partida. Los contadores de la semana (`w`, `wg`, `wr`, `wm`, `wc` en `stats/<uid>`) funcionan igual que los de hoy y vuelven a 0 el lunes.
+- **Logros (de una sola vez):** 35, con premios de $100 a $500.000: **cuanto más cuesta, más pagan**. Partidas jugadas (1, 10, 50, 100, 250, 500, 1.000), mejor partida (10, 25, 50, 75, **100 = $4.000**, 125, **150 = $25.000** · muy difícil, 200 = $100.000, 300 = $500.000), rebotes totales (100, 500, 2.000, 5.000, **10.000 = $20.000**, 25.000, 50.000), racha de 3, 7, 14, 21, 28 y 60 días, **tiempo jugado** (1, 10 y 50 horas), crear tu emblema, comprar tu primer artículo y **verificar tu correo ($500)**. Se pueden cobrar varios a la vez; sumados valen $1.171.050.
 - **Todo está en el catálogo** (`tienda.js` → `eco.misiones`): premios, metas y qué misión corresponde a cada casilla. Después de cambiarlo hay que correr `node herramientas/generar-reglas.js` y volver a publicar `firebase-rules.json` (el servidor es quien lo comprueba).
 - **Cómo se protege (las reglas de Firebase lo comprueban todo, el juego solo muestra y pide el cobro):**
-  - **Estadísticas** (`stats/<uid>`): partidas, rebotes totales y lo de hoy solo suben al cobrar una partida **verificada** (la misma del cobro de pesos), una sola vez por partida, y solo cuentan las de **5 rebotes o más** (`minRebotes`). Los contadores de hoy vuelven a 0 al cambiar el día. Se escriben **aparte del cobro**: si fallan, los pesos no se ven afectados.
-  - **Logros** (`missions/<uid>/<id>`): solo se pueden escribir una vez, solo si las estadísticas (o el dato de la cuenta: récord, racha, emblema, gasto, correo verificado) ya cumplen la meta, y no se pueden borrar para cobrar otra vez.
+  - **Estadísticas** (`stats/<uid>`): partidas, rebotes totales y lo de hoy y de la semana solo suben al cobrar una partida **verificada** (la misma del cobro de pesos), una sola vez por partida, y solo cuentan las de **5 rebotes o más** (`minRebotes`). Los contadores de hoy vuelven a 0 al cambiar el día y los de la semana el lunes. Se escriben **aparte del cobro**: si fallan, los pesos no se ven afectados.
+  - **Logros** (`missions/<uid>/<id>`): solo se pueden escribir una vez, solo si las estadísticas (o el dato de la cuenta: récord, racha, tiempo jugado, emblema, gasto, correo verificado) ya cumplen la meta, y no se pueden borrar para cobrar otra vez.
   - **Pesos:** la cartera solo sube **exactamente** lo que valen las misiones que se marcan en esa misma escritura (si pides más, menos o una misión que no cumples, Firebase rechaza todo el cobro). más de 400 pruebas de reglas lo comprueban.
-- **Límite honesto:** un programa que juegue partidas de 5 rebotes puede cobrar las misiones fáciles; como mucho se llevaría los premios del día ($850) y los logros una vez ($30.300 por cuenta), y cada partida le exige tiempo real (mínimo 0,45 s por rebote). No hay forma de inventar estadísticas ni de cobrar dos veces.
+- **Límite honesto:** un programa que juegue partidas de 5 rebotes puede cobrar las misiones fáciles; como mucho se llevaría los premios del día ($850), los de la semana ($14.000) y los logros una vez, y cada partida le exige tiempo real (mínimo 0,45 s por rebote). No hay forma de inventar estadísticas ni de cobrar dos veces.
 
 ## Grupo VIP (el WhatsApp de quien desbloquea el personaje secreto)
 
@@ -172,25 +173,40 @@ Revisión hecha con las skills de seguridad y calidad de jeffallan (escaneo est�
   4. *App Check* (reCAPTCHA Enterprise/Play Integrity/App Attest) cuando lo subas a las tiendas: frena a quien llama a Firebase desde fuera del juego.
 - **Límite que no se puede cerrar sin un servidor:** un programa que juegue perfecto (bot) puede llegar a los 500 rebotes; las reglas solo garantizan que no se pueda llegar más rápido que 1 rebote cada 0,45 s y que los pesos coincidan con la partida.
 
-**Pruebas** (carpeta `pruebas/`): `cd pruebas && npm install && npx playwright install chromium && npm test`. `reglas.test.js` prueba las reglas de Firebase con el simulador oficial (265 casos, con la racha, los pesos dobles y el emblema), `racha.test.js` y `perfil.test.js` prueban la racha y el emblema de punta a punta (el juego real contra un Firebase de mentira con las reglas reales) y `humo.test.js` abre el juego en Chromium y comprueba que cargue sin errores, que la CSP no bloquee nada, que el campo se adapte a cada forma de celular, el aviso de ventana chica, el multitáctil, el teclado y que los 8 personajes carguen. `.github/workflows/pruebas.yml` las corre solas en cada cambio.
+**Pruebas** (carpeta `pruebas/`): `cd pruebas && npm install && npx playwright install chromium && npm test`. `reglas.test.js` prueba las reglas de Firebase con el simulador oficial (más de 450 casos, con la racha y sus multiplicadores, el emblema, las misiones y el grupo VIP), `racha.test.js` y `perfil.test.js` prueban la racha y el emblema de punta a punta (el juego real contra un Firebase de mentira con las reglas reales) y `humo.test.js` abre el juego en Chromium y comprueba que cargue sin errores, que la CSP no bloquee nada, que el campo se adapte a cada forma de celular, el aviso de ventana chica, el multitáctil, el teclado y que los 8 personajes carguen. `.github/workflows/pruebas.yml` las corre solas en cada cambio.
 
 ## Qué hace el marcador
 
 - Cada cuenta guarda **solo su mejor puntaje** (si rebota más veces, se actualiza; si rebota menos, no baja). El puntaje son los rebotes: cada vez que la barra toca la pelota suma uno.
   Gana quien más rebotes aguante contra el personaje. Se guarda junto con los pesos al terminar cada partida.
-- Muestra el **Top 25** ordenado por rebotes. Si no estás entre ellos, debajo aparecen tres puntos y tu fila fija con **tu puesto en el mundo** (`#4.321`) y tu puntaje.
+- Muestra el **Top 30** ordenado por rebotes (**🏆 Todo el tiempo**; hay otras tres pestañas, ver más abajo). Si no estás entre ellos, debajo aparecen tres puntos y tu fila fija con **tu puesto en el mundo** (`#4.321`) y tu puntaje.
 - **Cómo calcula el puesto sin bajar la lista de jugadores:** Firebase guarda un contador `hist` con cuántas cuentas hay en cada puntaje (0 a 500). Tu puesto es 1 + la suma de las casillas de arriba de tu puntaje:
   se leen unos 500 números (~4 KB) vengan 100 o 100.000 jugadores. Cada cuenta se cuenta sola, una vez, y al mejorar pasa de casilla (`scores/<uid>/c` guarda dónde está contada; las reglas exigen que
   el contador solo se mueva de a 1 y solo para tu propia cuenta). Las cuentas que ya existían antes de que hubiera contador se cuentan la próxima vez que entran al juego; hasta entonces el puesto
-  de los demás puede salir unos lugares más arriba de lo real (el Top 25 siempre es exacto).
-- Cada vez que alguien abre el marcador se descargan ~5 KB (Top 25 + contador). El **Top 25 se actualiza cada 30 s** mientras el marcador está abierto y a la vista, y **el marcador se puede mirar como máximo 1 minuto**: a los 60 s el juego vuelve solo al inicio (un reloj bajo el título cuenta los segundos). Así, una apertura cuesta como mucho ~12 KB (la primera carga y 3 refrescos) sin importar cuánto tiempo se quede la persona mirando. El botón **↻ Actualizar** pide el Top 25 al instante (una vez cada 5 s) y no alarga el minuto. **Tu puesto** (el contador) se lee al abrir, cada 2 min y cuando cambia tu récord; con la app en segundo plano no se pide nada, y si vuelves después del minuto, te manda al inicio. Las escrituras usan `print=silent` (Firebase no devuelve lo escrito). Los tiempos están al inicio de `index.html` (`REFRESH_MS`, `BOARD_MAX_MS`, `REFRESH_COOLDOWN_MS`, `RANK_MS`).
-- Para miles de jugadores a la vez, lo más barato es que el Top 25 y el contador se lean de una copia en el CDN de Firebase Hosting (una Cloud Function los publica cada pocos segundos) en vez de leer la base de datos en cada pedido: ver la guía de seguridad y costos.
+  de los demás puede salir unos lugares más arriba de lo real (el Top 30 siempre es exacto).
+- Cada vez que alguien abre el marcador se descargan ~6 KB (Top 30 + contador). El **Top 30 se actualiza cada 30 s** mientras el marcador está abierto y a la vista, y **el marcador se puede mirar como máximo 1 minuto**: a los 60 s el juego vuelve solo al inicio (un reloj bajo el título cuenta los segundos). Así, una apertura cuesta como mucho ~12 KB (la primera carga y 3 refrescos) sin importar cuánto tiempo se quede la persona mirando. El botón **↻ Actualizar** pide el Top 30 al instante (una vez cada 5 s) y no alarga el minuto. **Tu puesto** (el contador) se lee al abrir, cada 2 min y cuando cambia tu récord; con la app en segundo plano no se pide nada, y si vuelves después del minuto, te manda al inicio. Las escrituras usan `print=silent` (Firebase no devuelve lo escrito). Los tiempos están al inicio de `index.html` (`REFRESH_MS`, `BOARD_MAX_MS`, `REFRESH_COOLDOWN_MS`, `RANK_MS`).
+- Para miles de jugadores a la vez, lo más barato es que el Top 30 y el contador se lean de una copia en el CDN de Firebase Hosting (una Cloud Function los publica cada pocos segundos) en vez de leer la base de datos en cada pedido: ver la guía de seguridad y costos.
 - El plan gratuito (Spark) de Firebase (1 GB guardado, 10 GB de descarga al mes) alcanza de sobra para miles de jugadores; para una app en las tiendas con 10.000+ jugadores conviene pasar al plan Blaze (pago por uso, con alerta de presupuesto).
 
 
+### Las 4 pestañas del marcador (todas con el Top 30)
+
+| Pestaña | Qué muestra |
+|---|---|
+| 🏆 **Todo el tiempo** | Los mejores rebotes de la historia, con tu puesto en el mundo debajo si no estás |
+| 📅 **Semanal** | La mejor partida de **esta semana** (empieza el lunes, hora de Chile); la nota dice cuánto falta para que se reinicie |
+| ⏱️ **Tiempo jugado** | Quienes más tiempo llevan jugando (ver abajo) |
+| 💰 **Millonarios** | Las **billeteras** más grandes (pesos ganados − gastados), con el monto en pesos |
+
+- **Semanal** (`weekly/<semana>/<uid>` = `n`, `s`, `t`, `a`): se escribe sola al terminar una partida que es tu **nueva mejor de la semana**, aparte del cobro. Las reglas solo dejan escribir en la semana en curso, `s` tiene que ser exactamente tu mejor partida de la semana que ya llevan tus estadísticas verificadas (`stats/<uid>/wm`), no baja nunca y el nombre es el de tu fila del marcador. Cada semana es un nodo nuevo: los de semanas viejas quedan guardados (pesan casi nada) y se pueden borrar desde la consola cuando quieras.
+- **Millonarios** (`scores/<uid>/w`): tu billetera se copia a tu fila del marcador tras cada cobro, compra, racha o misión (como mucho cada 15 s) y al abrir la pestaña. Las reglas solo aceptan **el valor exacto que dice tu cartera en ese momento**. Es público (como el puntaje): cualquiera ve cuántos pesos tiene cada jugador del Top 30.
+- **Insignias junto al nombre** en todas las pestañas: **🦆🎩 Tío Patito**, **🦆🎀 Tía Patita** y **👾 desarrolladores**. Las pone **solo el administrador desde la consola de Firebase** (`roles/<uid>` = `tio`, `tia` o `dev`; nadie puede escribirlas desde el juego). Pasos: Realtime Database → Datos → `roles` → «+» → nombre = el **uid** de la cuenta (se ve en Authentication → Usuarios) y valor = `tio`, `tia` o `dev`. Para que nadie más use los nombres «TIOPATITO» o «Tia Patita», regístralos tú: `names` → «+» → nombre `tiopatito` (y `tia,patita` para «Tia Patita»: en minúsculas y con los espacios/puntos como coma) y valor = tu uid.
+- **Reglas nuevas** (`weekly`, `roles` y `scores/<uid>/w` con su índice): hay que volver a pegar `firebase-rules.json`. Sin ellas, «Todo el tiempo» sigue igual y «Semanal» y «Millonarios» avisan que faltan publicarlas.
+- **Pruebas:** `pruebas/marcadores.test.js` (juego + reglas reales) y la sección «Marcadores: semanal, millonarios e insignias» de `pruebas/reglas.test.js`.
+
 ### Marcador «Tiempo jugado» (horas jugadas)
 
-- En el marcador hay dos pestañas: **🏆 Rebotes** y **⏱️ Tiempo jugado**. «Tiempo jugado» muestra el **Top 25 de quienes más tiempo llevan jugando**, con el mismo formato que el de rebotes: medallas 🥇🥈🥉, emblema, nombre, tu fila resaltada, actualización cada 30 s, botón «Actualizar» cada 5 s como máximo y el mismo minuto para mirarlo. Si no estás entre los 25, debajo salen tres puntos y **tu tiempo**; no hay «puesto en el mundo» porque contarlo exigiría bajar todas las cuentas (el de rebotes lo hace con el contador `hist`).
+- «Tiempo jugado» muestra el **Top 30 de quienes más tiempo llevan jugando**, con el mismo formato que el de rebotes: medallas 🥇🥈🥉, emblema, nombre, tu fila resaltada, actualización cada 30 s, botón «Actualizar» cada 5 s como máximo y el mismo minuto para mirarlo. Si no estás entre los 30, debajo salen tres puntos y **tu tiempo**; no hay «puesto en el mundo» porque contarlo exigiría bajar todas las cuentas (el de rebotes lo hace con el contador `hist`).
 - El tiempo se muestra como `45 s`, `12 min`, `3 h 05 min` o `2 d 4 h`. **Cuenta desde que existe este marcador**: no se puede recuperar el tiempo de partidas anteriores.
 - **Qué se suma:** al terminar cada partida (ya cobrada) se suma **lo que duró de verdad esa partida**, el mismo «Aguantaste 1:52 min» que ves al final (sin la cuenta regresiva), y el final de la partida muestra «⏱️ +1:52 · en total llevas 3 h 05 min jugando». El total es la **suma de todas tus partidas jugadas**.
 - **Por qué no se infla:** el juego manda lo que midió, pero las reglas no dejan sumar más de lo que tardó la partida en el servidor (hora de fin menos hora de inicio, las dos del servidor) ni más del **tope de 4,5 s por rebote + 6 s** (`eco.tiempo` en `tienda.js`). Así dejar el juego abierto o tardar en cobrar no suma horas. `ml` = la última partida sumada: cada partida cuenta una sola vez, y el tiempo nunca baja. Se escribe **aparte del cobro** (`scores/<uid>/ms` y `ml`): si falla, los pesos no se ven afectados, y el juego lo reintenta antes de empezar la siguiente partida. El Top 25 usa el índice `ms` de `scores`. (Las partidas que quedaron pendientes con una versión anterior suman lo que tardaron menos la cuenta regresiva.)
@@ -215,21 +231,47 @@ Para agregar otro personaje: prepara sus dos imágenes, añade una entrada en `c
 
 Con cuenta, al entrar cada día aparece la **Racha diaria** (también desde el chip 🔥 del inicio, con un punto rojo cuando hay premio):
 
-| Día | Premio |
+| Días | Premio |
 |---|---|
-| 1 | $100 |
-| 2 | $200 |
-| 3 | $300 |
-| 4 | $400 |
-| 5 | $500 |
+| 1 a 5 | $100, $200, $300, $400 y $500 |
 | 6 | $1.000 |
-| 7 | ⚡ **Pesos dobles durante 10 minutos** (las partidas que EMPIEZAN en ese lapso pagan el doble de pesos; los rebotes del marcador no se duplican) |
+| **7** | 🤑💸 **Multiplicador ×2** (se guarda: lo activas tú) |
+| 8 a 13 | de 1 a 6 monedas de $500: $500, $1.000, $1.500, $2.000, $2.500 y $3.000 |
+| **14** | 🤑💸 **Multiplicador ×3** |
+| 15 a 20 | de 1 a 6 billetes de $1.000: $1.000 a $6.000 |
+| **21** | 🤑💸 **Multiplicador ×4** |
+| 22 a 27 | $2.000, $3.000, $4.000, $5.000, $6.000 y $8.000 |
+| **28 en adelante** | **$10.000 cada día** (el billete de $10.000) |
 
-- Los dibujos de cada día son los pesos que regalan: $100 = una moneda de $100, $200 = dos monedas de $100, $300 = tres, $400 = cuatro, $500 = la moneda de $500 y $1.000 = el billete de $1.000 (se calculan solos a partir del premio, con monedas y billetes de `skins/`).
-- Si pasas un día entero sin entrar, la racha vuelve al día 1. Después del día 7 el ciclo empieza otra vez (día 8 = premio del día 1) y cada séptimo día vuelven los pesos dobles.
-- **El día cambia a medianoche de Chile en horario de verano** (`huso: -3` en `eco.racha` de `tienda.js`; en invierno es una hora antes). Los premios y el tiempo de los pesos dobles también están en `eco.racha`; si los cambias, ejecuta `node herramientas/generar-reglas.js` y vuelve a pegar `firebase-rules.json`.
-- **Lo valida el servidor** (reglas de Firebase, nodo `streaks/<uid>`): el día y la hora los pone Firebase, la racha solo avanza al valor exacto que toca, el premio en pesos tiene que coincidir con la tabla, la racha no se puede borrar para cobrar de nuevo, y el pago doble de una partida solo vale si empezó dentro de los 10 minutos del último día 7. Cambiar el reloj del celular no sirve: si no coincide, Firebase lo rechaza.
-- **Hay que publicar las reglas nuevas** (`firebase-rules.json`). Mientras no estén publicadas, el juego funciona igual pero la racha no aparece.
+- **La racha no se reinicia cada 7 días:** sigue sumando (día 8, 9, 10…) mientras no te saltes un día. La pantalla muestra la semana de hoy (7 días); pasado el día 28 queda la tarjeta de los $10.000 diarios.
+- **Los multiplicadores (7, 14 y 21) no se activan solos:** al reclamarlos se **guardan** en tu cuenta (`x2`, `x3`, `x4`) y en el inicio aparece un botón **«🤑 Activar ×N · 10 min»** por cada uno que tengas. Al tocarlo empieza el tiempo (se ve el cartel «🤑 Pesos ×N» con la cuenta regresiva) y **las partidas que EMPIEZAN en ese lapso pagan ×N** (los rebotes del marcador no se multiplican; se suma a las «Monedas dobles» del rebote 100). No se puede activar otro mientras uno corre; los guardados no vencen. Los días 7, 14 y 21 muestran 🤑💸 animados en vez del rayo ⚡.
+- Los dibujos de cada día son lo que regalan: monedas y billetes de `skins/` (día 9 = dos monedas de $500, día 16 = dos billetes de $1.000; si son más de 4 monedas o 3 billetes se dibujan 4 o 3 con una insignia «×5», «×6»; de la semana 4 en adelante son los billetes que sumen el premio).
+- Si pasas un día entero sin entrar, la racha vuelve al día 1 (los multiplicadores guardados se conservan).
+- **El día cambia a medianoche de Chile en horario de verano** (`huso: -3` en `eco.racha` de `tienda.js`; en invierno es una hora antes). Todo está en `eco.racha`: la tabla `dias` (días 1 a 27; 0 = día de multiplicador), `fijo`/`fijoDesde` (los $10.000 diarios desde el día 28), `mult` (`[día, ×N]`) y `dobleMs` (la duración). Si cambias algo, ejecuta `node herramientas/generar-reglas.js` y vuelve a pegar `firebase-rules.json`.
+- **Lo valida el servidor** (reglas de Firebase, nodo `streaks/<uid>`): el día y la hora los pone Firebase, la racha solo avanza al valor exacto que toca, el premio en pesos tiene que coincidir con la tabla (también el de los $10.000), los multiplicadores solo se guardan el día que tocan (uno por reclamo) y activar uno exige tenerlo guardado y gastarlo en esa misma escritura, sin otro activo; la racha no se puede borrar para cobrar de nuevo y el pago de una partida solo vale ×N si empezó dentro de los 10 minutos de la activación (las activaciones antiguas, sin `bm`, siguen valiendo ×2). Cambiar el reloj del celular no sirve: si no coincide con el de Firebase, el servidor rechaza el cobro.
+- **Hay que publicar las reglas nuevas** (`firebase-rules.json`). Mientras no estén publicadas, el juego funciona igual pero la racha no aparece o no deja reclamar los días nuevos.
+
+## Ruleta diaria (un giro por día)
+
+En la ventana de la racha hay una pestaña **🎡 Ruleta** (aparece cuando ya reclamaste tu racha; con un punto rojo si tienes el giro del día disponible, y el chip 🔥 del inicio también avisa). Un giro por día (el día cambia a medianoche de Chile). Los premios de la rueda (`eco.ruleta` de `tienda.js`, 20 casillas en total):
+
+| Premio | Casillas | Probabilidad |
+|---|---|---|
+| $300 | 6 | 30% |
+| $500 | 5 | 25% |
+| $1.000 | 3 | 15% |
+| $2.000 | 2 | 10% |
+| 🤑 Multiplicador ×2 (se guarda, lo activas tú) | 2 | 10% |
+| $5.000 | 1 | 5% |
+| 🤑 Multiplicador ×3 (se guarda) | 1 | 5% |
+
+Es lo que se espera ganar por giro: unos $815 en pesos más los multiplicadores. Los multiplicadores caen en los mismos guardados de la racha (`x2`, `x3`) y se activan con el mismo botón del inicio (10 min).
+
+- **El jugador no puede elegir ni reintentar el resultado.** El giro y el cobro son **dos escrituras distintas**: (1) girar anota la hora del servidor en `ruleta/<uid>/t` y (2) cobrar escribe `ruleta/<uid>/c = t` junto con los pesos o el multiplicador. El premio sale de la hora guardada (`t` en ms % 20), así que el jugador no sabe cuál será hasta que el servidor la anota, y las reglas **rechazan girar y cobrar en la misma escritura** (si no, se podría repetir una escritura rechazada hasta acertar el premio grande), un segundo giro el mismo día, cobrar dos veces el mismo giro, un monto distinto al de la tabla y borrar el giro.
+- Si se corta la conexión entre girar y cobrar, el premio **sigue guardado**: el botón pasa a «Cobrar mi premio» (también al día siguiente, mientras no se gire de nuevo).
+- La rueda es solo un dibujo: gira hasta donde ya dijo el servidor (el tamaño de cada trozo es su probabilidad). Si cambias la tabla en `tienda.js`, las casillas deben seguir sumando 20 (hay una prueba) y hay que volver a correr `node herramientas/generar-reglas.js` y a publicar las reglas.
+- **Pruebas:** la sección «Ruleta diaria» de `pruebas/reglas.test.js` (hora congelada: prueba cada casilla, los bordes y los intentos de trampa) y `pruebas/ruleta.test.js` de punta a punta (giro, cobro de cada casilla, trampas, al día siguiente y sin reglas nuevas).
+- **Hay que publicar las reglas nuevas** (nodo `ruleta`). Sin ellas la pestaña no aparece y todo lo demás sigue igual.
 
 ## Foto de perfil: el emblema (editor libre)
 
@@ -243,6 +285,11 @@ Cada jugador arma su **emblema** (tocando su nombre en el inicio, o en Ajustes �
 - **Quién ve tu emblema:** tú siempre ves el tuyo (se dibuja desde tu celular); los demás lo ven solo si está guardado en tu fila del marcador (`scores/<uid>/a`) y si ellos tienen la versión nueva del juego. Los jugadores que no han armado su emblema salen con su inicial en un círculo negro.
 - **Ajustes → Mi emblema** dice en qué estado está: «✅ Todos lo ven en el marcador», «⏳ Guardando…», «⏳ Sin conexión» o «⚠️ faltan publicar las reglas nuevas». Si no se pudo subir, queda pendiente y **se reintenta solo cada vez que abres el juego**; también se sube si tu fila del marcador no tiene emblema (por ejemplo, el récord se hizo antes).
 - **Hay que publicar las reglas nuevas** (`firebase-rules.json`): sin ellas el emblema se ve en tu celular pero no se guarda en la cuenta ni en el marcador.
+
+## El Pato que responde y los botones de redes
+
+- **El Pato no sigue la pelota:** se queda quieto mientras la pelota se aleja (hacia ti) y **solo sale a recibirla cuando vuelve**: calcula dónde va a llegar (con los rebotes en las paredes) y se desplaza justo a tiempo para golpearla. Es solo el movimiento del personaje: la pelota le llega igual y él siempre la devuelve, así que la dificultad y los límites de las reglas no cambian. Una prueba (`humo.test.js`) mide que mientras la pelota se aleja el Pato no se mueve ni un píxel y que cuando vuelve se desplaza sin saltos.
+- **Botones de redes sociales** (inicio, sobre «Ajustes»): círculos amarillos con su piquito y un patito encima, uno por red (📸 Instagram · 🎵 TikTok · ▶️ YouTube · 👍 Facebook · 💬 WhatsApp · ✖️ X). Los links se ponen en **`config.js` → `window.REDES`** (`instagram`, `tiktok`, `youtube`, `facebook`, `whatsapp`, `x`) con el enlace completo `https://…`; las redes que dejes vacías **no se muestran** y, si no hay ninguna, no aparece nada. Solo se aceptan enlaces `https://` (se descartan `javascript:`, `http:` y los que tengan espacios); abren en otra pestaña con `noopener noreferrer`. Para WhatsApp pon el link de tu comunidad o grupo (`https://chat.whatsapp.com/…`).
 
 ## Interfaz y accesibilidad
 

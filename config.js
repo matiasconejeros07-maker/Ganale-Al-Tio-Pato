@@ -17,3 +17,7 @@ window.PATO_DIR = 'pato/';
 // Déjalo vacío para que no haga nada.
 window.ENLACE_NUEVO = '';
 try { if (window.ENLACE_NUEVO && location.origin !== new URL(window.ENLACE_NUEVO).origin) location.replace(window.ENLACE_NUEVO.replace(/\/+$/, '') + '/' + location.search); } catch (e) {}
+
+// Redes sociales: botones con estilo patito en el inicio. Pon el link completo (https://…) de cada una; las que dejes vacías no se muestran.
+// (WhatsApp: el link de tu comunidad o grupo, por ejemplo https://chat.whatsapp.com/xxxx)
+window.REDES = { instagram: '', tiktok: '', youtube: '', facebook: '', whatsapp: '', x: '' };

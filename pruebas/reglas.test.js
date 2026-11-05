@@ -275,7 +275,7 @@ console.log('Racha diaria');
   const D0 = Date.UTC(2026, 9, 29, 15, 0, 0);                      // 12:00 en Chile (huso -3)
   const as = (uid, data, o, now) => db(data, now, uid).update('/', o);
   const wal = (c = 0) => ({ c, sp: 0 });
-  const reward = n => RA.dias[(n - 1) % RA.dias.length];
+  const reward = n => n >= RA.fijoDesde ? RA.fijo : RA.dias[n - 1];
   const claimS = (n, c0, over = {}) => Object.assign({ 'streaks/u1/n': n, 'streaks/u1/t': SV, 'wallets/u1/c': c0 + reward(n) }, over);
   const strk = (n, tMs) => ({ n, t: tMs });
   const day = ms => Math.floor((ms + OFFMS) / DAYMS);
@@ -287,7 +287,9 @@ console.log('Racha diaria');
   ok('día 1 con la hora inventada', as('u1', { wallets: { u1: wal() } }, claimS(1, 0, { 'streaks/u1/t': D0 - 99999999 }), D0), false);
   ok('sin tocar los pesos (solo la racha) sí vale', as('u1', { wallets: { u1: wal(500) } }, { 'streaks/u1/n': 1, 'streaks/u1/t': SV }, D0), true);
 
-  const hoy = { wallets: { u1: wal(100) }, streaks: { u1: strk(1, D0 - 3 * 3600000) } };           // ya cobró hoy, 3 horas antes
+  // «ya cobró hoy»: targaryen usa el reloj real, así que el día se corta según la hora real; se retrocede lo que haya pasado desde la medianoche de Chile (hasta 3 horas) para seguir en el mismo día a cualquier hora
+  const HACE = Math.max(1000, Math.min(3 * 3600000, (Date.now() + OFFMS) % DAYMS - 1000));
+  const hoy = { wallets: { u1: wal(100) }, streaks: { u1: strk(1, D0 - HACE) } };                      // ya cobró hoy, un rato antes
   ok('cobrar dos veces el mismo día (n=2)', as('u1', hoy, claimS(2, 100), D0), false);
   ok('cobrar dos veces el mismo día repitiendo el día 1', as('u1', hoy, claimS(1, 100), D0), false);
   ok('mismo día: solo cambiar la hora (t) y subir pesos', as('u1', hoy, { 'streaks/u1/t': SV, 'wallets/u1/c': 200 }, D0), false);
@@ -306,38 +308,88 @@ console.log('Racha diaria');
   ok('se saltó un día e intenta seguir en 5', as('u1', hace2(4, 1000), claimS(5, 1000), D0), false);
   ok('se saltó un día e intenta ir a 2', as('u1', hace2(4, 1000), claimS(2, 1000), D0), false);
 
-  ok('día 7: pesos dobles (bx) y sin pesos', as('u1', ayer(6, 3000), { 'streaks/u1/n': 7, 'streaks/u1/t': SV, 'streaks/u1/bx': SV }, D0), true);
-  ok('día 7 con pesos de regalo', as('u1', ayer(6, 3000), { 'streaks/u1/n': 7, 'streaks/u1/t': SV, 'streaks/u1/bx': SV, 'wallets/u1/c': 3500 }, D0), false);
-  ok('día 5: bx de contrabando', as('u1', ayer(4, 1000), claimS(5, 1000, { 'streaks/u1/bx': SV }), D0), false);
-  ok('bx con una hora inventada', as('u1', ayer(6, 3000), { 'streaks/u1/n': 7, 'streaks/u1/t': SV, 'streaks/u1/bx': D0 + 3600000 }, D0), false);
-  ok('día 8 = vuelve el premio del día 1 (+$' + reward(8) + ')', as('u1', ayer(7, 3000), claimS(8, 3000), D0), true);
-  ok('día 14 (segunda semana) también da pesos dobles', as('u1', ayer(13, 3000), { 'streaks/u1/n': 14, 'streaks/u1/t': SV, 'streaks/u1/bx': SV }, D0), true);
+  console.log(' Días con multiplicador (7, 14 y 21): se guardan, no se activan solos');
+  const dia = (n, over = {}, extra = {}) => Object.assign({ 'streaks/u1/n': n, 'streaks/u1/t': SV }, over, extra);
+  ok('día 7: guarda un multiplicador ×2 (x2 = 1) y sin pesos', as('u1', ayer(6, 3000), dia(7, { 'streaks/u1/x2': 1 }), D0), true);
+  ok('día 7 sin guardar el multiplicador (solo la racha) también vale', as('u1', ayer(6, 3000), dia(7), D0), true);
+  ok('día 7 con pesos de regalo', as('u1', ayer(6, 3000), dia(7, { 'streaks/u1/x2': 1, 'wallets/u1/c': 3500 }), D0), false);
+  ok('día 7 activándolo en el acto (como antes): ahora hay que tenerlo guardado', as('u1', ayer(6, 3000), dia(7, { 'streaks/u1/bx': SV, 'streaks/u1/bm': 2 }), D0), false);
+  ok('día 7 guardando un ×3 en vez de ×2', as('u1', ayer(6, 3000), dia(7, { 'streaks/u1/x3': 1 }), D0), false);
+  ok('día 7 guardando dos multiplicadores', as('u1', ayer(6, 3000), dia(7, { 'streaks/u1/x2': 2 }), D0), false);
+  ok('día 7 con uno ya guardado: pasa a 2 guardados', as('u1', { wallets: { u1: wal(3000) }, streaks: { u1: { n: 6, t: D0 - DAYMS, x2: 1 } } }, dia(7, { 'streaks/u1/x2': 2 }), D0), true);
+  ok('día 14: guarda un multiplicador ×3', as('u1', ayer(13, 3000), dia(14, { 'streaks/u1/x3': 1 }), D0), true);
+  ok('día 14 guardando un ×4', as('u1', ayer(13, 3000), dia(14, { 'streaks/u1/x4': 1 }), D0), false);
+  ok('día 21: guarda un multiplicador ×4', as('u1', ayer(20, 9000), dia(21, { 'streaks/u1/x4': 1 }), D0), true);
+  ok('día 21 guardando un ×2', as('u1', ayer(20, 9000), dia(21, { 'streaks/u1/x2': 1 }), D0), false);
+  ok('día 5: multiplicador de contrabando', as('u1', ayer(4, 1000), claimS(5, 1000, { 'streaks/u1/x2': 1 }), D0), false);
+  ok('día 8: premio de $' + reward(8) + ' (la moneda de $500)', as('u1', ayer(7, 3000), claimS(8, 3000), D0), true);
+  ok('día 8 cobrando el premio del día 1 ($100)', as('u1', ayer(7, 3000), claimS(8, 3000, { 'wallets/u1/c': 3100 }), D0), false);
+  ok('día 9: dos monedas de $500 = $' + reward(9), as('u1', ayer(8, 3500), claimS(9, 3500), D0), true);
+  for (const n of [10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 22, 23, 24, 25, 26, 27]) ok(`día ${n}: +$${reward(n)}`, as('u1', ayer(n - 1, 5000), claimS(n, 5000), D0), true);
+  ok('día 16: dos billetes de $1.000 = $' + reward(16), as('u1', ayer(15, 5000), claimS(16, 5000), D0), true);
+  ok('día 16 cobrando de más (+$2.001)', as('u1', ayer(15, 5000), claimS(16, 5000, { 'wallets/u1/c': 7001 }), D0), false);
+  ok('día 22: ' + reward(22) + ', no el de la semana anterior', as('u1', ayer(21, 5000), claimS(22, 5000, { 'wallets/u1/c': 5000 + reward(20) }), D0), false);
+  ok('día 28: $10.000', as('u1', ayer(27, 5000), claimS(28, 5000), D0), true);
+  ok('día 28 con $10.001', as('u1', ayer(27, 5000), claimS(28, 5000, { 'wallets/u1/c': 15001 }), D0), false);
+  ok('día 29: $10.000 otra vez', as('u1', ayer(28, 5000), claimS(29, 5000), D0), true);
+  ok('día 35 (no da multiplicador): $10.000', as('u1', ayer(34, 5000), claimS(35, 5000), D0), true);
+  ok('día 35 guardando un multiplicador que no existe', as('u1', ayer(34, 5000), claimS(35, 5000, { 'streaks/u1/x2': 1 }), D0), false);
+  ok('día 100: $10.000', as('u1', ayer(99, 5000), claimS(100, 5000), D0), true);
+  ok('día 100 con $20.000', as('u1', ayer(99, 5000), claimS(100, 5000, { 'wallets/u1/c': 25000 }), D0), false);
+
+  console.log(' Activar un multiplicador guardado (el botón del inicio)');
+  const guardado = (m, extra = {}) => ({ wallets: { u1: wal(3000) }, streaks: { u1: Object.assign({ n: 9, t: D0 - 3600000, ['x' + m]: 1 }, extra) } });
+  const act = (m, over = {}) => Object.assign({ 'streaks/u1/bx': SV, 'streaks/u1/bm': m, ['streaks/u1/x' + m]: 0 }, over);
+  ok('activar el ×2 guardado', as('u1', guardado(2), act(2), D0), true);
+  ok('activar el ×3 guardado', as('u1', guardado(3), act(3), D0), true);
+  ok('activar el ×4 guardado', as('u1', guardado(4), act(4), D0), true);
+  ok('activar uno de dos guardados (quedan 1)', as('u1', guardado(2, { x2: 2 }), act(2, { 'streaks/u1/x2': 1 }), D0), true);
+  ok('activar el ×4 sin tenerlo guardado (solo hay ×2)', as('u1', guardado(2), act(4, { 'streaks/u1/x4': 0 }), D0), false);
+  ok('activar sin gastar el guardado (x2 sigue en 1)', as('u1', guardado(2), act(2, { 'streaks/u1/x2': 1 }), D0), false);
+  ok('activar gastando uno que no es (x3 en vez de x2)', as('u1', guardado(2), act(2, { 'streaks/u1/x2': 1, 'streaks/u1/x3': 0 }), D0), false);
+  ok('activar sin tener ninguno guardado', as('u1', { wallets: { u1: wal(3000) }, streaks: { u1: { n: 9, t: D0 - 3600000 } } }, act(2), D0), false);
+  ok('activar con la hora inventada', as('u1', guardado(2), act(2, { 'streaks/u1/bx': D0 + 3600000 }), D0), false);
+  ok('activar con un multiplicador de ×10', as('u1', guardado(2), act(10, { 'streaks/u1/x2': 0 }), D0), false);
+  ok('activar mientras otro sigue activo (hace 1 minuto)', as('u1', guardado(3, { bx: D0 - 60000, bm: 2 }), act(3), D0), false);
+  ok('activar cuando el anterior ya venció (hace 11 minutos)', as('u1', guardado(3, { bx: D0 - 11 * 60000, bm: 2 }), act(3), D0), true);
+  ok('subir de ×2 a ×4 un multiplicador activo (solo bm)', as('u1', { wallets: { u1: wal(3000) }, streaks: { u1: { n: 9, t: D0 - 3600000, bx: D0 - 60000, bm: 2 } } }, { 'streaks/u1/bm': 4 }, D0), false);
+  ok('regalarse multiplicadores guardados (x4 = 5) sin racha de por medio', as('u1', guardado(2), { 'streaks/u1/x4': 5 }, D0), false);
+  ok('regalarse un multiplicador guardado el mismo día de la racha, sin reclamar', as('u1', { wallets: { u1: wal(3000) }, streaks: { u1: { n: 7, t: D0 - 3600000 } } }, { 'streaks/u1/x2': 1 }, D0), false);
+  ok('repetir el reclamo del día 7 el mismo día para guardar otro', as('u1', { wallets: { u1: wal(3000) }, streaks: { u1: { n: 7, t: D0 - 3600000, x2: 1 } } }, dia(7, { 'streaks/u1/x2': 2 }), D0), false);
+  ok('más de 99 guardados', as('u1', { wallets: { u1: wal(3000) }, streaks: { u1: { n: 6, t: D0 - DAYMS, x2: 99 } } }, dia(7, { 'streaks/u1/x2': 100 }), D0), false);
 
   console.log(' Ataques');
   ok('cambiar solo t (sin n) para cobrar el premio otra vez', as('u1', ayer(1, 100), { 'streaks/u1/t': SV, 'wallets/u1/c': 300 }, D0), false);
   ok('subir los pesos con la racha de otro día sin tocar nada', as('u1', ayer(1, 100), { 'wallets/u1/c': 300 }, D0), false);
   ok('borrar la racha para empezar de nuevo', db(ayer(3, 100), D0).write('/streaks/u1', null), false);
   ok('borrar la racha y volver a crearla el mismo día (premio del día 1 otra vez)', as('u1', hoy, { 'streaks/u1': { n: 1, t: SV }, 'wallets/u1/c': 200 }, D0), false);
-  ok('ponerse una racha de 7 de un golpe', as('u1', { wallets: { u1: wal() } }, claimS(7, 0, { 'streaks/u1/bx': SV }), D0), false);
+  ok('ponerse una racha de 7 de un golpe', as('u1', { wallets: { u1: wal() } }, claimS(7, 0, { 'streaks/u1/x2': 1 }), D0), false);
+  ok('ponerse una racha de 28 de un golpe (para cobrar $10.000)', as('u1', { wallets: { u1: wal() } }, claimS(28, 0), D0), false);
   ok('racha con campos extra', as('u1', { wallets: { u1: wal() } }, claimS(1, 0, { 'streaks/u1/oro': 5 }), D0), false);
   ok('cobrar la racha de otra cuenta', as('u2', { wallets: { u2: wal() } }, claimS(1, 0), D0), false);
   ok('leer la racha de otra cuenta', db({ streaks: { u1: strk(3, D0 - DAYMS) } }, D0, 'u2').read('/streaks/u1'), false);
   ok('leer tu propia racha', db({ streaks: { u1: strk(3, D0 - DAYMS) } }, D0).read('/streaks/u1'), true);
   ok('leer todas las rachas', db({ streaks: { u1: strk(3, D0 - DAYMS) } }, D0).read('/streaks'), false);
 
-  console.log(' Pesos dobles durante 10 minutos');
-  const bxAt = D0 - 60000;                                                    // el «pesos dobles» empezó hace 1 minuto
-  const conBoost = (sMs, extra = {}) => Object.assign({ wallets: { u1: wal(0) }, streaks: { u1: { n: 7, t: D0 - 60000, bx: bxAt } }, runs: { u1: { s: sMs, b: 'peso1', r: 1 } } }, extra);
+  console.log(' Multiplicador activo durante 10 minutos');
+  const bxAt = D0 - 60000;                                                    // el multiplicador se activó hace 1 minuto
+  const conBoost = (sMs, extra = {}, bm = 2) => Object.assign({ wallets: { u1: wal(0) }, streaks: { u1: Object.assign({ n: 9, t: D0 - 60000, bx: bxAt }, bm ? { bm } : {}) }, runs: { u1: { s: sMs, b: 'peso1', r: 1 } } }, extra);
   const claimDob = (h, mult, sMs, wc = 0) => ({ 'runs/u1/e': SV, 'runs/u1/h': h, 'runs/u1/p': pesosFor(h) * mult, 'wallets/u1/c': wc + pesosFor(h) * mult, 'wallets/u1/sp': 0, 'wallets/u1/lr': sMs });
-  ok('partida empezada dentro de los 10 minutos: se paga el doble (40 rebotes)', as('u1', conBoost(D0 - 30000), claimDob(40, 2, D0 - 30000), D0 + 40 * 450), true);
-  ok('partida con el boost pagada normal (×1) no vale (las reglas exigen ×2)', as('u1', conBoost(D0 - 30000), claimDob(40, 1, D0 - 30000), D0 + 40 * 450), false);
-  ok('partida con el boost pagada ×3', as('u1', conBoost(D0 - 30000), claimDob(40, 3, D0 - 30000), D0 + 40 * 450), false);
-  ok('partida empezada ANTES del boost: paga normal', as('u1', conBoost(bxAt - 30000), claimDob(40, 1, bxAt - 30000), D0 + 40 * 450), true);
-  ok('partida empezada antes del boost pagada ×2', as('u1', conBoost(bxAt - 30000), claimDob(40, 2, bxAt - 30000), D0 + 40 * 450), false);
-  const sTarde = bxAt + 10 * 60000 + 1000;                                    // empezó 10 min y 1 s después del boost: ya venció
-  ok('partida empezada con el boost vencido: paga normal', as('u1', conBoost(sTarde, { streaks: { u1: { n: 7, t: D0 - 60000, bx: bxAt } } }), claimDob(40, 1, sTarde), sTarde + 40 * 450 + 1000), true);
-  ok('partida empezada con el boost vencido pagada ×2', as('u1', conBoost(sTarde), claimDob(40, 2, sTarde), sTarde + 40 * 450 + 1000), false);
-  ok('sin racha nunca hay doble (×2 rechazado)', as('u1', { wallets: { u1: wal(0) }, runs: { u1: { s: D0 - 30000, b: 'peso1', r: 1 } } }, claimDob(40, 2, D0 - 30000), D0 + 40 * 450), false);
+  ok('partida empezada dentro de los 10 minutos con ×2: se paga el doble (40 rebotes)', as('u1', conBoost(D0 - 30000), claimDob(40, 2, D0 - 30000), D0 + 40 * 450), true);
+  ok('partida con el ×2 pagada normal (×1) no vale (las reglas exigen ×2)', as('u1', conBoost(D0 - 30000), claimDob(40, 1, D0 - 30000), D0 + 40 * 450), false);
+  ok('partida con el ×2 pagada ×3', as('u1', conBoost(D0 - 30000), claimDob(40, 3, D0 - 30000), D0 + 40 * 450), false);
+  ok('partida con el ×3 activo: se paga el triple', as('u1', conBoost(D0 - 30000, {}, 3), claimDob(40, 3, D0 - 30000), D0 + 40 * 450), true);
+  ok('partida con el ×3 activo pagada ×2', as('u1', conBoost(D0 - 30000, {}, 3), claimDob(40, 2, D0 - 30000), D0 + 40 * 450), false);
+  ok('partida con el ×4 activo: se paga ×4', as('u1', conBoost(D0 - 30000, {}, 4), claimDob(40, 4, D0 - 30000), D0 + 40 * 450), true);
+  ok('partida con el ×4 activo pagada ×5', as('u1', conBoost(D0 - 30000, {}, 4), claimDob(40, 5, D0 - 30000), D0 + 40 * 450), false);
+  ok('activaciones antiguas (sin bm) siguen valiendo ×2', as('u1', conBoost(D0 - 30000, {}, 0), claimDob(40, 2, D0 - 30000), D0 + 40 * 450), true);
+  ok('activaciones antiguas (sin bm) pagadas ×3', as('u1', conBoost(D0 - 30000, {}, 0), claimDob(40, 3, D0 - 30000), D0 + 40 * 450), false);
+  ok('partida empezada ANTES de activarlo: paga normal', as('u1', conBoost(bxAt - 30000), claimDob(40, 1, bxAt - 30000), D0 + 40 * 450), true);
+  ok('partida empezada antes de activarlo pagada ×2', as('u1', conBoost(bxAt - 30000), claimDob(40, 2, bxAt - 30000), D0 + 40 * 450), false);
+  const sTarde = bxAt + 10 * 60000 + 1000;                                    // empezó 10 min y 1 s después de activarlo: ya venció
+  ok('partida empezada con el multiplicador vencido: paga normal', as('u1', conBoost(sTarde), claimDob(40, 1, sTarde), sTarde + 40 * 450 + 1000), true);
+  ok('partida empezada con el multiplicador vencido pagada ×2', as('u1', conBoost(sTarde), claimDob(40, 2, sTarde), sTarde + 40 * 450 + 1000), false);
+  ok('sin racha nunca hay multiplicador (×2 rechazado)', as('u1', { wallets: { u1: wal(0) }, runs: { u1: { s: D0 - 30000, b: 'peso1', r: 1 } } }, claimDob(40, 2, D0 - 30000), D0 + 40 * 450), false);
 }
 
 
@@ -473,21 +525,36 @@ const pick = (d, k) => ((d * 5 + 2 * k) % 7) % 3;
   const cart = (c = 5000) => ({ wallets: { u1: { c, sp: 0, lr: T0 - 99999 } } });
   const g = { ...cart(), stats: { u1: S({ g: 12, r: 700, dc: 0 }) }, scores: { u1: { n: 'M', k: 'matias', s: 120, t: 5, c: 120 } } };
   const cobra = (ids, extra = {}) => ({ ...Object.fromEntries(ids.map(i => [`missions/u1/${i}`, true])), 'wallets/u1/c': 5000 + ids.reduce((a, i) => a + MI.logros.find(x => x[0] === i)[3], 0), 'wallets/u1/sp': 0, ...extra });
-  ok('«Juega 1 partida» ($50) con 12 partidas jugadas', as(g, cobra(['g1'])), true);
-  ok('«Juega 10 partidas» ($150)', as(g, cobra(['g10'])), true);
+  ok('«Juega 1 partida» con 12 partidas jugadas', as(g, cobra(['g1'])), true);
+  ok('«Juega 10 partidas»', as(g, cobra(['g10'])), true);
   ok('«Juega 50 partidas» con solo 12', as(g, cobra(['g50'])), false);
-  ok('«Llega a 100 rebotes» ($600) con un récord de 120', as(g, cobra(['b100'])), true);
+  ok('«Llega a 100 rebotes» con un récord de 120', as(g, cobra(['b100'])), true);
   ok('«Llega a 150 rebotes» con un récord de 120', as(g, cobra(['b150'])), false);
-  ok('«Suma 500 rebotes» ($300) con 700', as(g, cobra(['r500'])), true);
+  ok('«Suma 500 rebotes» con 700', as(g, cobra(['r500'])), true);
   ok('varios logros a la vez (g1 + g10 + b10 + b25 + b50 + b100 + r100 + r500)', as(g, cobra(['g1', 'g10', 'b10', 'b25', 'b50', 'b100', 'r100', 'r500'])), true);
-  ok('el premio no puede ser mayor que el del logro', as(g, cobra(['b100'], { 'wallets/u1/c': 5601 })), false);
-  ok('ni menor que el del logro', as(g, cobra(['b100'], { 'wallets/u1/c': 5599 })), false);
+  ok('el premio no puede ser mayor que el del logro', as(g, cobra(['b100'], { 'wallets/u1/c': 5000 + MI.logros.find(x => x[0] === 'b100')[3] + 1 })), false);
+  ok('ni menor que el del logro', as(g, cobra(['b100'], { 'wallets/u1/c': 5000 + MI.logros.find(x => x[0] === 'b100')[3] - 1 })), false);
   ok('cobrar el logro sin subir los pesos no rompe nada', as(g, cobra(['g1'], { 'wallets/u1/c': 5000 })), true);
   ok('subir los pesos sin ningún logro', as(g, { 'wallets/u1/c': 5050, 'wallets/u1/sp': 0 }), false);
   ok('el mismo logro dos veces', as({ ...g, missions: { u1: { g1: true } } }, cobra(['g1'])), false);
   ok('borrar un logro cobrado (para cobrarlo otra vez)', as({ ...g, missions: { u1: { g1: true } } }, { 'missions/u1/g1': null }), false);
   ok('un logro que no existe', as(g, { 'missions/u1/regalo': true, 'wallets/u1/c': 9999, 'wallets/u1/sp': 0 }), false);
   ok('un logro en la cuenta de otro', as(g, { 'missions/u1/g1': true, 'wallets/u1/c': 5050, 'wallets/u1/sp': 0 }, 'u2'), false);
+  const gg = { ...g, scores: { u1: { n: 'M', k: 'matias', s: 130, t: 5, c: 130, ms: 40000000 } }, stats: { u1: S({ g: 300, r: 30000, dc: 0 }) } };
+  ok('los premios crecen con la dificultad (150 rebotes paga más que 100, 10.000 rebotes = $20.000, 300 rebotes es el mayor)', { allowed: MI.logros.find(x => x[0] === 'b150')[3] > MI.logros.find(x => x[0] === 'b100')[3] * 4 && MI.logros.find(x => x[0] === 'r10000')[3] === 20000
+    && ['b', 'r', 'g', 's', 't'].every(t => MI.logros.filter(x => x[1] === t).every((x, i, a) => i === 0 || x[3] > a[i - 1][3])) }, true);
+  ok('«Llega a 125 rebotes» con un récord de 130', as(gg, cobra(['b125'])), true);
+  ok('«Llega a 150 rebotes» con un récord de 130', as(gg, cobra(['b150'])), false);
+  ok('«Juega 250 partidas» con 300', as(gg, cobra(['g250'])), true);
+  ok('«Juega 500 partidas» con 300', as(gg, cobra(['g500'])), false);
+  ok('«Suma 25.000 rebotes» con 30.000', as(gg, cobra(['r25000'])), true);
+  ok('«Suma 50.000 rebotes» con 30.000', as(gg, cobra(['r50000'])), false);
+  ok('«Juega 1 hora» con 11 horas jugadas', as(gg, cobra(['t1'])), true);
+  ok('«Juega 10 horas» con 11 horas jugadas', as(gg, cobra(['t10'])), true);
+  ok('«Juega 50 horas» con 11 horas jugadas', as(gg, cobra(['t50'])), false);
+  ok('«Juega 1 hora» sin tiempo guardado', as(g, cobra(['t1'])), false);
+  ok('«Racha de 14 días» con la racha en 14', as({ ...g, streaks: { u1: { n: 14, t: T0 } } }, cobra(['s14'])), true);
+  ok('«Racha de 28 días» con la racha en 14', as({ ...g, streaks: { u1: { n: 14, t: T0 } } }, cobra(['s28'])), false);
   ok('«Racha de 3 días» con la racha en 3', as({ ...g, streaks: { u1: { n: 3, t: T0 } } }, cobra(['s3'])), true);
   ok('«Racha de 7 días» con la racha en 3', as({ ...g, streaks: { u1: { n: 3, t: T0 } } }, cobra(['s7'])), false);
   ok('«Crea tu emblema» con emblema', as({ ...g, wallets: { u1: { c: 5000, sp: 0, lr: T0 - 99999, av: 'e41A33GGG' } } }, cobra(['e1'])), true);
@@ -519,8 +586,185 @@ const pick = (d, k) => ((d * 5 + 2 * k) % 7) % 3;
   ok('cobrar la segunda con la primera ya cobrada (1 → 3)', as({ ...cartera, stats: { u1: stats([0, 1], { dc: 1 }) } }, dia(0, 3, premio(1))), true);
   ok('contadores de ayer: no se pueden cobrar hoy', as({ ...cartera, stats: { u1: stats([0], { d: D - 1 }) } }, dia(0, 1, premio(0))), false);
   ok('un valor de casillas fuera de rango', as({ ...cartera, stats: { u1: stats([0, 1, 2]) } }, dia(0, 8, premio(0))), false);
-  ok('misión del día y logro en el mismo cobro', as({ ...cartera, stats: { u1: stats([0], { g: 12 }) }, scores: { u1: { n: 'M', k: 'matias', s: 120, t: 5, c: 120 } } }, { ...dia(0, 1, premio(0) + 150 + 50, {}), 'missions/u1/g10': true, 'missions/u1/g1': true }), true);
+  ok('misión del día y logro en el mismo cobro', as({ ...cartera, stats: { u1: stats([0], { g: 12 }) }, scores: { u1: { n: 'M', k: 'matias', s: 120, t: 5, c: 120 } } }, { ...dia(0, 1, premio(0) + MI.logros.find(x => x[0] === 'g10')[3] + MI.logros.find(x => x[0] === 'g1')[3], {}), 'missions/u1/g10': true, 'missions/u1/g1': true }), true);
   ok('las misiones de la casilla de otro día no las cobra otra cuenta', as({ ...cartera, stats: { u1: stats([0]) } }, dia(0, 1, premio(0)), 'u2'), false);
+}
+
+// ---------- misiones de la semana (3 casillas, 1 de 5 misiones al azar cada semana) ----------
+console.log('Misiones de la semana');
+{
+  const MI2 = ECO.misiones, SEM = MI2.semana, DAYMS2 = 86400000, HUSO2 = -3 * 3600000;
+  const D = Math.floor((Date.now() + HUSO2) / DAYMS2), WK = Math.floor((D + 3) / 7);
+  const pickW = (w, k) => ((w * 13 + 7 * k) % 17) % SEM.de[k].length;
+  const campo = { g: 'wg', r: 'wr', m: 'wm' };
+  const as = (data, upd, uid = 'u1') => db(data, T0 + 70000, uid).update('/', upd);
+  const cartera = { wallets: { u1: { c: 5000, sp: 0, lr: T0 - 99999 } } };
+  const base = (o = {}) => ({ g: 3, r: 100, sl: T0 - 900000, d: D, dg: 2, dr: 50, dm: 40, dc: 0, w: WK, wg: 2, wr: 50, wm: 40, wc: 0, ...o });
+  const run = (h = 60, lr = T0) => ({ runs: { u1: { s: T0, b: 'peso1', r: 1, e: T0 + 60000, h, p: h } }, wallets: { u1: { c: 5000, sp: 0, lr } }, scores: { u1: { n: 'Matías', k: 'matias', s: h, t: T0 - 100, c: h } } });
+  const casilla = (k, w = WK) => { const j = pickW(w, k), de = SEM.de[k][j]; return { campo: campo[de[0]], meta: de[1], j }; };
+  console.log('   misiones de esta semana (semana ' + WK + '):', [0, 1, 2].map(k => `$${SEM.premios[k]} = ${casilla(k).campo} ≥ ${casilla(k).meta}`).join(' · '));
+  ok('en las 3 casillas hay 5 misiones posibles y a lo largo de las semanas salen todas (se reparten bien)', { allowed: [0, 1, 2].every(k => { const vistas = new Set(); for (let w = 0; w < 60; w++) vistas.add(pickW(w, k)); return SEM.de[k].length === 5 && vistas.size === 5; }) }, true);
+  ok('el premio sube con la dificultad (fácil < media < difícil)', { allowed: SEM.premios[0] < SEM.premios[1] && SEM.premios[1] < SEM.premios[2] }, true);
+  ok('dos semanas seguidas nunca repiten la misma misión en las tres casillas a la vez', { allowed: (() => { let rep = 0; for (let w = 0; w < 100; w++) if ([0, 1, 2].every(k => pickW(w, k) === pickW(w + 1, k))) rep++; return rep === 0; })() }, true);
+
+  // estadísticas de la semana
+  const sync = (h, old, over = {}) => ({ 'stats/u1/g': old.g + 1, 'stats/u1/r': old.r + h, 'stats/u1/sl': T0, 'stats/u1/d': D, 'stats/u1/dg': old.dg + 1, 'stats/u1/dr': old.dr + h, 'stats/u1/dm': Math.max(old.dm, h),
+    'stats/u1/w': WK, 'stats/u1/wg': (old.w === WK ? old.wg : 0) + 1, 'stats/u1/wr': (old.w === WK ? old.wr : 0) + h, 'stats/u1/wm': old.w === WK ? Math.max(old.wm, h) : h, ...(old.w === WK ? {} : { 'stats/u1/wc': 0 }), ...over });
+  ok('una partida suma también a la semana (partidas, rebotes y mejor partida)', as({ ...run(70), stats: { u1: base() } }, sync(70, base())), true);
+  ok('la primera partida con contadores de semana (cuentas que aún no los tenían)', as({ ...run(60), stats: { u1: (({ w, wg, wr, wm, wc, ...r }) => r)(base()) } }, sync(60, { ...base(), w: undefined }, {})), true);
+  ok('la mejor de la semana no baja si la partida fue peor', as({ ...run(30), stats: { u1: base({ wm: 90 }) } }, sync(30, base({ wm: 90 }))), true);
+  const pasada = base({ w: WK - 1, wg: 20, wr: 900, wm: 95, wc: 7 });
+  ok('al cambiar la semana los contadores vuelven a empezar y las casillas cobradas a 0', as({ ...run(60), stats: { u1: pasada } }, sync(60, pasada)), true);
+  ok('… si se olvida poner las casillas de la semana en 0', as({ ...run(60), stats: { u1: pasada } }, sync(60, pasada, { 'stats/u1/wc': undefined })), false);
+  ok('… ni arrastrar los contadores de la semana pasada', as({ ...run(60), stats: { u1: pasada } }, sync(60, pasada, { 'stats/u1/wg': 21 })), false);
+  ok('partidas de la semana infladas', as({ ...run(60), stats: { u1: base() } }, sync(60, base(), { 'stats/u1/wg': 9 })), false);
+  ok('rebotes de la semana inventados', as({ ...run(60), stats: { u1: base() } }, sync(60, base(), { 'stats/u1/wr': 5000 })), false);
+  ok('mejor partida de la semana inflada', as({ ...run(60), stats: { u1: base() } }, sync(60, base(), { 'stats/u1/wm': 300 })), false);
+  ok('una semana que no es esta', as({ ...run(60), stats: { u1: base() } }, sync(60, base(), { 'stats/u1/w': WK + 1 })), false);
+  ok('subir un contador de la semana a mano', db({ ...run(60), stats: { u1: base() } }, T0).write('/stats/u1/wg', 99), false);
+  ok('la misma partida dos veces no suma otra vez a la semana', as({ ...run(60), stats: { u1: base({ sl: T0 }) } }, sync(60, base({ sl: T0 }))), false);
+
+  // cobrar las casillas de la semana
+  const stats = (cumple = [], extra = {}) => { const st = base({ wg: 0, wr: 0, wm: 0, wc: 0 }); cumple.forEach(k => { const c = casilla(k); st[c.campo] = c.meta; }); return { ...st, ...extra }; };
+  const cobra = (bits, premio, extra = {}) => ({ 'stats/u1/wc': bits, 'wallets/u1/c': 5000 + premio, 'wallets/u1/sp': 0, ...extra });
+  const P = SEM.premios;
+  ok(`casilla fácil ($${P[0]}) cumplida`, as({ ...cartera, stats: { u1: stats([0]) } }, cobra(1, P[0])), true);
+  ok(`casilla media ($${P[1]}) cumplida`, as({ ...cartera, stats: { u1: stats([1]) } }, cobra(2, P[1])), true);
+  ok(`casilla difícil ($${P[2]}) cumplida`, as({ ...cartera, stats: { u1: stats([2]) } }, cobra(4, P[2])), true);
+  ok(`las tres a la vez ($${P[0] + P[1] + P[2]})`, as({ ...cartera, stats: { u1: stats([0, 1, 2]) } }, cobra(7, P[0] + P[1] + P[2])), true);
+  ok('casilla sin cumplir', as({ ...cartera, stats: { u1: stats([]) } }, cobra(1, P[0])), false);
+  ok('cobrar la difícil habiendo cumplido solo la fácil', as({ ...cartera, stats: { u1: stats([0]) } }, cobra(4, P[2])), false);
+  ok('el monto de la difícil por la casilla fácil', as({ ...cartera, stats: { u1: stats([0]) } }, cobra(1, P[2])), false);
+  ok('premio de más', as({ ...cartera, stats: { u1: stats([0]) } }, cobra(1, P[0] + 1)), false);
+  ok('premio de menos', as({ ...cartera, stats: { u1: stats([0]) } }, cobra(1, P[0] - 1)), false);
+  ok('cobrar la misma casilla otra vez', as({ ...cartera, stats: { u1: stats([0], { wc: 1 }) } }, cobra(1, P[0])), false);
+  ok('descobrar una casilla (3 → 1) para cobrarla de nuevo', as({ ...cartera, stats: { u1: stats([0, 1], { wc: 3 }) } }, { 'stats/u1/wc': 1 }), false);
+  ok('cobrar la segunda con la primera ya cobrada (1 → 3)', as({ ...cartera, stats: { u1: stats([0, 1], { wc: 1 }) } }, cobra(3, P[1])), true);
+  ok('contadores de la semana pasada: no se cobran esta semana', as({ ...cartera, stats: { u1: stats([0], { w: WK - 1 }) } }, cobra(1, P[0])), false);
+  ok('un valor de casillas fuera de rango', as({ ...cartera, stats: { u1: stats([0, 1, 2]) } }, cobra(8, P[0])), false);
+  ok('subir los pesos sin cobrar ninguna casilla', as({ ...cartera, stats: { u1: stats([0]) } }, { 'wallets/u1/c': 5000 + P[0], 'wallets/u1/sp': 0 }), false);
+  ok('cobrar las casillas de la semana de otra cuenta', as({ ...cartera, stats: { u1: stats([0]) } }, cobra(1, P[0]), 'u2'), false);
+  ok('misión de la semana y misión del día en el mismo cobro', as({ ...cartera, stats: { u1: stats([0], { dg: 9, dr: 999, dm: 99 }) } }, cobra(1, P[0] + ECO.misiones.dia[0].premio, { 'stats/u1/dc': 1 })), true);
+  ok('misión de la semana y un logro en el mismo cobro', as({ ...cartera, stats: { u1: stats([0], { g: 12 }) }, scores: { u1: { n: 'M', k: 'matias', s: 60, t: 5, c: 60 } } }, cobra(1, P[0] + MI2.logros.find(x => x[0] === 'g1')[3], { 'missions/u1/g1': true })), true);
+}
+
+// ---------- marcadores: semanal, millonarios e insignias ----------
+console.log('Marcadores: semanal, millonarios e insignias');
+{
+  const D = Math.floor((Date.now() - 3 * 3600000) / 86400000), WK = Math.floor((D + 3) / 7);
+  const as = (data, upd, uid = 'u1') => db(data, T0 + 70000, uid).update('/', upd);
+  const fila = { n: 'Matías', k: 'matias', s: 90, t: T0 - 5000 };
+  const base = { scores: { u1: fila }, stats: { u1: { g: 9, r: 400, sl: T0 - 9000, d: D, dg: 2, dr: 60, dm: 40, dc: 0, w: WK, wg: 3, wr: 150, wm: 70, wc: 0 } } };
+  const sem = (o = {}) => ({ n: 'Matías', s: 70, t: SV, ...o });
+  console.log(' Semanal');
+  ok('tu mejor partida de la semana entra al marcador semanal (n, s, t)', as(base, { [`weekly/${WK}/u1`]: sem() }), true);
+  ok('… con tu foto de perfil', as(base, { [`weekly/${WK}/u1`]: sem({ a: 'e4A1aGGGG' }) }), true);
+  ok('… con una foto con formato inventado', as(base, { [`weekly/${WK}/u1`]: sem({ a: '<img src=x>' }) }), false);
+  ok('con más rebotes de los que llevan las estadísticas (s = 80, wm = 70)', as(base, { [`weekly/${WK}/u1`]: sem({ s: 80 }) }), false);
+  ok('con menos rebotes de los que llevan las estadísticas (s = 60, wm = 70)', as(base, { [`weekly/${WK}/u1`]: sem({ s: 60 }) }), false);
+  ok('sin estadísticas de la semana (no hay partidas verificadas)', as({ scores: base.scores }, { [`weekly/${WK}/u1`]: sem() }), false);
+  ok('con estadísticas de la semana pasada (w = semana − 1)', as({ ...base, stats: { u1: { ...base.stats.u1, w: WK - 1 } } }, { [`weekly/${WK}/u1`]: sem() }), false);
+  ok('en la semana pasada', as(base, { [`weekly/${WK - 1}/u1`]: sem() }), false);
+  ok('en una semana futura', as(base, { [`weekly/${WK + 1}/u1`]: sem() }), false);
+  ok('con un nombre que no es el de tu fila del marcador', as(base, { [`weekly/${WK}/u1`]: sem({ n: 'Otra Persona' }) }), false);
+  ok('sin tener fila en el marcador', as({ stats: base.stats }, { [`weekly/${WK}/u1`]: sem() }), false);
+  ok('con la hora inventada', as(base, { [`weekly/${WK}/u1`]: sem({ t: T0 - 99999 }) }), false);
+  ok('con un campo extra', as(base, { [`weekly/${WK}/u1`]: sem({ oro: 9 }) }), false);
+  ok('sin el nombre', as(base, { [`weekly/${WK}/u1`]: { s: 70, t: SV } }), false);
+  ok('la fila de otra cuenta', as(base, { [`weekly/${WK}/u1`]: sem() }, 'u2'), false);
+  const ya = { ...base, weekly: { [WK]: { u1: { n: 'Matías', s: 70, t: T0 - 60000 } } } };
+  ok('actualizar tu mejor partida de la semana (70 → 90) cuando las estadísticas ya dicen 90', as({ ...ya, stats: { u1: { ...base.stats.u1, wm: 90 } } }, { [`weekly/${WK}/u1/s`]: 90, [`weekly/${WK}/u1/t`]: SV }), true);
+  ok('bajar tu marca de la semana (70 → 50)', as({ ...ya, stats: { u1: { ...base.stats.u1, wm: 50 } } }, { [`weekly/${WK}/u1/s`]: 50, [`weekly/${WK}/u1/t`]: SV }), false);
+  ok('escribir la fila de otra cuenta en la semana actual', as({ ...base, scores: { u2: { ...fila, n: 'Otra' }, u1: fila }, stats: { u2: base.stats.u1, u1: base.stats.u1 } }, { [`weekly/${WK}/u2`]: sem({ n: 'Otra' }) }), false);
+  ok('leer el marcador semanal sin sesión', targaryen.database(rules, shiftObj(ya, 0)).as(null).read(`/weekly/${WK}`), true);
+  ok('leer cualquier semana vieja', targaryen.database(rules, shiftObj(ya, 0)).as(null).read(`/weekly/${WK - 3}`), true);
+
+  console.log(' Millonarios (la billetera en el marcador)');
+  const cart = { wallets: { u1: { c: 5000, sp: 1200, lr: T0 - 99999 } }, scores: { u1: fila } };
+  ok('tu billetera (ganado − gastado = $3.800) en tu fila del marcador', as(cart, { 'scores/u1/w': 3800 }), true);
+  ok('una billetera más grande que la real ($3.801)', as(cart, { 'scores/u1/w': 3801 }), false);
+  ok('lo ganado sin descontar lo gastado ($5.000)', as(cart, { 'scores/u1/w': 5000 }), false);
+  ok('una billetera menor que la real ($3.799)', as(cart, { 'scores/u1/w': 3799 }), false);
+  ok('billetera negativa', as(cart, { 'scores/u1/w': -1 }), false);
+  ok('billetera con decimales', as({ ...cart, wallets: { u1: { c: 5000.5, sp: 1200, lr: T0 - 99999 } } }, { 'scores/u1/w': 3800.5 }), false);
+  ok('billetera de otra cuenta', as({ ...cart, scores: { u1: fila, u2: { ...fila, n: 'Otra', k: 'otra' } } }, { 'scores/u2/w': 3800 }), false);
+  ok('billetera sin tener cartera', as({ scores: { u1: fila } }, { 'scores/u1/w': 100 }), false);
+  ok('billetera enorme de verdad ($500.000.000.000)', as({ wallets: { u1: { c: 600000000000, sp: 100000000000, lr: T0 - 99999 } }, scores: { u1: fila } }, { 'scores/u1/w': 500000000000 }), true);
+  ok('al comprar algo, la billetera vieja deja de valer ($3.800 con sp 2.000 → ahora son $3.000)', as({ wallets: { u1: { c: 5000, sp: 2000, lr: T0 - 99999 } }, scores: { u1: { ...fila, w: 3800 } } }, { 'scores/u1/w': 3800 }), false);
+  ok('actualizar la billetera tras comprar ($3.000)', as({ wallets: { u1: { c: 5000, sp: 2000, lr: T0 - 99999 } }, scores: { u1: { ...fila, w: 3800 } } }, { 'scores/u1/w': 3000 }), true);
+  ok('leer todas las filas del marcador (incluida la billetera)', targaryen.database(rules, shiftObj({ scores: { u1: { ...fila, w: 3800 } } }, 0)).as(null).read('/scores'), true);
+
+  console.log(' Insignias (roles)');
+  ok('ponerte una insignia de desarrollador desde el juego', as(base, { 'roles/u1': 'dev' }), false);
+  ok('ponerte la insignia del Tío Patito', as(base, { 'roles/u1': 'tio' }), false);
+  ok('borrar la insignia de otra cuenta', db({ roles: { u2: 'dev' } }, T0).write('/roles/u2', null), false);
+  ok('leer las insignias sin sesión', targaryen.database(rules, shiftObj({ roles: { u1: 'dev', u2: 'tio', u3: 'tia' } }, 0)).as(null).read('/roles'), true);
+}
+
+// ---------- ruleta diaria: el resultado sale de la hora del servidor y no se puede elegir ----------
+console.log('Ruleta diaria');
+{
+  const RU = ECO.ruleta, N = RU.premios.reduce((a, x) => a + x[2], 0), DAYMS = 86400000, OFF = -3 * 3600000;
+  const realNow = Date.now, NOW = Math.floor(realNow() / 20) * 20 + 3;       // reloj congelado: así el resultado de un giro hecho «ahora» (NOW % 20) y la hora de los giros guardados son exactos
+  Date.now = () => NOW;
+  try {
+    const as = (data, upd, uid = 'u1') => db(data, NOW, uid).update('/', upd);
+    const sinceMid = (NOW + OFF) % DAYMS, ago = Math.max(1000, Math.min(5 * 60000, sinceMid - 2000));
+    const tSeg = (seg, back = ago) => Math.floor((NOW - back - seg) / N) * N + seg;            // una hora de hace un rato (de hoy) cuyo resultado es la casilla `seg`
+    const premioDe = t => { const x = ((t % N) + N) % N; let acc = 0; for (const [v, m, w] of RU.premios) { acc += w; if (x < acc) return { v, m }; } };
+    const segDe = (v, m) => { let acc = 0; for (const [pv, pm, w] of RU.premios) { if (pv === v && pm === m) return acc; acc += w; } return -1; };
+    ok('las casillas de la ruleta suman 20 y hay de pesos y de multiplicador', { allowed: N === 20 && RU.premios.some(x => x[1] > 0) && RU.premios.some(x => x[0] > 0) }, true);
+    const cart = (c = 1000) => ({ wallets: { u1: { c, sp: 0, lr: NOW - 99999 } } });
+    const strk = { streaks: { u1: { n: 3, t: NOW - 3600000, x2: 1, x3: 0 } } };
+
+    console.log(' Girar');
+    ok('el primer giro del día: ruleta/u1/t = hora del servidor', as({}, { 'ruleta/u1/t': SV }), true);
+    ok('el giro con una hora inventada', as({}, { 'ruleta/u1/t': NOW - 5000 }), false);
+    ok('el giro con una hora futura', as({}, { 'ruleta/u1/t': NOW + 5000 }), false);
+    ok('un segundo giro el mismo día', as({ ruleta: { u1: { t: tSeg(0), c: tSeg(0) } } }, { 'ruleta/u1/t': SV }), false);
+    ok('un giro al día siguiente', as({ ruleta: { u1: { t: tSeg(0, DAYMS), c: tSeg(0, DAYMS) } } }, { 'ruleta/u1/t': SV }), true);
+    ok('girar la ruleta de otra cuenta', as({}, { 'ruleta/u1/t': SV }, 'u2'), false);
+    ok('un giro con campos extra', as({}, { 'ruleta/u1/t': SV, 'ruleta/u1/oro': 1 }), false);
+    ok('borrar el giro de hoy para girar otra vez', db({ ruleta: { u1: { t: tSeg(0), c: tSeg(0) } } }, NOW).write('/ruleta/u1', null), false);
+    ok('cambiar la hora del giro de hoy hacia atrás (para volver a girar o a cobrar)', as({ ruleta: { u1: { t: tSeg(0) } } }, { 'ruleta/u1/t': tSeg(0, DAYMS) }), false);
+    ok('girar y cobrar en la misma escritura (c = hora del servidor)', as({}, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV }), false);
+    for (const [v, m] of [[300, 0], [500, 0], [1000, 0], [2000, 0], [5000, 0]]) ok(`girar y cobrar $${v} en la misma escritura (reintentar hasta acertar)`, as({ ...cart(), ruleta: {} }, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV, 'wallets/u1/c': 1000 + v, 'wallets/u1/sp': 0 }), false);
+    ok('girar y guardar un multiplicador en la misma escritura', as({ ...strk }, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV, 'streaks/u1/x2': 2 }), false);
+    ok('girar y subir los pesos sin cobrar el giro', as({ ...cart() }, { 'ruleta/u1/t': SV, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
+
+    console.log(' Cobrar el giro (el premio sale de la hora guardada)');
+    for (const [v, m, w] of RU.premios) {
+      const seg = segDe(v, m), t0 = tSeg(seg), g = { ...cart(1000), ...strk, ruleta: { u1: { t: t0 } } };
+      if (v > 0) {
+        ok(`casilla ${seg} paga $${v}`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1000 + v, 'wallets/u1/sp': 0 }), true);
+        ok(`casilla ${seg} ($${v}) cobrando $1 de más`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1000 + v + 1, 'wallets/u1/sp': 0 }), false);
+        ok(`casilla ${seg} ($${v}) cobrando $1 de menos`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1000 + v - 1, 'wallets/u1/sp': 0 }), false);
+        ok(`casilla ${seg} ($${v}) pidiendo un multiplicador`, as(g, { 'ruleta/u1/c': t0, 'streaks/u1/x2': 2 }), false);
+      } else {
+        ok(`casilla ${seg} regala un multiplicador ×${m} (se guarda)`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/x${m}`]: (g.streaks.u1['x' + m] || 0) + 1 }), true);
+        ok(`casilla ${seg} (×${m}) pidiendo pesos`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
+        ok(`casilla ${seg} (×${m}) guardando ${m === 2 ? '×3' : '×2'} en vez de ×${m}`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/x${m === 2 ? 3 : 2}`]: (g.streaks.u1['x' + (m === 2 ? 3 : 2)] || 0) + 1 }), false);
+        ok(`casilla ${seg} (×${m}) guardando dos`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/x${m}`]: (g.streaks.u1['x' + m] || 0) + 2 }), false);
+        ok(`casilla ${seg} (×${m}) sin racha (no hay dónde guardarlo)`, as({ ...cart(), ruleta: { u1: { t: t0 } } }, { 'ruleta/u1/c': t0, [`streaks/u1/x${m}`]: 1 }), false);
+      }
+    }
+    // borde de cada casilla: la última hora de una casilla y la primera de la siguiente pagan distinto
+    { const lim = RU.premios[0][2], tA = tSeg(lim - 1), tB = tSeg(lim), a = premioDe(tA), b = premioDe(tB);
+      ok(`la casilla ${lim - 1} y la ${lim} (borde entre dos premios) pagan lo que dice la tabla`, as({ ...cart(), ruleta: { u1: { t: tA } } }, { 'ruleta/u1/c': tA, 'wallets/u1/c': 1000 + a.v, 'wallets/u1/sp': 0 }).allowed && as({ ...cart(), ruleta: { u1: { t: tB } } }, { 'ruleta/u1/c': tB, 'wallets/u1/c': 1000 + b.v, 'wallets/u1/sp': 0 }).allowed ? { allowed: true } : { allowed: false }, true); }
+    const t300 = tSeg(0), g0 = { ...cart(1000), ruleta: { u1: { t: t300 } } };
+    ok('cobrar el premio grande ($5.000) con una casilla de $300', as(g0, { 'ruleta/u1/c': t300, 'wallets/u1/c': 6000, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar el mismo giro dos veces', as({ ...cart(1300), ruleta: { u1: { t: t300, c: t300 } } }, { 'ruleta/u1/c': t300, 'wallets/u1/c': 1600, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar con una hora distinta a la del giro (c ≠ t)', as(g0, { 'ruleta/u1/c': t300 + 1, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar cambiando también la hora del giro (para que toque otra casilla)', as(g0, { 'ruleta/u1/t': tSeg(RU.premios[0][2] + 5), 'ruleta/u1/c': tSeg(RU.premios[0][2] + 5), 'wallets/u1/c': 1000 + premioDe(tSeg(RU.premios[0][2] + 5)).v, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar sin haber girado (no hay ruleta/u1/t)', as({ ...cart() }, { 'ruleta/u1/c': NOW, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar el giro de otra cuenta', as({ ...cart(), ruleta: { u1: { t: t300 } } }, { 'ruleta/u1/c': t300, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }, 'u2'), false);
+    ok('subir los pesos con la ruleta sin cobrar el giro', as(g0, { 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar solo marcando el giro (sin pesos) vale: no se gana nada', as(g0, { 'ruleta/u1/c': t300 }), true);
+    ok('cobrar un giro de hace días (sigue siendo el último giro y no se había cobrado)', as({ ...cart(), ruleta: { u1: { t: tSeg(0, 3 * DAYMS) } } }, { 'ruleta/u1/c': tSeg(0, 3 * DAYMS), 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), true);
+    ok('leer tu ruleta', db({ ruleta: { u1: { t: t300 } } }, NOW).read('/ruleta/u1'), true);
+    ok('leer la de otra cuenta', db({ ruleta: { u1: { t: t300 } } }, NOW, 'u2').read('/ruleta/u1'), false);
+    ok('leer todas', db({ ruleta: { u1: { t: t300 } } }, NOW).read('/ruleta'), false);
+  } finally { Date.now = realNow; }
 }
 
 // ---------- grupo VIP: el WhatsApp de quien desbloqueó el personaje secreto ----------

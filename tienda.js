@@ -9,7 +9,7 @@ window.TIENDA = {
     // misiones: los premios los verifica el servidor (reglas de Firebase) con estadísticas que solo suben al cobrar partidas de verdad (una partida cuenta desde minRebotes rebotes).
     // dia: 3 casillas por día (fácil / media / difícil, el premio es fijo por casilla); en cada casilla la misión del día se elige entre las 3 según la fecha (la misma para todos).
     //      de: [tipo, meta] · g = partidas jugadas hoy · r = rebotes sumados hoy · m = rebotes en una sola partida hoy
-    // logros: [id, tipo, meta, premio] de una sola vez · g = partidas · r = rebotes totales · b = mejor partida · s = días de racha · e = tiene emblema · c = compró algo · v = correo verificado
+    // logros: [id, tipo, meta, premio] de una sola vez · g = partidas · r = rebotes totales · b = mejor partida · s = días de racha · t = tiempo jugado · e = tiene emblema · c = compró algo · v = correo verificado
     misiones: {
       minRebotes: 5,
       dia: [
@@ -17,16 +17,34 @@ window.TIENDA = {
         { premio: 250, de: [['g', 5], ['r', 150], ['m', 40]] },
         { premio: 500, de: [['g', 10], ['r', 400], ['m', 80]] }
       ],
+      // misiones de la semana (la semana empieza el lunes, hora de Chile): 3 casillas (fácil / media / difícil) y en cada una se elige UNA de 5 misiones al azar según la semana (igual para todos);
+      //   de: [tipo, meta] · g = partidas esta semana · r = rebotes esta semana · m = rebotes en una sola partida esta semana. El premio es fijo por casilla.
+      semana: { premios: [1000, 3000, 10000], de: [
+        [['g', 15], ['g', 20], ['r', 500], ['r', 700], ['m', 40]],
+        [['g', 35], ['g', 45], ['r', 1500], ['r', 2000], ['m', 75]],
+        [['g', 70], ['g', 90], ['r', 4000], ['r', 5500], ['m', 100]]
+      ] },
+      // logros de una sola vez: [id, tipo, meta, premio]. Cuanto más cuesta, más pagan: 100 rebotes ya es difícil, 150 es muy difícil y 200 o 300 son de leyenda.
+      // t = tiempo total jugado (ms) · el resto como arriba
       logros: [
-        ['g1', 'g', 1, 50], ['g10', 'g', 10, 150], ['g50', 'g', 50, 500], ['g100', 'g', 100, 1000], ['g500', 'g', 500, 5000],
-        ['b10', 'b', 10, 50], ['b25', 'b', 25, 100], ['b50', 'b', 50, 250], ['b100', 'b', 100, 600], ['b150', 'b', 150, 1500], ['b200', 'b', 200, 4000], ['b300', 'b', 300, 10000],
-        ['r100', 'r', 100, 100], ['r500', 'r', 500, 300], ['r2000', 'r', 2000, 1000], ['r10000', 'r', 10000, 4000],
-        ['s3', 's', 3, 200], ['s7', 's', 7, 1000],
-        ['e1', 'e', 1, 100], ['c1', 'c', 1, 100], ['v1', 'v', 1, 300]
+        ['g1', 'g', 1, 100], ['g10', 'g', 10, 250], ['g50', 'g', 50, 1000], ['g100', 'g', 100, 3000], ['g250', 'g', 250, 8000], ['g500', 'g', 500, 20000], ['g1000', 'g', 1000, 60000],
+        ['b10', 'b', 10, 100], ['b25', 'b', 25, 250], ['b50', 'b', 50, 600], ['b75', 'b', 75, 1500], ['b100', 'b', 100, 4000], ['b125', 'b', 125, 10000], ['b150', 'b', 150, 25000], ['b200', 'b', 200, 100000], ['b300', 'b', 300, 500000],
+        ['r100', 'r', 100, 150], ['r500', 'r', 500, 500], ['r2000', 'r', 2000, 2000], ['r5000', 'r', 5000, 6000], ['r10000', 'r', 10000, 20000], ['r25000', 'r', 25000, 60000], ['r50000', 'r', 50000, 150000],
+        ['s3', 's', 3, 300], ['s7', 's', 7, 1500], ['s14', 's', 14, 5000], ['s21', 's', 21, 12000], ['s28', 's', 28, 30000], ['s60', 's', 60, 100000],
+        ['t1', 't', 3600000, 1000], ['t10', 't', 36000000, 8000], ['t50', 't', 180000000, 40000],
+        ['e1', 'e', 1, 150], ['c1', 'c', 1, 150], ['v1', 'v', 1, 500]
       ]
     },
-    // Racha diaria: entrar cada día da premios. dias = pesos del día 1 al 7 (el 7 no da pesos: da «pesos dobles» durante dobleMs) · el día cambia a medianoche de Chile en horario de verano (huso -3)
-    racha: { dias: [100, 200, 300, 400, 500, 1000, 0], dobleMs: 600000, huso: -3 } },
+    // Ruleta diaria: un giro por día (medianoche de Chile). El resultado NO lo elige el jugador: sale de la hora en que el servidor anota el giro (hora en ms % 20, 20 casillas iguales)
+    // y el cobro es un segundo paso que repite esa misma cuenta, así no hay forma de «reintentar hasta que toque el premio grande».
+    // premios: [pesos, multiplicador, casillas de las 20] · pesos 0 + multiplicador = se guarda uno (×2 o ×3, 10 min, lo activas tú como los de la racha) · las casillas suman 20
+    ruleta: { premios: [[300, 0, 6], [500, 0, 5], [1000, 0, 3], [2000, 0, 2], [0, 2, 2], [5000, 0, 1], [0, 3, 1]] },
+    // Racha diaria: entrar cada día da premios y la racha sigue mientras no te saltes un día. El día cambia a medianoche de Chile en horario de verano (huso -3).
+    // dias = pesos del día 1 al 27 (0 = ese día regala un multiplicador, ver mult): semana 1: $100 a $500 y el billete de $1.000 · semana 2: de 1 a 6 monedas de $500 · semana 3: de 1 a 6 billetes de $1.000 ·
+    //        semana 4: $2.000 a $8.000. Desde el día `fijoDesde` en adelante se paga `fijo` cada día (el billete de $10.000).
+    // mult = [día, multiplicador]: ese día se guarda un multiplicador en la cuenta; NO se activa solo: el jugador lo activa con un botón y dura dobleMs (las partidas que EMPIEZAN en ese lapso pagan ×N).
+    racha: { dias: [100, 200, 300, 400, 500, 1000, 0,   500, 1000, 1500, 2000, 2500, 3000, 0,   1000, 2000, 3000, 4000, 5000, 6000, 0,   2000, 3000, 4000, 5000, 6000, 8000],
+      fijo: 10000, fijoDesde: 28, mult: [[7, 2], [14, 3], [21, 4]], dobleMs: 600000, huso: -3 } },
 
   // Foto de perfil = un emblema que cada jugador arma en el editor: forma, colores de fondo y borde, diseño y hasta 5 símbolos puestos donde quiera.
   // Se guarda en 25 caracteres como máximo («e» + forma + fondo + borde + diseño + 4 por símbolo), así pesa casi nada en la base de datos y se dibuja con CSS (sin imágenes).

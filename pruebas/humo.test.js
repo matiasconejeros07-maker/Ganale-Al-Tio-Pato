@@ -10,9 +10,10 @@ let pass = 0, fail = 0;
 const ok = (nombre, cond, extra = '') => { if (cond) { pass++; console.log('  ok  ', nombre); } else { fail++; console.log('  FALLA', nombre, extra); } };
 
 async function abrir(browser, w, h, extra = {}) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...extra });
-  await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: LOCAL }));
-  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length, pt: parts.length }), banner: () => bonusBanner(2, 2), bolas: () => CAT.ball.map(b => b.id), zona: (id, n) => { fitBall(CAT.ball.find(b => b.id === id)); const o = hits, op = pw; hits = n; const w = padWidth(); pw = w; const tol = catchTol(); hits = o; pw = op; return { visible: w, zona: w + 2 * tol, BH, bx: BX - K }; }, set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
+  const { config = '', ...ctxOpts } = extra;                                             // config: líneas de JavaScript que se suman al config.js de la prueba
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...ctxOpts });
+  await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: LOCAL + config }));
+  await ctx.route('**/index.html', r => r.fulfill({ contentType: 'text/html', body: fs.readFileSync(JUEGO + 'index.html', 'utf8').replace('  fetchLeader();\n})();', '  window.__g = { st: () => ({ state, x, y, px, hits, duckX, vy, W, H, K, VYF, VS, tiny, keyDir, fxw: fx.width, fxh: fx.height, fl: flames.length, pt: parts.length }), banner: () => bonusBanner(2, 2), bolas: () => CAT.ball.map(b => b.id), zona: (id, n) => { fitBall(CAT.ball.find(b => b.id === id)); const o = hits, op = pw; hits = n; const w = padWidth(); pw = w; const tol = catchTol(); hits = o; pw = op; return { visible: w, zona: w + 2 * tol, BH, bx: BX - K }; }, set: n => { hits = n; pw = padWidth(); setBg(); }, sp: n => { const o = hits; hits = n; const v = ballSpeed(); hits = o; return v; }, sh: n => { const o = hits; hits = n; const v = shrink(); hits = o; return v; }, bs: n => baseSpeed(n), geo: () => ({ top: paddleTop(), db: DUCK_BOTTOM, by: BY, vs: VS, vyf: VYF }) };\n  (function auto() { if (window.__auto && state === \'play\') px = clamp(x, pw / 2, W - pw / 2); requestAnimationFrame(auto); })();\n  fetchLeader();\n})();') }));
   const p = await ctx.newPage(); const errs = [], csp = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (/Content.Security.Policy|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140)); });
@@ -45,6 +46,47 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     const f = await p.evaluate(() => { const r = document.getElementById('field').getBoundingClientRect(); return { l: r.left, t: r.top, w: r.width, h: r.height, ...window.__g.st() }; });
     ok(`${w}×${h}: el campo llena la pantalla`, Math.abs(f.w - w) < 1 && Math.abs(f.h - h) < 1 && f.l < 1 && f.t < 1, JSON.stringify(f));
     ok(`${w}×${h}: K = ancho/390 y sin errores`, Math.abs(f.K - w / 390) < 1e-3 && (f.state === 'play' || f.state === 'over') && errs.length === 0, `K=${f.K} errs=${errs}`);
+    await ctx.close();
+  }
+
+  console.log('Botones de redes sociales con estilo patito');
+  {
+    const sin = await abrir(b, 390, 844);
+    await sin.p.waitForTimeout(500);
+    ok('sin links en config.js no se ve nada (ni un hueco)', await sin.p.evaluate(() => document.getElementById('redes').hidden && document.getElementById('redes').children.length === 0));
+    await sin.ctx.close();
+    const { ctx, p, errs } = await abrir(b, 390, 844, { config: "window.REDES = { instagram: 'https://www.instagram.com/ejemplo', tiktok: 'javascript:alert(1)', youtube: 'http://inseguro.test/x', whatsapp: 'https://chat.whatsapp.com/abc123', x: '', facebook: 'https://facebook.com/a b' };" });
+    await p.waitForTimeout(500);
+    const r = await p.evaluate(() => ({ hid: document.getElementById('redes').hidden, bt: [...document.querySelectorAll('#redes a')].map(a => ({ href: a.href, t: a.target, rel: a.rel, label: a.getAttribute('aria-label'), duck: a.querySelector('i').textContent, emoji: a.querySelector('span').textContent })) }));
+    ok('solo salen los links https válidos: Instagram y WhatsApp (se descartan javascript:, http: y los con espacios)', !r.hid && r.bt.length === 2 && /instagram/.test(r.bt[0].href) && /whatsapp/.test(r.bt[1].href), JSON.stringify(r));
+    ok('abren en otra pestaña sin dar acceso a la página (noopener noreferrer) y llevan el patito', r.bt.every(a => a.t === '_blank' && /noopener/.test(a.rel) && /noreferrer/.test(a.rel) && a.duck === '🦆'), JSON.stringify(r.bt));
+    ok('cada botón dice a qué red lleva (para lectores de pantalla)', /Instagram/.test(r.bt[0].label) && /WhatsApp/.test(r.bt[1].label), JSON.stringify(r.bt.map(a => a.label)));
+    const caja = await p.evaluate(() => { const bx = document.getElementById('redes').getBoundingClientRect(), f = document.querySelector('#menu .foot').getBoundingClientRect(); return { top: bx.top, bottom: bx.bottom, w: bx.width, footTop: f.top, h: innerHeight }; });
+    ok('los botones están dentro de la pantalla, sobre «Ajustes» y no la tapan', caja.top > 0 && caja.bottom <= caja.footTop + 1 && caja.bottom <= caja.h, JSON.stringify(caja));
+    await p.screenshot({ path: process.env.SHOT_REDES || '/tmp/redes.png' });
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
+  console.log('El Pato no sigue la pelota: se queda quieto cuando se aleja y solo sale a recibirla cuando vuelve');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    await jugar(p); await p.waitForTimeout(3600);
+    await p.evaluate(() => { window.__auto = true; });                                  // una barra perfecta mantiene viva la partida
+    const m = []; for (let i = 0; i < 360; i++) { m.push(await p.evaluate(() => { const g = window.__g.st(); return [g.duckX, g.vy, g.y, g.x, g.state, g.hits]; })); await p.waitForTimeout(18); }
+    let quietosMov = 0, quietosN = 0, vueltaMov = 0, vueltaN = 0, saltos = 0;
+    for (let i = 1; i < m.length; i++) {
+      const [d0, v0] = m[i - 1], [d1, v1] = m[i], dd = Math.abs(d1 - d0);
+      if (v0 >= 0 && v1 >= 0) { quietosN++; quietosMov = Math.max(quietosMov, dd); }                 // la pelota se aleja: el Pato no se mueve
+      if (v0 < 0 && v1 < 0) { vueltaN++; vueltaMov += dd; }                                          // la pelota vuelve: el Pato se desplaza
+      if (dd > 150) saltos++;
+    }
+    const jugando = m.filter(r => r[4] === 'play').length;
+    ok('la partida siguió en juego durante la medición', jugando > m.length * .9, String(jugando));
+    ok('mientras la pelota se aleja (hacia ti) el Pato no se mueve ni un píxel', quietosN > 40 && quietosMov < 0.5, `${quietosN} muestras · mayor movimiento ${quietosMov.toFixed(2)} px`);
+    ok('cuando la pelota vuelve, el Pato sale a recibirla', vueltaN > 20 && vueltaMov > 20, `${vueltaN} muestras · ${vueltaMov.toFixed(1)} px`);
+    ok('y llega a tiempo sin dar saltos raros (ningún salto de más de 150 px entre dos muestras)', saltos === 0, String(saltos));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
     await ctx.close();
   }
 

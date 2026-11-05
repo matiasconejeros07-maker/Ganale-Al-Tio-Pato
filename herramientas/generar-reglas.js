@@ -32,8 +32,11 @@ const STR = "newData.parent().parent().parent().child('streaks').child($uid)";  
 const STR_ROOT = "root.child('streaks').child($uid)";                                    // la racha de esta cuenta, vista desde una partida
 // n que le toca a la racha: la primera vez 1 · al día siguiente del último cobro n+1 · después de saltarse un día, 1 · el mismo día, -1 (no vale)
 const NEXT_N = "(data.parent().child('n').exists() ? (" + `${TODAY} === ${dayOf("data.parent().child('t').val()")} + 1 ? data.parent().child('n').val() + 1 : (${TODAY} > ${dayOf("data.parent().child('t').val()")} ? 1 : -1)` + ") : 1)";
-const rewardExp = n => '(' + R.dias.map((v, i) => `((${n} - 1) % ${R.dias.length}) === ${i} ? ${v}`).join(' : ') + ' : 0)';
-const BOOST = `(${STR_ROOT}.child('bx').exists() && ${P_ROOT_S()} >= ${STR_ROOT}.child('bx').val() && ${P_ROOT_S()} < ${STR_ROOT}.child('bx').val() + ${R.dobleMs} ? 2 : 1)`;
+// pesos del día n de la racha: la tabla de los primeros días (los de multiplicador valen 0) y, desde `fijoDesde`, el pago fijo de cada día
+const rewardExp = n => `(${n} >= ${R.fijoDesde} ? ${R.fijo} : (` + R.dias.map((v, i) => [v, i]).filter(([v]) => v > 0).map(([v, i]) => `${n} === ${i + 1} ? ${v}`).join(' : ') + ' : 0))';
+const MULTS = R.mult.map(([d, m]) => m);                                                    // multiplicadores que se pueden guardar y activar (2, 3, 4)
+// multiplicador de una partida: si empezó dentro de los dobleMs de una activación (bx), paga ×bm (las activaciones antiguas, sin bm, eran ×2)
+const BOOST = `(${STR_ROOT}.child('bx').exists() && ${P_ROOT_S()} >= ${STR_ROOT}.child('bx').val() && ${P_ROOT_S()} < ${STR_ROOT}.child('bx').val() + ${R.dobleMs} ? (${STR_ROOT}.child('bm').exists() ? ${STR_ROOT}.child('bm').val() : 2) : 1)`;
 function P_ROOT_S() { return "newData.parent().child('s').val()"; }
 // contador de puestos (hist): SC = tu fila de scores antes de la escritura · NS = tu fila de scores después
 const SC = "root.child('scores').child(auth.uid)", NS = "newData.parent().parent().child('scores').child(auth.uid)";
@@ -72,6 +75,12 @@ const STAT = { g: 'dg', r: 'dr', m: 'dm' };
 // misión de la casilla k del día: se elige entre 3 según la fecha ((día × 5 + 2k) % 7 % 3), igual para todos
 const pickJ = k => `(((${TODAY}) * 5 + ${2 * k}) % 7 % 3)`;
 const condDia = k => { const j = pickJ(k), d = M.dia[k].de; return `(${j} === 0 ? newData.parent().child('${STAT[d[0][0]]}').val() >= ${d[0][1]} : ${j} === 1 ? newData.parent().child('${STAT[d[1][0]]}').val() >= ${d[1][1]} : newData.parent().child('${STAT[d[2][0]]}').val() >= ${d[2][1]})`; };
+// misiones de la semana: la semana empieza el lunes (el día 0 de la cuenta es jueves); en cada casilla se elige 1 de 5 misiones según la semana, igual para todos
+const WEEK = `((${TODAY} + 3 - (${TODAY} + 3) % 7) / 7)`;
+const WSAME = `(${OLDP}.child('w').exists() && ${OLDP}.child('w').val() === newData.parent().child('w').val())`;       // el contador de la semana ya era de esta semana
+const SEM = M.semana, WSTAT = { g: 'wg', r: 'wr', m: 'wm' };
+const pickW = k => `((${WEEK} * 13 + ${7 * k}) % 17 % ${SEM.de[k].length})`;
+const condSem = k => { const j = pickW(k), d = SEM.de[k]; return d.map(([t, meta], i) => `(${j} === ${i} && newData.parent().child('${WSTAT[t]}').val() >= ${meta})`).join(' || '); };
 const condLogro = (tipo, meta) => ({
   g: `root.child('stats').child($uid).child('g').val() >= ${meta}`,
   r: `root.child('stats').child($uid).child('r').val() >= ${meta}`,
@@ -79,6 +88,7 @@ const condLogro = (tipo, meta) => ({
   s: `root.child('streaks').child($uid).child('n').val() >= ${meta}`,
   e: `${W_ROOT}.child('av').exists()`,
   c: `${W_ROOT}.child('sp').val() >= ${meta}`,
+  t: `root.child('scores').child($uid).child('ms').val() >= ${meta}`,
   v: `auth.token.email_verified === true && !auth.token.email.endsWith('${MAIL}')`
 })[tipo];
 const NEWM = "newData.parent().parent().parent().child('missions').child($uid)", OLDM = "root.child('missions').child($uid)";
@@ -86,6 +96,19 @@ const NEWDC = "(newData.parent().parent().parent().child('stats').child($uid).ch
 const OLDDC = "(root.child('stats').child($uid).child('dc').exists() ? root.child('stats').child($uid).child('dc').val() : 0)";
 const MIS_SUM = '(' + M.logros.map(([id, , , premio]) => `(${NEWM}.child('${id}').exists() && !${OLDM}.child('${id}').exists() ? ${premio} : 0)`).join(' + ') + ')';
 const DIA_SUM = '(' + M.dia.map((x, k) => `(${bit(NEWDC, k)} && !${bit(OLDDC, k)} ? ${x.premio} : 0)`).join(' + ') + ')';
+const NEWWC = "(newData.parent().parent().parent().child('stats').child($uid).child('wc').exists() ? newData.parent().parent().parent().child('stats').child($uid).child('wc').val() : 0)";
+const OLDWC = "(root.child('stats').child($uid).child('wc').exists() ? root.child('stats').child($uid).child('wc').val() : 0)";
+const SEM_SUM = '(' + SEM.premios.map((pr, k) => `(${bit(NEWWC, k)} && !${bit(OLDWC, k)} ? ${pr} : 0)`).join(' + ') + ')';
+const INV_OLD = m => `(data.exists() ? data.val() : 0)`;                                      // (se usa dentro de x<m>: su valor anterior)
+const INV_DEC = m => `(${P}.child('x${m}').exists() && data.parent().child('x${m}').exists() && ${P}.child('x${m}').val() + 1 === data.parent().child('x${m}').val())`;       // desde bx: ¿el contador x<m> bajó en 1 en esta escritura?
+// ruleta diaria: el giro anota la hora del servidor (ruleta/<uid>/t) y de esa hora sale el resultado (hora en ms % 20); el cobro es otra escritura (ruleta/<uid>/c = t) que repite la cuenta.
+// Un giro y su cobro NUNCA van en la misma escritura (si no, se podría reintentar hasta acertar el premio grande): el cobro exige que `t` ya estuviera guardado y no cambie.
+const RU = ECO.ruleta, NEWR = "newData.parent().parent().parent().child('ruleta').child($uid)", OLDR = "root.child('ruleta').child($uid)";
+const RU_N = RU.premios.reduce((a, x) => a + x[2], 0);
+const RU_ACUM = []; { let acc = 0; for (const [v, m, w] of RU.premios) { acc += w; RU_ACUM.push([acc, v, m]); } }
+const ruChain = (t, k) => '(' + RU_ACUM.map(([lim, v, m]) => `((${t}) % ${RU_N}) < ${lim} ? ${k === 'v' ? v : m}`).join(' : ') + ' : 0)';
+const RU_T = `${NEWR}.child('t').val()`;
+const RU_CLAIM = `(${NEWR}.child('c').exists() && ${NEWR}.child('c').val() === ${RU_T} && ${OLDR}.child('t').val() === ${RU_T} && (!${OLDR}.child('c').exists() || ${OLDR}.child('c').val() !== ${RU_T}))`;      // en esta escritura se cobra el giro ya guardado
 const P = "newData.parent()";
 const rules = { rules: {
   '.read': false, '.write': false,
@@ -109,7 +132,7 @@ const rules = { rules: {
 
   // ---- marcadores: cada cuenta escribe solo lo suyo, nunca baja y no puede superar los rebotes de su partida terminada ----
   scores: {
-    '.read': true, '.indexOn': ['s', 'k', 'ms'],                                      // `k` sirve para ver si un nombre ya lo usa alguien en el marcador
+    '.read': true, '.indexOn': ['s', 'k', 'ms', 'w'],                                 // `k` sirve para ver si un nombre ya lo usa alguien en el marcador · `w` ordena el marcador «Millonarios»
     $uid: {
       '.write': "auth != null && auth.uid === $uid && (!data.exists() || newData.child('s').val() >= data.child('s').val())",
       '.validate': "newData.hasChildren(['n', 'k', 's', 't'])",
@@ -125,9 +148,33 @@ const rules = { rules: {
       ml: { '.validate': `newData.isNumber() && newData.val() === ${RV('s')} && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val()) && root.child('wallets').child($uid).child('lr').val() === newData.val()` },
       // c = el puntaje que ya está contado en `hist` (así cada cuenta cuenta una sola vez y se puede mover de casilla al mejorar). Solo sube y siempre es igual al puntaje de ese momento.
       c: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && newData.val() === ${P}.child('s').val() && (!data.exists() || newData.val() > data.val())` },
+      // w = la billetera (pesos ganados − gastados) que se ve en el marcador «Millonarios»: solo vale lo que la cartera dice en el momento de escribirlo (se actualiza aparte del cobro, después de cada cambio de saldo)
+      w: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.cMax} && newData.val() === ${P}.parent().parent().child('wallets').child($uid).child('c').val() - ${P}.parent().parent().child('wallets').child($uid).child('sp').val()` },
       $other: { '.validate': false }
     }
   },
+
+  // ---- marcador semanal: weekly/<semana>/<uid> = tu mejor partida de esa semana (la semana empieza el lunes, hora de Chile). Solo se escribe en la semana en curso, `s` tiene que ser
+  //      exactamente tu mejor partida de la semana que ya llevan las estadísticas (`stats/<uid>/wm`, que sale de partidas verificadas), nunca baja y el nombre es el de tu fila del marcador. ----
+  weekly: {
+    '.read': true,
+    $week: {
+      '.indexOn': ['s'],
+      $uid: {
+        '.write': `auth != null && auth.uid === $uid && $week === ${WEEK} + ''`,
+        '.validate': "newData.hasChildren(['n', 's', 't'])",
+        n: { '.validate': `newData.isString() && newData.val() === newData.parent().parent().parent().parent().child('scores').child($uid).child('n').val()` },
+        s: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && newData.val() <= ${ECO.hMax} && newData.val() === newData.parent().parent().parent().parent().child('stats').child($uid).child('wm').val() && newData.parent().parent().parent().parent().child('stats').child($uid).child('w').val() === ${WEEK} && (!data.exists() || newData.val() >= data.val())` },
+        t: { '.validate': 'newData.val() === now' },
+        a: { '.validate': AVATAR },
+        $other: { '.validate': false }
+      }
+    }
+  },
+
+  // ---- insignias del marcador: roles/<uid> = 'tio' (🦆🎩 Tío Patito) · 'tia' (🦆🎀 Tía Patita) · 'dev' (👾 desarrolladores). Lo pone el administrador desde la consola de Firebase;
+  //      nadie puede escribirlo desde el juego. Cualquiera lo lee (para dibujar la insignia junto al nombre). ----
+  roles: { '.read': true, $uid: { '.validate': "newData.isString() && newData.val().matches(/^(tio|tia|dev)$/)" } },
 
   // ---- registro de nombres: names/<nombre con las comas en lugar de puntos (Firebase no deja puntos en las claves)> = uid de la cuenta que lo tiene.
   //      Se escribe una sola vez y solo así: (1) una cuenta antigua con el correo interno de ese nombre, o (2) una cuenta con correo real que anota a la vez
@@ -155,15 +202,22 @@ const rules = { rules: {
     }
   },
 
-  // ---- racha diaria: n = días seguidos · t = hora del último cobro (la pone el servidor) · bx = hora en que empezó el último «pesos dobles» (día 7).
-  //      Cada cobro mueve n y t juntos al valor exacto que toca; la recompensa en pesos la valida la cartera (c) y no se puede borrar la racha para cobrar otra vez. ----
+  // ---- racha diaria: n = días seguidos · t = hora del último cobro (la pone el servidor) · x2/x3/x4 = multiplicadores guardados que aún no se activaron ·
+  //      bx = hora en que se activó el último multiplicador · bm = cuál era (×2, ×3 o ×4; sin bm = ×2, de las activaciones antiguas).
+  //      Cada cobro mueve n y t juntos al valor exacto que toca; los días de multiplicador (7, 14, 21) suman 1 a su contador en esa misma escritura. Activar uno resta 1 a su contador
+  //      (solo si hay) y pone bx = ahora y bm: solo se puede activar otro cuando el anterior ya venció. La recompensa en pesos la valida la cartera (c); no se puede borrar la racha para cobrar otra vez. ----
   streaks: { $uid: {
     '.read': 'auth != null && auth.uid === $uid',
     '.write': 'auth != null && auth.uid === $uid && newData.exists()',
     '.validate': "newData.hasChildren(['n', 't'])",
     n: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && newData.val() <= 100000 && newData.val() === ${NEXT_N} && ${P}.child('t').val() === now` },
     t: { '.validate': `newData.isNumber() && newData.val() === now && ${P}.child('n').val() === ${NEXT_N}` },
-    bx: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (newData.val() === now && ${P}.child('t').val() === now && (${P}.child('n').val() - 1) % ${R.dias.length} === ${R.dias.length - 1}))` },
+    bx: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (newData.val() === now && (!data.exists() || data.val() + ${R.dobleMs} <= now) && (` + MULTS.map(m => `(${P}.child('bm').val() === ${m} && ${INV_DEC(m)})`).join(' || ') + '))) ' },
+    bm: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (${P}.child('bx').val() === now && (` + MULTS.map(m => `newData.val() === ${m}`).join(' || ') + '))) ' },
+    ...Object.fromEntries(R.mult.map(([dia, m]) => ['x' + m, { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 99 && (newData.val() === ${INV_OLD(m)}`
+      + ` || (newData.val() === ${INV_OLD(m)} + 1 && ${P}.child('n').val() === ${dia} && ${P}.child('t').val() === now)`
+      + ` || (newData.val() === ${INV_OLD(m)} - 1 && ${P}.child('bm').val() === ${m} && ${P}.child('bx').val() === now)`
+      + ` || (newData.val() === ${INV_OLD(m)} + 1 && ${RU_CLAIM} && ${ruChain(RU_T, 'm')} === ${m}))` }])),
     $other: { '.validate': false }
   } },
 
@@ -184,6 +238,15 @@ const rules = { rules: {
     dc: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 7 && ((!${DSAME} && newData.val() === 0) || (${DSAME} && ${P}.child('d').val() === ${TODAY} && newData.val() >= ${'(data.exists() ? data.val() : 0)'}`
       + ' && ' + M.dia.map((x, k) => `!(${bit('(data.exists() ? data.val() : 0)', k)} && !${bit('newData.val()', k)})`).join(' && ')
       + ' && ' + M.dia.map((x, k) => `(!(${bit('newData.val()', k)} && !${bit('(data.exists() ? data.val() : 0)', k)}) || ${condDia(k)})`).join(' && ') + '))' },
+    // semana: w = semana de los contadores · wg/wr/wm = partidas, rebotes y mejor partida de esta semana · wc = casillas de la semana ya cobradas (bits 1, 2 y 4). Igual que los de hoy; son opcionales
+    //         (las cuentas que no los tienen todavía los crean con su próxima partida) y vuelven a 0 al cambiar la semana.
+    w: { '.validate': `newData.isNumber() && newData.val() === ${WEEK} && ${FRESH} && (${WSAME} || ${P}.child('wc').val() === 0)` },
+    wg: { '.validate': `newData.isNumber() && newData.val() === (${WSAME} ? ${OLDP}.child('wg').val() : 0) + 1 && ${FRESH}` },
+    wr: { '.validate': `newData.isNumber() && newData.val() === (${WSAME} ? ${OLDP}.child('wr').val() : 0) + ${RV('h')} && ${FRESH}` },
+    wm: { '.validate': `newData.isNumber() && newData.val() === (${WSAME} && ${OLDP}.child('wm').val() > ${RV('h')} ? ${OLDP}.child('wm').val() : ${RV('h')}) && ${FRESH}` },
+    wc: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 7 && ((!${WSAME} && newData.val() === 0) || (${WSAME} && ${P}.child('w').val() === ${WEEK} && newData.val() >= ${'(data.exists() ? data.val() : 0)'}`
+      + ' && ' + SEM.premios.map((x, k) => `!(${bit('(data.exists() ? data.val() : 0)', k)} && !${bit('newData.val()', k)})`).join(' && ')
+      + ' && ' + SEM.premios.map((x, k) => `(!(${bit('newData.val()', k)} && !${bit('(data.exists() ? data.val() : 0)', k)}) || (${condSem(k)}))`).join(' && ') + '))' },
     $other: { '.validate': false }
   } },
 
@@ -192,6 +255,17 @@ const rules = { rules: {
   missions: { $uid: {
     '.read': 'auth != null && auth.uid === $uid',
     ...Object.fromEntries(M.logros.map(([id, tipo, meta]) => [id, { '.write': 'auth != null && auth.uid === $uid && !data.exists() && newData.val() === true', '.validate': `newData.val() === true && ${condLogro(tipo, meta)}` }])),
+    $other: { '.validate': false }
+  } },
+
+  // ---- ruleta diaria: t = hora del giro (la pone el servidor; un giro por día, medianoche de Chile) · c = el giro que ya se cobró (igual a t). El premio sale de t (ver tienda.js → eco.ruleta) y se
+  //      cobra en la cartera (c) o, si toca multiplicador, en los guardados de la racha (x2/x3). No se puede cobrar dos veces ni cobrar en la misma escritura que gira. ----
+  ruleta: { $uid: {
+    '.read': 'auth != null && auth.uid === $uid',
+    '.write': 'auth != null && auth.uid === $uid && newData.exists()',
+    '.validate': "newData.hasChildren(['t'])",
+    t: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (newData.val() === now && (!data.exists() || ${TODAY} > ${dayOf('data.val()')})))` },
+    c: { '.validate': `newData.isNumber() && newData.val() === ${P}.child('t').val() && data.parent().child('t').exists() && data.parent().child('t').val() === ${P}.child('t').val() && (!data.exists() || data.val() !== newData.val())` },
     $other: { '.validate': false }
   } },
 
@@ -222,7 +296,8 @@ const rules = { rules: {
       + ` || (${P}.child('lr').exists() && (!data.parent().child('lr').exists() || ${P}.child('lr').val() > data.parent().child('lr').val())`
       + ` && newData.val() - (data.exists() ? data.val() : 0) === ${RUN}.child('p').val())`
       + ` || (${STR}.child('t').val() === now && newData.val() - (data.exists() ? data.val() : 0) === ${rewardExp(`${STR}.child('n').val()`)})`
-      + ` || (${MIS_SUM} + ${DIA_SUM} > 0 && newData.val() - (data.exists() ? data.val() : 0) === ${MIS_SUM} + ${DIA_SUM}))` },
+      + ` || (${MIS_SUM} + ${DIA_SUM} + ${SEM_SUM} > 0 && newData.val() - (data.exists() ? data.val() : 0) === ${MIS_SUM} + ${DIA_SUM} + ${SEM_SUM})`
+      + ` || (${RU_CLAIM} && newData.val() - (data.exists() ? data.val() : 0) === ${ruChain(RU_T, 'v')}))` },
     sp: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && (!data.exists() || newData.val() >= data.val()) && newData.val() <= ${P}.child('c').val()` },
     lr: { '.validate': `newData.isNumber() && newData.val() === ${RUN}.child('s').val() && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val())` },
     av: { '.validate': AVATAR },                                                     // tu foto de perfil (se sincroniza entre tus dispositivos)
