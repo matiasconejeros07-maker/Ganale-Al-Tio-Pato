@@ -23,12 +23,14 @@ const pesosFor = h => h;   // hasta 99 rebotes: $1 por rebote
   await p.tap('#dailyGo'); await p.waitForTimeout(1200);
   await p.waitForTimeout(250);
   ok('al reclamar salen monedas volando hacia el bolsillo y el «+$100» grande', await p.evaluate(() => document.querySelectorAll('.fly').length > 0 && !!document.querySelector('.gain')));
-  await p.waitForTimeout(2600);
+  ok('el mensaje confirma el cobro', /\+\$100/.test(await txt('#dailyMsg')), await txt('#dailyMsg'));
+  ok('el botón queda en «Vuelve en …»', /^Vuelve en/.test(await txt('#dailyGo')) && await p.evaluate(() => document.getElementById('dailyGo').disabled));
+  await p.waitForTimeout(1600);
   ok('el bolsillo termina en $100 y no quedan monedas volando', (await txt('#pocketNum')) === '$100' && await p.evaluate(() => document.querySelectorAll('.fly, .gain').length === 0), await txt('#pocketNum'));
   ok('la cartera subió $100 en el servidor', st.db.wallets[uid].c === 100, JSON.stringify(st.db.wallets[uid]));
   ok('racha guardada n=1', st.db.streaks[uid].n === 1, JSON.stringify(st.db.streaks[uid]));
-  ok('el mensaje confirma el cobro', /\+\$100/.test(await txt('#dailyMsg')), await txt('#dailyMsg'));
-  ok('el botón queda en «Vuelve en …»', /^Vuelve en/.test(await txt('#dailyGo')) && await p.evaluate(() => document.getElementById('dailyGo').disabled));
+  await p.waitForTimeout(1400);
+  ok('cobrada la racha, la ventana pasa sola a la ruleta del día', /Ruleta diaria/.test(await txt('#dailyTitle')) && await p.evaluate(() => !document.getElementById('wheelBox').hidden), await txt('#dailyTitle'));
   ok('chip 🔥 1', (await txt('#streakNum')) === '1');
   await p.tap('#dailyClose'); await p.waitForTimeout(300);
   ok('sin denegados', st.denied.length === 0, st.denied.join('|'));

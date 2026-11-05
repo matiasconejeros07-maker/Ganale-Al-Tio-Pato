@@ -23,9 +23,10 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   await p.tap('#dailyGo'); await p.waitForTimeout(3800);
   ok('con la racha reclamada aparece la pestaña «🎡 Ruleta»', await vis(p, '#tabR') && /Ruleta/.test(await txt(p, '#tabR')));
   ok('con un punto rojo porque hay un giro disponible', await p.evaluate(() => document.getElementById('tabR').classList.contains('dot')));
+  ok('cobrada la racha, la ventana pasa sola a la ruleta (sin tocar nada)', /Ruleta diaria/.test(await txt(p, '#dailyTitle')) && await vis(p, '#wheelBox'), await txt(p, '#dailyTitle'));
   await p.tap('#tabR'); await p.waitForTimeout(900);
-  const rueda = await p.evaluate(() => ({ labels: [...document.querySelectorAll('#wheel span')].map(s => s.textContent), bg: document.getElementById('wheel').style.background.slice(0, 20), go: document.getElementById('dailyGo').textContent, ttl: document.getElementById('dailyTitle').textContent }));
-  ok('se ve la rueda con todos los premios de la tabla ($300, $500, $1.000, $2.000, ×2, $5.000 y ×3)', JSON.stringify(rueda.labels) === JSON.stringify(RU.premios.map(pr => pr[0] > 0 ? money(pr[0]) : '×' + pr[1] + ' 🤑')) && /conic-gradient/.test(rueda.bg), JSON.stringify(rueda));
+  const rueda = await p.evaluate(() => ({ labels: [...document.querySelectorAll('#wheel text')].map(s => s.textContent), paths: document.querySelectorAll('#wheel path').length, bulbs: document.querySelectorAll('#wrim .bulb').length, go: document.getElementById('dailyGo').textContent, ttl: document.getElementById('dailyTitle').textContent }));
+  ok('se ve la rueda con todos los premios de la tabla (' + RU.premios.map(pr => pr[0] > 0 ? money(pr[0]) : '×' + pr[1]).join(', ') + ')', JSON.stringify(rueda.labels) === JSON.stringify(RU.premios.map(pr => pr[0] > 0 ? money(pr[0]) : '×' + pr[1] + ' 🤑')) && rueda.paths === RU.premios.length && rueda.bulbs === 24, JSON.stringify(rueda));
   ok('el título y el botón invitan a girar', /Ruleta diaria/.test(rueda.ttl) && rueda.go === '🎡 Girar la ruleta', JSON.stringify(rueda));
   await p.screenshot({ path: process.env.SHOT || '/tmp/ruleta_antes.png' });
 
@@ -76,6 +77,48 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
   ok('sin denegados ni errores de página en todo el recorrido', st.denied.length === 0 && errs.length === 0, st.denied.join(' || ') + errs.join('|'));
   await ctx.close();
+
+  console.log('Cada día nuevo la ruleta aparece sola');
+  {
+    const { ctx: c5, p: p5, errs: e5 } = await newPage(b);
+    const u5 = await registrar(p5, 'Ruleta Cinco');
+    await p5.tap('#dailyGo'); await p5.waitForTimeout(4600);
+    await cerrarDiario(p5);
+    ok('con la racha de hoy ya cobrada y la ruleta sin girar, al volver a entrar sale la ruleta sola', await (async () => {
+      st.db.ruleta = { ...(st.db.ruleta || {}) }; delete st.db.ruleta[u5];
+      await p5.reload(); await p5.waitForTimeout(3000);
+      return /Ruleta diaria/.test(await txt(p5, '#dailyTitle')) && await vis(p5, '#wheelBox') && await p5.evaluate(() => document.getElementById('daily').classList.contains('show'));
+    })(), await txt(p5, '#dailyTitle'));
+    await p5.tap('#dailyGo'); await p5.waitForTimeout(6800);
+    ok('la giras y la cobras (sin denegados)', st.db.ruleta[u5] && st.db.ruleta[u5].c === st.db.ruleta[u5].t && st.denied.length === 0, JSON.stringify([st.db.ruleta[u5], st.denied]));
+    await cerrarDiario(p5);
+    await p5.reload(); await p5.waitForTimeout(2800);
+    ok('ya giraste hoy: no vuelve a salir sola', !(await p5.evaluate(() => document.getElementById('daily').classList.contains('show'))));
+    st.db.ruleta[u5] = { t: st.db.ruleta[u5].t - DAY, c: st.db.ruleta[u5].c - DAY }; st.db.streaks[u5].t -= 3600000 * 0;
+    await p5.reload(); await p5.waitForTimeout(3000);
+    ok('al día siguiente (racha ya cobrada hoy y último giro de ayer) sale otra vez sola', /Ruleta diaria/.test(await txt(p5, '#dailyTitle')) && await vis(p5, '#wheelBox'), await txt(p5, '#dailyTitle'));
+    ok('sin errores de página', e5.length === 0, e5.join('|'));
+    st.denied.length = 0;
+    await c5.close();
+  }
+
+  console.log('Las cinco pestañas caben en la tarjeta (nada se desborda)');
+  for (const [w, h] of [[390, 844], [360, 740], [320, 568]]) {
+    const { ctx: c6, p: p6, errs: e6 } = await newPage(b, { viewport: { width: w, height: h } });
+    await registrar(p6, 'Rul6x' + w);
+    await p6.evaluate(() => document.getElementById('dailyGo').click()); await p6.waitForTimeout(4600);
+    const r = await p6.evaluate(() => {
+      const card = document.getElementById('dailyCard').getBoundingClientRect(), bar = document.getElementById('dTabs').getBoundingClientRect();
+      const tabs = [...document.querySelectorAll('#dTabs button')].filter(x => !x.hidden).map(x => { const q = x.getBoundingClientRect(); return { n: x.querySelector('span').textContent, l: q.left, r: q.right, w: q.width, sw: x.scrollWidth, cw: x.clientWidth }; });
+      const w0 = document.getElementById('wheelBox').getBoundingClientRect(), go = document.getElementById('dailyGo').getBoundingClientRect();
+      return { card: [card.left, card.right, card.top, card.bottom], bar: [bar.left, bar.right], tabs, wheel: [w0.left, w0.right, w0.width], go: [go.top, go.bottom], vh: innerHeight, vw: innerWidth };
+    });
+    ok(`${w}×${h}: las 5 pestañas (Racha, Hoy, Semana, Ruleta y Logros) se ven, del mismo ancho y dentro de la barra y la tarjeta`,
+      r.tabs.length === 5 && r.tabs.map(t => t.n).join() === 'Racha,Hoy,Semana,Ruleta,Logros' && r.tabs.every(t => t.l >= r.bar[0] - .5 && t.r <= r.bar[1] + .5 && Math.abs(t.w - r.tabs[0].w) < 1.5 && t.sw <= t.cw + 1) && r.bar[0] >= r.card[0] - .5 && r.bar[1] <= r.card[1] + .5, JSON.stringify(r));
+    ok(`${w}×${h}: la rueda y el botón «Girar» caben en la pantalla`, r.wheel[0] >= 0 && r.wheel[1] <= r.vw && r.go[1] <= r.vh + 1, JSON.stringify(r));
+    ok(`${w}×${h}: sin errores de página`, e6.length === 0, e6.join('|'));
+    await c6.close();
+  }
 
   console.log('Si todavía no están publicadas las reglas nuevas');
   {
