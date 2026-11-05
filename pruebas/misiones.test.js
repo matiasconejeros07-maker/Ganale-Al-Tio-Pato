@@ -107,6 +107,7 @@ const tab = async (p, id) => { await p.evaluate(i => document.getElementById(i).
 
     // la semana pasada: todo vuelve a empezar al jugar
     st.db.stats[uid] = { ...st.db.stats[uid], w: W - 1, wg: 30, wr: 2000, wm: 99, wc: 7 };
+    if (st.db.weekly && st.db.weekly[W]) delete st.db.weekly[W][uid];                                  // (y todavía no hay fila de esta semana en el marcador semanal)
     await p.reload(); await p.waitForTimeout(2500); await cerrarDiario(p);
     await abrir(p, 'openMiss'); await tab(p, 'tabW');
     ok('con contadores de la semana pasada, las misiones de esta semana empiezan en 0 (sin listas ni cobradas)', (await filas(p)).every(f => !/ready|done/.test(f.cls)), JSON.stringify((await filas(p)).map(f => f.cls)));
