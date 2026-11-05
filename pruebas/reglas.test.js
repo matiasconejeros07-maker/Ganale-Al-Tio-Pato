@@ -339,7 +339,9 @@ console.log('Racha diaria');
 
   console.log(' Activar un multiplicador guardado (el botón del inicio)');
   const guardado = (m, extra = {}) => ({ wallets: { u1: wal(3000) }, streaks: { u1: Object.assign({ n: 9, t: D0 - 3600000, ['x' + m]: 1 }, extra) } });
-  const act = (m, over = {}) => Object.assign({ 'streaks/u1/bx': SV, 'streaks/u1/bm': m, ['streaks/u1/x' + m]: 0 }, over);
+  const act = (m, over = {}) => Object.assign({ 'streaks/u1/bx': SV, 'streaks/u1/bm': m, 'streaks/u1/bd': 600000, ['streaks/u1/x' + m]: 0 }, over);
+  const actY = (m, over = {}) => Object.assign({ 'streaks/u1/bx': SV, 'streaks/u1/bm': m, 'streaks/u1/bd': 300000, ['streaks/u1/y' + m]: 0 }, over);          // activar uno de la ruleta (dura 5 min)
+  const guardadoY = (m, extra = {}) => ({ wallets: { u1: wal(3000) }, streaks: { u1: Object.assign({ n: 9, t: D0 - 3600000, ['y' + m]: 1 }, extra) } });
   ok('activar el ×2 guardado', as('u1', guardado(2), act(2), D0), true);
   ok('activar el ×3 guardado', as('u1', guardado(3), act(3), D0), true);
   ok('activar el ×4 guardado', as('u1', guardado(4), act(4), D0), true);
@@ -352,6 +354,31 @@ console.log('Racha diaria');
   ok('activar con un multiplicador de ×10', as('u1', guardado(2), act(10, { 'streaks/u1/x2': 0 }), D0), false);
   ok('activar mientras otro sigue activo (hace 1 minuto)', as('u1', guardado(3, { bx: D0 - 60000, bm: 2 }), act(3), D0), false);
   ok('activar cuando el anterior ya venció (hace 11 minutos)', as('u1', guardado(3, { bx: D0 - 11 * 60000, bm: 2 }), act(3), D0), true);
+  ok('activar uno de la racha sin decir cuánto dura (sin bd)', as('u1', guardado(2), { 'streaks/u1/bx': SV, 'streaks/u1/bm': 2, 'streaks/u1/x2': 0 }, D0), false);
+  ok('activar uno de la racha diciendo que dura 1 hora (bd = 3.600.000)', as('u1', guardado(2), act(2, { 'streaks/u1/bd': 3600000 }), D0), false);
+  ok('activar uno de la racha diciendo que dura 5 minutos', as('u1', guardado(2), act(2, { 'streaks/u1/bd': 300000 }), D0), false);
+
+  console.log(' Multiplicadores de la ruleta: se guardan aparte (y2, y3, y4) y duran 5 minutos');
+  ok('activar el ×2 de la ruleta (bd = 5 min)', as('u1', guardadoY(2), actY(2), D0), true);
+  ok('activar el ×3 de la ruleta', as('u1', guardadoY(3), actY(3), D0), true);
+  ok('activar el ×4 de la ruleta', as('u1', guardadoY(4), actY(4), D0), true);
+  ok('activar uno de dos de la ruleta (queda 1)', as('u1', guardadoY(2, { y2: 2 }), actY(2, { 'streaks/u1/y2': 1 }), D0), true);
+  ok('activar el de la ruleta diciendo que dura 10 minutos', as('u1', guardadoY(2), actY(2, { 'streaks/u1/bd': 600000 }), D0), false);
+  ok('activar el de la ruleta diciendo que dura 1 hora', as('u1', guardadoY(2), actY(2, { 'streaks/u1/bd': 3600000 }), D0), false);
+  ok('activar el de la ruleta sin decir cuánto dura (sin bd)', as('u1', guardadoY(2), { 'streaks/u1/bx': SV, 'streaks/u1/bm': 2, 'streaks/u1/y2': 0 }, D0), false);
+  ok('activar el de la ruleta sin gastarlo (y2 sigue en 1)', as('u1', guardadoY(2), actY(2, { 'streaks/u1/y2': 1 }), D0), false);
+  ok('activar el de la ruleta sin tener ninguno', as('u1', { wallets: { u1: wal(3000) }, streaks: { u1: { n: 9, t: D0 - 3600000 } } }, actY(2), D0), false);
+  ok('activar un ×2 de la racha gastando el de la ruleta con 10 minutos (sacarle más tiempo)', as('u1', guardadoY(2), act(2, { 'streaks/u1/x2': 0, 'streaks/u1/y2': 0 }), D0), false);
+  ok('activar uno de la ruleta gastando el de la racha (bd = 5 min pero se descuenta x2)', as('u1', guardado(2), { 'streaks/u1/bx': SV, 'streaks/u1/bm': 2, 'streaks/u1/bd': 300000, 'streaks/u1/x2': 0 }, D0), false);
+  ok('activar mientras otro de la ruleta sigue activo (hace 4 minutos de 5)', as('u1', guardadoY(3, { bx: D0 - 4 * 60000, bm: 2, bd: 300000 }), actY(3), D0), false);
+  ok('activar cuando el de la ruleta ya venció (hace 6 minutos)', as('u1', guardadoY(3, { bx: D0 - 6 * 60000, bm: 2, bd: 300000 }), actY(3), D0), true);
+  ok('activar uno de la racha cuando el de la ruleta ya venció (hace 6 minutos)', as('u1', guardado(3, { bx: D0 - 6 * 60000, bm: 2, bd: 300000 }), act(3), D0), true);
+  ok('activar mientras uno de la racha (10 min) sigue activo hace 6 minutos', as('u1', guardadoY(3, { bx: D0 - 6 * 60000, bm: 2, bd: 600000 }), actY(3), D0), false);
+  ok('activar mientras uno antiguo (sin bd) sigue activo hace 6 minutos', as('u1', guardadoY(3, { bx: D0 - 6 * 60000, bm: 2 }), actY(3), D0), false);
+  ok('alargar un multiplicador de la ruleta ya activo (cambiar solo bd a 10 minutos)', as('u1', { wallets: { u1: wal(3000) }, streaks: { u1: { n: 9, t: D0 - 3600000, bx: D0 - 60000, bm: 2, bd: 300000 } } }, { 'streaks/u1/bd': 600000 }, D0), false);
+  ok('regalarse multiplicadores de la ruleta (y4 = 5) sin girar', as('u1', guardadoY(2), { 'streaks/u1/y4': 5 }, D0), false);
+  ok('guardar un multiplicador de la racha en el contador de la ruleta (día 7 con y2)', as('u1', ayer(6, 3000), dia(7, { 'streaks/u1/y2': 1 }), D0), false);
+  ok('más de 99 guardados de la ruleta', as('u1', guardadoY(2, { y2: 99 }), { 'streaks/u1/y2': 100 }, D0), false);
   ok('subir de ×2 a ×4 un multiplicador activo (solo bm)', as('u1', { wallets: { u1: wal(3000) }, streaks: { u1: { n: 9, t: D0 - 3600000, bx: D0 - 60000, bm: 2 } } }, { 'streaks/u1/bm': 4 }, D0), false);
   ok('regalarse multiplicadores guardados (x4 = 5) sin racha de por medio', as('u1', guardado(2), { 'streaks/u1/x4': 5 }, D0), false);
   ok('regalarse un multiplicador guardado el mismo día de la racha, sin reclamar', as('u1', { wallets: { u1: wal(3000) }, streaks: { u1: { n: 7, t: D0 - 3600000 } } }, { 'streaks/u1/x2': 1 }, D0), false);
@@ -389,6 +416,17 @@ console.log('Racha diaria');
   const sTarde = bxAt + 10 * 60000 + 1000;                                    // empezó 10 min y 1 s después de activarlo: ya venció
   ok('partida empezada con el multiplicador vencido: paga normal', as('u1', conBoost(sTarde), claimDob(40, 1, sTarde), sTarde + 40 * 450 + 1000), true);
   ok('partida empezada con el multiplicador vencido pagada ×2', as('u1', conBoost(sTarde), claimDob(40, 2, sTarde), sTarde + 40 * 450 + 1000), false);
+  // los de la ruleta (bd = 5 min) y los de la racha (bd = 10 min)
+  const conBd = (sMs, bd, bm = 2) => Object.assign({ wallets: { u1: wal(0) }, streaks: { u1: { n: 9, t: D0 - 60000, bx: bxAt, bm, bd } }, runs: { u1: { s: sMs, b: 'peso1', r: 1 } } });
+  const sMedio = bxAt + 7 * 60000, sRuleta = bxAt + 4 * 60000;                // 7 min y 4 min después de activarlo
+  ok('multiplicador de la ruleta: una partida a los 4 minutos paga ×2', as('u1', conBd(sRuleta, 300000), claimDob(40, 2, sRuleta), sRuleta + 40 * 450), true);
+  ok('multiplicador de la ruleta: a los 4 minutos pagada normal (×1) no vale', as('u1', conBd(sRuleta, 300000), claimDob(40, 1, sRuleta), sRuleta + 40 * 450), false);
+  ok('multiplicador de la ruleta: una partida a los 7 minutos ya paga normal (venció a los 5)', as('u1', conBd(sMedio, 300000), claimDob(40, 1, sMedio), sMedio + 40 * 450), true);
+  ok('multiplicador de la ruleta: a los 7 minutos pagada ×2 se rechaza', as('u1', conBd(sMedio, 300000), claimDob(40, 2, sMedio), sMedio + 40 * 450), false);
+  ok('multiplicador de la racha (bd = 10 min): a los 7 minutos sigue pagando ×2', as('u1', conBd(sMedio, 600000), claimDob(40, 2, sMedio), sMedio + 40 * 450), true);
+  ok('multiplicador de la racha: a los 7 minutos pagado normal se rechaza', as('u1', conBd(sMedio, 600000), claimDob(40, 1, sMedio), sMedio + 40 * 450), false);
+  ok('multiplicador de la ruleta ×3: a los 4 minutos paga ×3', as('u1', conBd(sRuleta, 300000, 3), claimDob(40, 3, sRuleta), sRuleta + 40 * 450), true);
+  ok('activación antigua (sin bd) a los 7 minutos sigue pagando ×2 (10 minutos como siempre)', as('u1', conBoost(sMedio), claimDob(40, 2, sMedio), sMedio + 40 * 450), true);
   ok('sin racha nunca hay multiplicador (×2 rechazado)', as('u1', { wallets: { u1: wal(0) }, runs: { u1: { s: D0 - 30000, b: 'peso1', r: 1 } } }, claimDob(40, 2, D0 - 30000), D0 + 40 * 450), false);
 }
 
@@ -716,7 +754,7 @@ console.log('Ruleta diaria');
     const segDe = (v, m) => { let acc = 0; for (const [pv, pm, w] of RU.premios) { if (pv === v && pm === m) return acc; acc += w; } return -1; };
     ok('las casillas de la ruleta suman 20 y hay de pesos y de multiplicador', { allowed: N === 20 && RU.premios.some(x => x[1] > 0) && RU.premios.some(x => x[0] > 0) }, true);
     const cart = (c = 1000) => ({ wallets: { u1: { c, sp: 0, lr: NOW - 99999 } } });
-    const strk = { streaks: { u1: { n: 3, t: NOW - 3600000, x2: 1, x3: 0 } } };
+    const strk = { streaks: { u1: { n: 3, t: NOW - 3600000, x2: 1, x3: 0, y2: 0, y3: 0, y4: 0 } } };
 
     console.log(' Girar');
     ok('el primer giro del día: ruleta/u1/t = hora del servidor', as({}, { 'ruleta/u1/t': SV }), true);
@@ -730,7 +768,7 @@ console.log('Ruleta diaria');
     ok('cambiar la hora del giro de hoy hacia atrás (para volver a girar o a cobrar)', as({ ruleta: { u1: { t: tSeg(0) } } }, { 'ruleta/u1/t': tSeg(0, DAYMS) }), false);
     ok('girar y cobrar en la misma escritura (c = hora del servidor)', as({}, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV }), false);
     for (const [v] of RU.premios.filter(x => x[0] > 0)) ok(`girar y cobrar $${v} en la misma escritura (reintentar hasta acertar)`, as({ ...cart(), ruleta: {} }, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV, 'wallets/u1/c': 1000 + v, 'wallets/u1/sp': 0 }), false);
-    ok('girar y guardar un multiplicador en la misma escritura', as({ ...strk }, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV, 'streaks/u1/x2': 2 }), false);
+    ok('girar y guardar un multiplicador en la misma escritura', as({ ...strk }, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV, 'streaks/u1/y2': 1 }), false);
     ok('girar y subir los pesos sin cobrar el giro', as({ ...cart() }, { 'ruleta/u1/t': SV, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
 
     console.log(' Cobrar el giro (el premio sale de la hora guardada)');
@@ -740,13 +778,14 @@ console.log('Ruleta diaria');
         ok(`casilla ${seg} paga $${v}`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1000 + v, 'wallets/u1/sp': 0 }), true);
         ok(`casilla ${seg} ($${v}) cobrando $1 de más`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1000 + v + 1, 'wallets/u1/sp': 0 }), false);
         ok(`casilla ${seg} ($${v}) cobrando $1 de menos`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1000 + v - 1, 'wallets/u1/sp': 0 }), false);
-        ok(`casilla ${seg} ($${v}) pidiendo un multiplicador`, as(g, { 'ruleta/u1/c': t0, 'streaks/u1/x2': 2 }), false);
+        ok(`casilla ${seg} ($${v}) pidiendo un multiplicador`, as(g, { 'ruleta/u1/c': t0, 'streaks/u1/y2': 1 }), false);
       } else {
-        ok(`casilla ${seg} regala un multiplicador ×${m} (se guarda)`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/x${m}`]: (g.streaks.u1['x' + m] || 0) + 1 }), true);
+        ok(`casilla ${seg} regala un multiplicador ×${m} (se guarda aparte, en y${m}: dura 5 minutos)`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/y${m}`]: (g.streaks.u1['y' + m] || 0) + 1 }), true);
+        ok(`casilla ${seg} (×${m}) guardándolo entre los de la racha (x${m}: duraría 10 minutos)`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/x${m}`]: (g.streaks.u1['x' + m] || 0) + 1 }), false);
         ok(`casilla ${seg} (×${m}) pidiendo pesos`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
-        ok(`casilla ${seg} (×${m}) guardando ${m === 2 ? '×3' : '×2'} en vez de ×${m}`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/x${m === 2 ? 3 : 2}`]: (g.streaks.u1['x' + (m === 2 ? 3 : 2)] || 0) + 1 }), false);
-        ok(`casilla ${seg} (×${m}) guardando dos`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/x${m}`]: (g.streaks.u1['x' + m] || 0) + 2 }), false);
-        ok(`casilla ${seg} (×${m}) sin racha (no hay dónde guardarlo)`, as({ ...cart(), ruleta: { u1: { t: t0 } } }, { 'ruleta/u1/c': t0, [`streaks/u1/x${m}`]: 1 }), false);
+        ok(`casilla ${seg} (×${m}) guardando ${m === 2 ? '×3' : '×2'} en vez de ×${m}`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/y${m === 2 ? 3 : 2}`]: (g.streaks.u1['y' + (m === 2 ? 3 : 2)] || 0) + 1 }), false);
+        ok(`casilla ${seg} (×${m}) guardando dos`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/y${m}`]: (g.streaks.u1['y' + m] || 0) + 2 }), false);
+        ok(`casilla ${seg} (×${m}) sin racha (no hay dónde guardarlo)`, as({ ...cart(), ruleta: { u1: { t: t0 } } }, { 'ruleta/u1/c': t0, [`streaks/u1/y${m}`]: 1 }), false);
       }
     }
     // borde de cada casilla: la última hora de una casilla y la primera de la siguiente pagan distinto

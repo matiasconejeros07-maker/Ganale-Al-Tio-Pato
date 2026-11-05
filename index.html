@@ -2787,7 +2787,7 @@
       const w = (await wr.json()) || {}, sv = await sr.json(), best = +sv || 0, rowExists = typeof sv === 'number';
       if (+w.lr === pr.s) { pending = null; savePending(); markRun(pr.s, pr.t); syncRun(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
       if (!kr.ok && kr.status !== 401 && kr.status !== 403) return 'error';
-      const kv = kr.ok ? await kr.json() : null, mult = boostMult(pr.s, kv && +kv.bx || 0, kv && +kv.bm || 0);      // ¿la partida empezó con un multiplicador activo? lo decide la racha que guarda el servidor
+      const kv = kr.ok ? await kr.json() : null, mult = boostMult(pr.s, kv && +kv.bx || 0, kv && +kv.bm || 0, kv && +kv.bd || 0);      // ¿la partida empezó con un multiplicador activo? lo decide la racha que guarda el servidor
       const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h) * mult, body = {}, rowSeen = rowExists;
       body[`runs/${uid}/e`] = SV; body[`runs/${uid}/h`] = pr.h; body[`runs/${uid}/p`] = p;
       body[`wallets/${uid}/c`] = c0 + p; body[`wallets/${uid}/sp`] = sp0; body[`wallets/${uid}/lr`] = pr.s;
@@ -2815,9 +2815,9 @@
   const rachaPago = n => (n >= RACHA.fijoDesde ? RACHA.fijo : (RACHA.dias[n - 1] || 0));                 // pesos del día n de la racha (el servidor usa la misma tabla)
   const rachaMult = n => { const f = RACHA.mult.find(x => x[0] === n); return f ? f[1] : 0; };         // multiplicador que regala el día n (0 = ninguno)
   const MULTS = RACHA.mult.map(x => x[1]);
-  const parseStreak = kv => (kv && typeof kv.n === 'number' ? { n: +kv.n, t: +kv.t || 0, bx: +kv.bx || 0, bm: +kv.bm || 0, x: { 2: +kv.x2 || 0, 3: +kv.x3 || 0, 4: +kv.x4 || 0 } } : null);
+  const parseStreak = kv => (kv && typeof kv.n === 'number' ? { n: +kv.n, t: +kv.t || 0, bx: +kv.bx || 0, bm: +kv.bm || 0, bd: +kv.bd || 0, x: { 2: +kv.x2 || 0, 3: +kv.x3 || 0, 4: +kv.x4 || 0 }, y: { 2: +kv.y2 || 0, 3: +kv.y3 || 0, 4: +kv.y4 || 0 } } : null);      // x = guardados de la racha (10 min) · y = guardados de la ruleta (5 min) · bd = cuánto dura la activación
   const dayOf = ms => Math.floor((ms + HUSO_MS) / DAYMS);                      // número de día (el día cambia a medianoche del huso de Chile)
-  const boostMult = (runS, bx, bm) => (bx && runS >= bx && runS < bx + RACHA.dobleMs ? (bm || 2) : 1);       // las activaciones antiguas (sin bm) eran ×2
+  const boostMult = (runS, bx, bm, bd) => (bx && runS >= bx && runS < bx + (bd || RACHA.dobleMs) ? (bm || 2) : 1);       // las activaciones antiguas (sin bm) eran ×2 y duraban 10 minutos (sin bd)
   let streak = null, streakOk = false, streakDayShown = -1, streakBusy = false;   // streak: { n: días seguidos, t: último cobro, bx: cuándo activaste el último multiplicador, bm: cuál era, x: cuántos guardados tienes de cada uno }
   function streakInfo(now = Date.now()) {
     const today = dayOf(now), claimable = !streak || today > dayOf(streak.t);
@@ -2826,7 +2826,7 @@
       broken: !!streak && today > dayOf(streak.t) + 1,                          // se saltó un día: la racha vuelve a empezar
       n: streak ? streak.n : 0,
       nextN: !streak ? 1 : (today === dayOf(streak.t) + 1 ? streak.n + 1 : 1),   // la racha que tendrás si cobras hoy
-      boostLeft: streak && streak.bx ? Math.max(0, streak.bx + RACHA.dobleMs - now) : 0,
+      boostLeft: streak && streak.bx ? Math.max(0, streak.bx + (streak.bd || RACHA.dobleMs) - now) : 0,
       boostM: streak && streak.bm ? streak.bm : 2,
       toNext: (today + 1) * DAYMS - HUSO_MS - now                                // ms que faltan para el día siguiente
     };
@@ -2854,23 +2854,26 @@
     renderMissChip();
     if ($('daily').classList.contains('show')) paintDailyButton();                      // cada segundo solo se actualiza el texto del botón (la cuadrícula no se redibuja)
   }
-  /* Botones del inicio para activar un multiplicador guardado (no se activa solo): uno por cada multiplicador que tengas; desaparecen mientras hay uno activo (dura 10 min). */
+  /* Botones del inicio para activar un multiplicador guardado (no se activa solo): uno por cada multiplicador que tengas (🤑 los de la racha, 10 min; 🎡 los de la ruleta, 5 min); desaparecen mientras hay uno activo. */
+  const BOOST_KINDS = [['x', '🤑', () => RACHA.dobleMs], ['y', '🎡', () => RUL_MS]];
   let boostBusy = false, boostSig = '', boostMsgT = 0;
   function paintBoostGo(on, info) {
     const box = $('boostGo');
-    const stock = on ? MULTS.filter(m => streak && streak.x[m] > 0 && info.boostLeft <= 0) : [];
-    const sig = stock.map(m => m + ':' + streak.x[m]).join(',') + '|' + boostBusy + '|' + boostMsgT;
+    const stock = [];
+    if (on && streak && info.boostLeft <= 0) for (const [k, em, ms] of BOOST_KINDS) for (const m of MULTS_ALL()) if (streak[k][m] > 0) stock.push([k, em, ms(), m, streak[k][m]]);
+    const sig = stock.map(a => a[0] + a[3] + ':' + a[4]).join(',') + '|' + boostBusy + '|' + boostMsgT;
     if (sig === boostSig) return; boostSig = sig;
     box.textContent = '';
-    for (const m of stock) {
-      const b = document.createElement('button'); b.type = 'button'; b.disabled = boostBusy; b.dataset.m = m;
-      b.append(`🤑 Activar ×${m}${streak.x[m] > 1 ? ' (' + streak.x[m] + ')' : ''}`); const sm = document.createElement('small'); sm.textContent = `· ${Math.round(RACHA.dobleMs / 60000)} min`; b.appendChild(sm);
-      b.addEventListener('click', () => activateBoost(m)); box.appendChild(b);
+    for (const [k, em, ms, m, n] of stock) {
+      const b = document.createElement('button'); b.type = 'button'; b.disabled = boostBusy; b.dataset.m = m; b.dataset.k = k;
+      b.append(`${em} Activar ×${m}${n > 1 ? ' (' + n + ')' : ''}`); const sm = document.createElement('small'); sm.textContent = `· ${Math.round(ms / 60000)} min`; b.appendChild(sm);
+      b.addEventListener('click', () => activateBoost(m, k)); box.appendChild(b);
     }
     if (boostMsgT) { const g = document.createElement('div'); g.className = 'bmsg'; g.textContent = boostMsgT; box.appendChild(g); }
     box.hidden = !box.childNodes.length;
   }
-  async function activateBoost(m) {
+  const MULTS_ALL = () => [...new Set([...MULTS, ...(RUL ? RUL.premios.filter(x => x[1] > 0).map(x => x[1]) : [])])].sort((a, b) => a - b);      // los multiplicadores que existen (racha y ruleta)
+  async function activateBoost(m, k = 'x') {
     if (!AUTH || !session || boostBusy) return;
     boostBusy = true; boostMsgT = 0; renderStreak();
     try {
@@ -2878,9 +2881,9 @@
       const kr = await http(`${DB}/streaks/${uid}.json?auth=${tok}`);
       if (!kr.ok) throw new Error('lectura');
       streak = parseStreak(await kr.json());                                   // manda lo que dice el servidor
-      const have = streak ? streak.x[m] : 0;
+      const have = streak && streak[k] ? streak[k][m] : 0;
       if (!have || streakInfo().boostLeft > 0) return;
-      const body = {}; body[`streaks/${uid}/bx`] = SV; body[`streaks/${uid}/bm`] = m; body[`streaks/${uid}/x${m}`] = have - 1;
+      const body = {}; body[`streaks/${uid}/bx`] = SV; body[`streaks/${uid}/bm`] = m; body[`streaks/${uid}/bd`] = k === 'y' ? RUL_MS : RACHA.dobleMs; body[`streaks/${uid}/${k}${m}`] = have - 1;
       const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
       if (r.ok) { await pullStreak(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .12), i * 90)); vib([20, 30, 20, 30, 50]); }
       else boostMsgT = r.status === 401 || r.status === 403 ? 'Firebase no permitió activarlo (revisa que las reglas nuevas estén publicadas).' : 'No se pudo activar. Inténtalo de nuevo.';
@@ -3031,6 +3034,7 @@
      El giro anota la hora del servidor (ruleta/<uid>/t) y de esa hora sale el resultado (t % 20, igual que en las reglas); el cobro es otra escritura que repite la cuenta.
      El jugador no elige nada: la ruleta solo muestra lo que ya decidió el servidor. */
   const RUL = (window.TIENDA && window.TIENDA.eco && window.TIENDA.eco.ruleta) || null;
+  const RUL_MS = (RUL && RUL.multMs) || 300000;                                // lo que dura un multiplicador de la ruleta (eco.ruleta.multMs)
   const RUL_N = RUL ? RUL.premios.reduce((a, x) => a + x[2], 0) : 20;
   const rulaSlot = t => { const x = ((t % RUL_N) + RUL_N) % RUL_N; let acc = 0; for (let i = 0; i < RUL.premios.length; i++) { acc += RUL.premios[i][2]; if (x < acc) return i; } return 0; };   // qué premio de la tabla toca con la hora t
   const RUL_COL = [['#ffb44d', '#e07a08'], ['#ff7b7b', '#cf2b2b'], ['#5fd8c8', '#0a9886'], ['#74b9ff', '#1b66d1'], ['#ff8fd2', '#d1209a'], ['#ffe56f', '#e0a000']];      // colores de los premios en pesos (claro, oscuro)
@@ -3078,7 +3082,7 @@
   }
   function renderRoulette(msg) {
     $('dailyGrid').hidden = true; $('missList').hidden = true; $('wheelBox').hidden = false; $('dailyCard').classList.add('roul'); $('dailyTitle').textContent = 'Ruleta diaria 🎡';
-    $('dailySub').textContent = 'Un giro por día · pesos o multiplicadores de regalo';
+    $('dailySub').textContent = `Un giro por día · pesos o multiplicadores de regalo (duran ${Math.round(RUL_MS / 60000)} min)`;
     paintDailyButton(); if (!pocketBusy) setPocket(balance());
     const pi = document.querySelector('#coinChip .ci'); if (pi && pi.getAttribute('src')) $('pocketImg').src = pi.getAttribute('src');
     if (msg !== undefined) { $('dailyMsg').textContent = msg.t; $('dailyMsg').className = 'status' + (msg.ok ? ' ok' : ' err'); }
@@ -3128,7 +3132,7 @@
     const w = (await wr.json()) || {}, c0 = +w.c || 0, sp0 = +w.sp || 0, sk = parseStreak(await kr.json());
     const pr = RUL.premios[rulaSlot(ruleta.t)], body = {}; body[`ruleta/${uid}/c`] = ruleta.t;
     if (pr[0] > 0) { body[`wallets/${uid}/c`] = c0 + pr[0]; body[`wallets/${uid}/sp`] = sp0; }
-    else { if (!sk) return 'error'; body[`streaks/${uid}/x${pr[1]}`] = (sk.x[pr[1]] || 0) + 1; }
+    else { if (!sk) return 'error'; body[`streaks/${uid}/y${pr[1]}`] = (sk.y[pr[1]] || 0) + 1; }
     const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
     if (!r.ok) return denied4(r) ? 'denied' : 'error';
     const bal0 = balance(); if (pr[0] > 0) { wallet.c = c0 + pr[0]; saveWallet(); }
@@ -3152,10 +3156,10 @@
       }
       const slot = rulaSlot(ruleta.t), pr = RUL.premios[slot];
       await spinWheelTo(slot);
-      $('wheelRes').textContent = pr[0] > 0 ? `¡Te tocó ${money(pr[0])}!` : `¡Te tocó un multiplicador ×${pr[1]}! 🤑`;
+      $('wheelRes').textContent = pr[0] > 0 ? `¡Te tocó ${money(pr[0])}!` : `¡Te tocó un multiplicador ×${pr[1]} por ${Math.round(RUL_MS / 60000)} minutos! 🤑`;
       $('wframe').classList.remove('spin'); $('wframe').classList.add('win'); confetti(pr[0] >= 5000 ? ['🎉', '✨', '💰', '🪙', '🎊'] : pr[0] > 0 ? ['✨', '🪙', '💫'] : ['🤑', '💸', '✨'], pr[0] >= 10000 ? 36 : 22);
       const res = await cobrarRuleta(rect);
-      if (res === 'ok') renderRoulette({ t: pr[0] > 0 ? `¡Listo! +${money(pr[0])} 🎉` : `¡Listo! Guardaste un multiplicador ×${pr[1]} 🤑💸 Actívalo en el inicio cuando quieras`, ok: true });
+      if (res === 'ok') renderRoulette({ t: pr[0] > 0 ? `¡Listo! +${money(pr[0])} 🎉` : `¡Listo! Guardaste un multiplicador ×${pr[1]} de ${Math.round(RUL_MS / 60000)} minutos 🤑💸 Actívalo en el inicio cuando quieras`, ok: true });
       else renderRoulette({ t: res === 'denied' ? 'Firebase no permitió cobrar el premio. Revisa que estén publicadas las reglas nuevas.' : 'Sin conexión: tu premio sigue guardado, toca «Cobrar mi premio» para reintentar.', ok: false });
     } catch (e) { renderRoulette({ t: 'Sin conexión: tu premio sigue guardado, toca «Cobrar mi premio» para reintentar.', ok: false }); }
     finally { ruletaBusy = false; paintRoulette(); renderStreak(); }
@@ -3826,7 +3830,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v62';
+  const BUILD = 'v63';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3897,7 +3901,7 @@
         : 'Firebase no permitió registrar la partida: hay que publicar las reglas nuevas (firebase-rules.json).';
       $('bestResult').textContent = `Tu mejor puntaje: ${player.best}`; $('diagBtn').hidden = false; return;
     }
-    const mult = boostMult(rn.s, streak && streak.bx, streak && streak.bm), pp = p * mult;          // multiplicador de la racha: vale si la partida empezó dentro de los 10 minutos de activarlo
+    const mult = boostMult(rn.s, streak && streak.bx, streak && streak.bm, streak && streak.bd), pp = p * mult;          // multiplicador: vale si la partida empezó mientras dura (10 minutos los de la racha, 5 los de la ruleta)
     pending = { s: rn.s, h: hp, r: rn.r, m: mult, t: Math.round(elapsed * 1000) }; savePending(); renderCoins();          // t = lo que duró de verdad la partida (el «Aguantaste» de abajo): es lo que se suma al tiempo jugado
     if (mult > 1) $('finalSub').textContent += `\n🤑 ¡Pesos ×${mult} de tu multiplicador!`;
     countUp(cl, pp, n => `+${money(n)}`);
