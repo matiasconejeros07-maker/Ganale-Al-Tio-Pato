@@ -251,6 +251,28 @@ Con cuenta, al entrar cada día aparece la **Racha diaria** (también desde el c
 - **Lo valida el servidor** (reglas de Firebase, nodo `streaks/<uid>`): el día y la hora los pone Firebase, la racha solo avanza al valor exacto que toca, el premio en pesos tiene que coincidir con la tabla (también el de los $10.000), los multiplicadores solo se guardan el día que tocan (uno por reclamo) y activar uno exige tenerlo guardado y gastarlo en esa misma escritura, sin otro activo; la racha no se puede borrar para cobrar de nuevo y el pago de una partida solo vale ×N si empezó dentro de los 10 minutos de la activación (las activaciones antiguas, sin `bm`, siguen valiendo ×2). Cambiar el reloj del celular no sirve: si no coincide con el de Firebase, el servidor rechaza el cobro.
 - **Hay que publicar las reglas nuevas** (`firebase-rules.json`). Mientras no estén publicadas, el juego funciona igual pero la racha no aparece o no deja reclamar los días nuevos.
 
+## Ruleta diaria (un giro por día)
+
+En la ventana de la racha hay una pestaña **🎡 Ruleta** (aparece cuando ya reclamaste tu racha; con un punto rojo si tienes el giro del día disponible, y el chip 🔥 del inicio también avisa). Un giro por día (el día cambia a medianoche de Chile). Los premios de la rueda (`eco.ruleta` de `tienda.js`, 20 casillas en total):
+
+| Premio | Casillas | Probabilidad |
+|---|---|---|
+| $300 | 6 | 30% |
+| $500 | 5 | 25% |
+| $1.000 | 3 | 15% |
+| $2.000 | 2 | 10% |
+| 🤑 Multiplicador ×2 (se guarda, lo activas tú) | 2 | 10% |
+| $5.000 | 1 | 5% |
+| 🤑 Multiplicador ×3 (se guarda) | 1 | 5% |
+
+Es lo que se espera ganar por giro: unos $815 en pesos más los multiplicadores. Los multiplicadores caen en los mismos guardados de la racha (`x2`, `x3`) y se activan con el mismo botón del inicio (10 min).
+
+- **El jugador no puede elegir ni reintentar el resultado.** El giro y el cobro son **dos escrituras distintas**: (1) girar anota la hora del servidor en `ruleta/<uid>/t` y (2) cobrar escribe `ruleta/<uid>/c = t` junto con los pesos o el multiplicador. El premio sale de la hora guardada (`t` en ms % 20), así que el jugador no sabe cuál será hasta que el servidor la anota, y las reglas **rechazan girar y cobrar en la misma escritura** (si no, se podría repetir una escritura rechazada hasta acertar el premio grande), un segundo giro el mismo día, cobrar dos veces el mismo giro, un monto distinto al de la tabla y borrar el giro.
+- Si se corta la conexión entre girar y cobrar, el premio **sigue guardado**: el botón pasa a «Cobrar mi premio» (también al día siguiente, mientras no se gire de nuevo).
+- La rueda es solo un dibujo: gira hasta donde ya dijo el servidor (el tamaño de cada trozo es su probabilidad). Si cambias la tabla en `tienda.js`, las casillas deben seguir sumando 20 (hay una prueba) y hay que volver a correr `node herramientas/generar-reglas.js` y a publicar las reglas.
+- **Pruebas:** la sección «Ruleta diaria» de `pruebas/reglas.test.js` (hora congelada: prueba cada casilla, los bordes y los intentos de trampa) y `pruebas/ruleta.test.js` de punta a punta (giro, cobro de cada casilla, trampas, al día siguiente y sin reglas nuevas).
+- **Hay que publicar las reglas nuevas** (nodo `ruleta`). Sin ellas la pestaña no aparece y todo lo demás sigue igual.
+
 ## Foto de perfil: el emblema (editor libre)
 
 Cada jugador arma su **emblema** (tocando su nombre en el inicio, o en Ajustes → «Mi emblema»): elige la **forma** (círculo, cuadrado, hexágono, octógono, escudo, rombo, estrella, arco), el **color de fondo** y el del **borde** (16 colores), un **diseño** (liso, rayas, puntos, rayos, mitad, cuadros) y hasta **5 símbolos** (48 emojis o su inicial) que **toca o arrastra donde quiera** en la vista previa, además de agrandarlos, girarlos, quitarlos y **mandarlos «Al fondo» o traerlos «Al frente»** para decidir cuál tapa a cuál (el orden de las capas es el orden de los símbolos en el texto del emblema: el primero queda al fondo). También hay «🎲 Sorpréndeme».

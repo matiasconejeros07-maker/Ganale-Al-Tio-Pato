@@ -35,6 +35,10 @@ window.TIENDA = {
         ['e1', 'e', 1, 150], ['c1', 'c', 1, 150], ['v1', 'v', 1, 500]
       ]
     },
+    // Ruleta diaria: un giro por día (medianoche de Chile). El resultado NO lo elige el jugador: sale de la hora en que el servidor anota el giro (hora en ms % 20, 20 casillas iguales)
+    // y el cobro es un segundo paso que repite esa misma cuenta, así no hay forma de «reintentar hasta que toque el premio grande».
+    // premios: [pesos, multiplicador, casillas de las 20] · pesos 0 + multiplicador = se guarda uno (×2 o ×3, 10 min, lo activas tú como los de la racha) · las casillas suman 20
+    ruleta: { premios: [[300, 0, 6], [500, 0, 5], [1000, 0, 3], [2000, 0, 2], [0, 2, 2], [5000, 0, 1], [0, 3, 1]] },
     // Racha diaria: entrar cada día da premios y la racha sigue mientras no te saltes un día. El día cambia a medianoche de Chile en horario de verano (huso -3).
     // dias = pesos del día 1 al 27 (0 = ese día regala un multiplicador, ver mult): semana 1: $100 a $500 y el billete de $1.000 · semana 2: de 1 a 6 monedas de $500 · semana 3: de 1 a 6 billetes de $1.000 ·
     //        semana 4: $2.000 a $8.000. Desde el día `fijoDesde` en adelante se paga `fijo` cada día (el billete de $10.000).

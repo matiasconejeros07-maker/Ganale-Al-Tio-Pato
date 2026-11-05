@@ -701,6 +701,72 @@ console.log('Marcadores: semanal, millonarios e insignias');
   ok('leer las insignias sin sesión', targaryen.database(rules, shiftObj({ roles: { u1: 'dev', u2: 'tio', u3: 'tia' } }, 0)).as(null).read('/roles'), true);
 }
 
+// ---------- ruleta diaria: el resultado sale de la hora del servidor y no se puede elegir ----------
+console.log('Ruleta diaria');
+{
+  const RU = ECO.ruleta, N = RU.premios.reduce((a, x) => a + x[2], 0), DAYMS = 86400000, OFF = -3 * 3600000;
+  const realNow = Date.now, NOW = Math.floor(realNow() / 20) * 20 + 3;       // reloj congelado: así el resultado de un giro hecho «ahora» (NOW % 20) y la hora de los giros guardados son exactos
+  Date.now = () => NOW;
+  try {
+    const as = (data, upd, uid = 'u1') => db(data, NOW, uid).update('/', upd);
+    const sinceMid = (NOW + OFF) % DAYMS, ago = Math.max(1000, Math.min(5 * 60000, sinceMid - 2000));
+    const tSeg = (seg, back = ago) => Math.floor((NOW - back - seg) / N) * N + seg;            // una hora de hace un rato (de hoy) cuyo resultado es la casilla `seg`
+    const premioDe = t => { const x = ((t % N) + N) % N; let acc = 0; for (const [v, m, w] of RU.premios) { acc += w; if (x < acc) return { v, m }; } };
+    const segDe = (v, m) => { let acc = 0; for (const [pv, pm, w] of RU.premios) { if (pv === v && pm === m) return acc; acc += w; } return -1; };
+    ok('las casillas de la ruleta suman 20 y hay de pesos y de multiplicador', { allowed: N === 20 && RU.premios.some(x => x[1] > 0) && RU.premios.some(x => x[0] > 0) }, true);
+    const cart = (c = 1000) => ({ wallets: { u1: { c, sp: 0, lr: NOW - 99999 } } });
+    const strk = { streaks: { u1: { n: 3, t: NOW - 3600000, x2: 1, x3: 0 } } };
+
+    console.log(' Girar');
+    ok('el primer giro del día: ruleta/u1/t = hora del servidor', as({}, { 'ruleta/u1/t': SV }), true);
+    ok('el giro con una hora inventada', as({}, { 'ruleta/u1/t': NOW - 5000 }), false);
+    ok('el giro con una hora futura', as({}, { 'ruleta/u1/t': NOW + 5000 }), false);
+    ok('un segundo giro el mismo día', as({ ruleta: { u1: { t: tSeg(0), c: tSeg(0) } } }, { 'ruleta/u1/t': SV }), false);
+    ok('un giro al día siguiente', as({ ruleta: { u1: { t: tSeg(0, DAYMS), c: tSeg(0, DAYMS) } } }, { 'ruleta/u1/t': SV }), true);
+    ok('girar la ruleta de otra cuenta', as({}, { 'ruleta/u1/t': SV }, 'u2'), false);
+    ok('un giro con campos extra', as({}, { 'ruleta/u1/t': SV, 'ruleta/u1/oro': 1 }), false);
+    ok('borrar el giro de hoy para girar otra vez', db({ ruleta: { u1: { t: tSeg(0), c: tSeg(0) } } }, NOW).write('/ruleta/u1', null), false);
+    ok('cambiar la hora del giro de hoy hacia atrás (para volver a girar o a cobrar)', as({ ruleta: { u1: { t: tSeg(0) } } }, { 'ruleta/u1/t': tSeg(0, DAYMS) }), false);
+    ok('girar y cobrar en la misma escritura (c = hora del servidor)', as({}, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV }), false);
+    for (const [v, m] of [[300, 0], [500, 0], [1000, 0], [2000, 0], [5000, 0]]) ok(`girar y cobrar $${v} en la misma escritura (reintentar hasta acertar)`, as({ ...cart(), ruleta: {} }, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV, 'wallets/u1/c': 1000 + v, 'wallets/u1/sp': 0 }), false);
+    ok('girar y guardar un multiplicador en la misma escritura', as({ ...strk }, { 'ruleta/u1/t': SV, 'ruleta/u1/c': SV, 'streaks/u1/x2': 2 }), false);
+    ok('girar y subir los pesos sin cobrar el giro', as({ ...cart() }, { 'ruleta/u1/t': SV, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
+
+    console.log(' Cobrar el giro (el premio sale de la hora guardada)');
+    for (const [v, m, w] of RU.premios) {
+      const seg = segDe(v, m), t0 = tSeg(seg), g = { ...cart(1000), ...strk, ruleta: { u1: { t: t0 } } };
+      if (v > 0) {
+        ok(`casilla ${seg} paga $${v}`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1000 + v, 'wallets/u1/sp': 0 }), true);
+        ok(`casilla ${seg} ($${v}) cobrando $1 de más`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1000 + v + 1, 'wallets/u1/sp': 0 }), false);
+        ok(`casilla ${seg} ($${v}) cobrando $1 de menos`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1000 + v - 1, 'wallets/u1/sp': 0 }), false);
+        ok(`casilla ${seg} ($${v}) pidiendo un multiplicador`, as(g, { 'ruleta/u1/c': t0, 'streaks/u1/x2': 2 }), false);
+      } else {
+        ok(`casilla ${seg} regala un multiplicador ×${m} (se guarda)`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/x${m}`]: (g.streaks.u1['x' + m] || 0) + 1 }), true);
+        ok(`casilla ${seg} (×${m}) pidiendo pesos`, as(g, { 'ruleta/u1/c': t0, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
+        ok(`casilla ${seg} (×${m}) guardando ${m === 2 ? '×3' : '×2'} en vez de ×${m}`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/x${m === 2 ? 3 : 2}`]: (g.streaks.u1['x' + (m === 2 ? 3 : 2)] || 0) + 1 }), false);
+        ok(`casilla ${seg} (×${m}) guardando dos`, as(g, { 'ruleta/u1/c': t0, [`streaks/u1/x${m}`]: (g.streaks.u1['x' + m] || 0) + 2 }), false);
+        ok(`casilla ${seg} (×${m}) sin racha (no hay dónde guardarlo)`, as({ ...cart(), ruleta: { u1: { t: t0 } } }, { 'ruleta/u1/c': t0, [`streaks/u1/x${m}`]: 1 }), false);
+      }
+    }
+    // borde de cada casilla: la última hora de una casilla y la primera de la siguiente pagan distinto
+    { const lim = RU.premios[0][2], tA = tSeg(lim - 1), tB = tSeg(lim), a = premioDe(tA), b = premioDe(tB);
+      ok(`la casilla ${lim - 1} y la ${lim} (borde entre dos premios) pagan lo que dice la tabla`, as({ ...cart(), ruleta: { u1: { t: tA } } }, { 'ruleta/u1/c': tA, 'wallets/u1/c': 1000 + a.v, 'wallets/u1/sp': 0 }).allowed && as({ ...cart(), ruleta: { u1: { t: tB } } }, { 'ruleta/u1/c': tB, 'wallets/u1/c': 1000 + b.v, 'wallets/u1/sp': 0 }).allowed ? { allowed: true } : { allowed: false }, true); }
+    const t300 = tSeg(0), g0 = { ...cart(1000), ruleta: { u1: { t: t300 } } };
+    ok('cobrar el premio grande ($5.000) con una casilla de $300', as(g0, { 'ruleta/u1/c': t300, 'wallets/u1/c': 6000, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar el mismo giro dos veces', as({ ...cart(1300), ruleta: { u1: { t: t300, c: t300 } } }, { 'ruleta/u1/c': t300, 'wallets/u1/c': 1600, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar con una hora distinta a la del giro (c ≠ t)', as(g0, { 'ruleta/u1/c': t300 + 1, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar cambiando también la hora del giro (para que toque otra casilla)', as(g0, { 'ruleta/u1/t': tSeg(RU.premios[0][2] + 5), 'ruleta/u1/c': tSeg(RU.premios[0][2] + 5), 'wallets/u1/c': 1000 + premioDe(tSeg(RU.premios[0][2] + 5)).v, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar sin haber girado (no hay ruleta/u1/t)', as({ ...cart() }, { 'ruleta/u1/c': NOW, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar el giro de otra cuenta', as({ ...cart(), ruleta: { u1: { t: t300 } } }, { 'ruleta/u1/c': t300, 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }, 'u2'), false);
+    ok('subir los pesos con la ruleta sin cobrar el giro', as(g0, { 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), false);
+    ok('cobrar solo marcando el giro (sin pesos) vale: no se gana nada', as(g0, { 'ruleta/u1/c': t300 }), true);
+    ok('cobrar un giro de hace días (sigue siendo el último giro y no se había cobrado)', as({ ...cart(), ruleta: { u1: { t: tSeg(0, 3 * DAYMS) } } }, { 'ruleta/u1/c': tSeg(0, 3 * DAYMS), 'wallets/u1/c': 1300, 'wallets/u1/sp': 0 }), true);
+    ok('leer tu ruleta', db({ ruleta: { u1: { t: t300 } } }, NOW).read('/ruleta/u1'), true);
+    ok('leer la de otra cuenta', db({ ruleta: { u1: { t: t300 } } }, NOW, 'u2').read('/ruleta/u1'), false);
+    ok('leer todas', db({ ruleta: { u1: { t: t300 } } }, NOW).read('/ruleta'), false);
+  } finally { Date.now = realNow; }
+}
+
 // ---------- grupo VIP: el WhatsApp de quien desbloqueó el personaje secreto ----------
 console.log('Grupo VIP (WhatsApp)');
 {

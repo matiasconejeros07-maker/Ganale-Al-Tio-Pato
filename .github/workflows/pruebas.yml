@@ -34,6 +34,9 @@ jobs:
       - name: Marcador de tiempo jugado (sumar, Top 25 y reglas sin publicar)
         working-directory: pruebas
         run: node tiempo.test.js
+      - name: Ruleta diaria (un giro por día, premio que decide el servidor)
+        working-directory: pruebas
+        run: node ruleta.test.js
       - name: Marcadores (Top 30, semanal, millonarios e insignias)
         working-directory: pruebas
         run: node marcadores.test.js

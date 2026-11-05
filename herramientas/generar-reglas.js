@@ -101,6 +101,14 @@ const OLDWC = "(root.child('stats').child($uid).child('wc').exists() ? root.chil
 const SEM_SUM = '(' + SEM.premios.map((pr, k) => `(${bit(NEWWC, k)} && !${bit(OLDWC, k)} ? ${pr} : 0)`).join(' + ') + ')';
 const INV_OLD = m => `(data.exists() ? data.val() : 0)`;                                      // (se usa dentro de x<m>: su valor anterior)
 const INV_DEC = m => `(${P}.child('x${m}').exists() && data.parent().child('x${m}').exists() && ${P}.child('x${m}').val() + 1 === data.parent().child('x${m}').val())`;       // desde bx: ¿el contador x<m> bajó en 1 en esta escritura?
+// ruleta diaria: el giro anota la hora del servidor (ruleta/<uid>/t) y de esa hora sale el resultado (hora en ms % 20); el cobro es otra escritura (ruleta/<uid>/c = t) que repite la cuenta.
+// Un giro y su cobro NUNCA van en la misma escritura (si no, se podría reintentar hasta acertar el premio grande): el cobro exige que `t` ya estuviera guardado y no cambie.
+const RU = ECO.ruleta, NEWR = "newData.parent().parent().parent().child('ruleta').child($uid)", OLDR = "root.child('ruleta').child($uid)";
+const RU_N = RU.premios.reduce((a, x) => a + x[2], 0);
+const RU_ACUM = []; { let acc = 0; for (const [v, m, w] of RU.premios) { acc += w; RU_ACUM.push([acc, v, m]); } }
+const ruChain = (t, k) => '(' + RU_ACUM.map(([lim, v, m]) => `((${t}) % ${RU_N}) < ${lim} ? ${k === 'v' ? v : m}`).join(' : ') + ' : 0)';
+const RU_T = `${NEWR}.child('t').val()`;
+const RU_CLAIM = `(${NEWR}.child('c').exists() && ${NEWR}.child('c').val() === ${RU_T} && ${OLDR}.child('t').val() === ${RU_T} && (!${OLDR}.child('c').exists() || ${OLDR}.child('c').val() !== ${RU_T}))`;      // en esta escritura se cobra el giro ya guardado
 const P = "newData.parent()";
 const rules = { rules: {
   '.read': false, '.write': false,
@@ -208,7 +216,8 @@ const rules = { rules: {
     bm: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (${P}.child('bx').val() === now && (` + MULTS.map(m => `newData.val() === ${m}`).join(' || ') + '))) ' },
     ...Object.fromEntries(R.mult.map(([dia, m]) => ['x' + m, { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 99 && (newData.val() === ${INV_OLD(m)}`
       + ` || (newData.val() === ${INV_OLD(m)} + 1 && ${P}.child('n').val() === ${dia} && ${P}.child('t').val() === now)`
-      + ` || (newData.val() === ${INV_OLD(m)} - 1 && ${P}.child('bm').val() === ${m} && ${P}.child('bx').val() === now))` }])),
+      + ` || (newData.val() === ${INV_OLD(m)} - 1 && ${P}.child('bm').val() === ${m} && ${P}.child('bx').val() === now)`
+      + ` || (newData.val() === ${INV_OLD(m)} + 1 && ${RU_CLAIM} && ${ruChain(RU_T, 'm')} === ${m}))` }])),
     $other: { '.validate': false }
   } },
 
@@ -249,6 +258,17 @@ const rules = { rules: {
     $other: { '.validate': false }
   } },
 
+  // ---- ruleta diaria: t = hora del giro (la pone el servidor; un giro por día, medianoche de Chile) · c = el giro que ya se cobró (igual a t). El premio sale de t (ver tienda.js → eco.ruleta) y se
+  //      cobra en la cartera (c) o, si toca multiplicador, en los guardados de la racha (x2/x3). No se puede cobrar dos veces ni cobrar en la misma escritura que gira. ----
+  ruleta: { $uid: {
+    '.read': 'auth != null && auth.uid === $uid',
+    '.write': 'auth != null && auth.uid === $uid && newData.exists()',
+    '.validate': "newData.hasChildren(['t'])",
+    t: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (newData.val() === now && (!data.exists() || ${TODAY} > ${dayOf('data.val()')})))` },
+    c: { '.validate': `newData.isNumber() && newData.val() === ${P}.child('t').val() && data.parent().child('t').exists() && data.parent().child('t').val() === ${P}.child('t').val() && (!data.exists() || data.val() !== newData.val())` },
+    $other: { '.validate': false }
+  } },
+
   // ---- grupo VIP: vip/<uid> = el WhatsApp que deja quien desbloqueó el personaje secreto, para invitarle al grupo.
   //      w = número con código de país (+56912345678) · n = su nombre · t = hora en que lo dejó (la pone el servidor) · c = aceptó que le escriban.
   //      Solo su dueña lo lee y lo escribe, y solo si ya tiene el personaje secreto; puede borrarlo cuando quiera. Nadie más lo ve (ni se puede listar):
@@ -276,7 +296,8 @@ const rules = { rules: {
       + ` || (${P}.child('lr').exists() && (!data.parent().child('lr').exists() || ${P}.child('lr').val() > data.parent().child('lr').val())`
       + ` && newData.val() - (data.exists() ? data.val() : 0) === ${RUN}.child('p').val())`
       + ` || (${STR}.child('t').val() === now && newData.val() - (data.exists() ? data.val() : 0) === ${rewardExp(`${STR}.child('n').val()`)})`
-      + ` || (${MIS_SUM} + ${DIA_SUM} + ${SEM_SUM} > 0 && newData.val() - (data.exists() ? data.val() : 0) === ${MIS_SUM} + ${DIA_SUM} + ${SEM_SUM}))` },
+      + ` || (${MIS_SUM} + ${DIA_SUM} + ${SEM_SUM} > 0 && newData.val() - (data.exists() ? data.val() : 0) === ${MIS_SUM} + ${DIA_SUM} + ${SEM_SUM})`
+      + ` || (${RU_CLAIM} && newData.val() - (data.exists() ? data.val() : 0) === ${ruChain(RU_T, 'v')}))` },
     sp: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && (!data.exists() || newData.val() >= data.val()) && newData.val() <= ${P}.child('c').val()` },
     lr: { '.validate': `newData.isNumber() && newData.val() === ${RUN}.child('s').val() && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val())` },
     av: { '.validate': AVATAR },                                                     // tu foto de perfil (se sincroniza entre tus dispositivos)

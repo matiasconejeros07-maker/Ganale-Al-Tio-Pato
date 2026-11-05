@@ -202,7 +202,16 @@
   .mcard .msub { margin: 6px 0 0; font-size: 14px; font-weight: 700; color: #6b6840; min-height: 1.3em; }
   .mclose { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; border: 0; background: none; font-size: 20px; cursor: pointer; color: var(--ink); opacity: .6; }
   .dtabs { width: 100%; margin: 12px auto 0; }
-  .dtabs button { font-size: 12px; padding: 10px 1px; white-space: nowrap; }
+  .dtabs button { font-size: 12px; padding: 10px 1px; white-space: nowrap; position: relative; }
+  .dtabs button[hidden] { display: none; }
+  .dtabs button.dot::after { content: ""; position: absolute; top: 5px; right: 3px; width: 9px; height: 9px; border-radius: 50%; background: #e5281c; border: 2px solid #fff; }
+  .wheelbox { position: relative; width: min(100%, 280px); margin: 14px auto 8px; }
+  .wheelbox[hidden] { display: none; }
+  .wheel { position: relative; width: 100%; aspect-ratio: 1; border-radius: 50%; border: 6px solid #111; box-shadow: 0 6px 18px rgba(0, 0, 0, .28), inset 0 0 0 3px #ffc928; transition: transform 4.4s cubic-bezier(.12, .62, .08, 1); will-change: transform; }
+  .wheel::after { content: "🎡"; position: absolute; left: 50%; top: 50%; width: 22%; aspect-ratio: 1; transform: translate(-50%, -50%) rotate(var(--hub, 0deg)); display: flex; align-items: center; justify-content: center; font-size: 22px; background: #111; border-radius: 50%; border: 3px solid #ffc928; }
+  .wheel span { position: absolute; left: 50%; top: 50%; font-weight: 900; font-size: 13px; line-height: 1; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .65); white-space: nowrap; }
+  .wptr { position: absolute; left: 50%; top: -14px; transform: translateX(-50%); z-index: 3; font-size: 32px; line-height: 1; color: #e5281c; filter: drop-shadow(0 2px 1px rgba(0, 0, 0, .45)); }
+  .wres { min-height: 1.4em; margin-top: 12px; font-size: 20px; font-weight: 900; color: #7a4a00; }
   .dtabs[hidden], .mlist[hidden], .dgrid[hidden] { display: none; }
   .mlist { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 14px; max-height: min(46vh, 380px); overflow-y: auto; overscroll-behavior: contain; text-align: left; }
   .mrow { display: flex; align-items: center; gap: 10px; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 9px 10px; }
@@ -903,6 +912,7 @@
     #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .item .pv.mystery b, .item .pv.mystery i, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .ball.jump::before, .ball.jump::after, .hero, .rain span, #rotate .ico, .item .pv.chpv img { animation: none; }
     #arena.jolt { animation: none; }
     .screen.show, #hint.on, .chip.streak.go, .dcard.today, .mcard, .modal.show, .pocket.bump, .dcard.mx .mxe span, .boostgo button { animation: none; }
+    .wheel { transition: none; }
     .tog, .tog i { transition: none; }
     .btn, .tile, .seg button, .link { transition: none; }
   }
@@ -1092,9 +1102,14 @@
     <button class="mclose" id="dailyClose" type="button" aria-label="Cerrar">✕</button>
     <h2 id="dailyTitle">Racha diaria 🔥</h2>
     <p class="msub" id="dailySub">Entra cada día y gana premios.</p>
-    <div class="seg dtabs" id="dTabs" role="tablist"><button type="button" id="tabS" class="on" role="tab" aria-selected="true">🔥 Racha</button><button type="button" id="tabD" role="tab" aria-selected="false">🎯 Hoy</button><button type="button" id="tabW" role="tab" aria-selected="false">📅 Semana</button><button type="button" id="tabA" role="tab" aria-selected="false">🏅 Logros</button></div>
+    <div class="seg dtabs" id="dTabs" role="tablist"><button type="button" id="tabS" class="on" role="tab" aria-selected="true">🔥 Racha</button><button type="button" id="tabD" role="tab" aria-selected="false">🎯 Hoy</button><button type="button" id="tabW" role="tab" aria-selected="false">📅 Semana</button><button type="button" id="tabR" role="tab" aria-selected="false" hidden>🎡 Ruleta</button><button type="button" id="tabA" role="tab" aria-selected="false">🏅 Logros</button></div>
     <div class="pocket" id="pocket" aria-live="polite"><img id="pocketImg" src="skins/peso1.webp" alt=""><span>Tu bolsillo</span><b id="pocketNum">$0</b></div>
     <div class="dgrid" id="dailyGrid"></div>
+    <div class="wheelbox" id="wheelBox" hidden>
+      <div class="wptr" aria-hidden="true">▼</div>
+      <div class="wheel" id="wheel" aria-hidden="true"></div>
+      <div class="wres" id="wheelRes" aria-live="polite"></div>
+    </div>
     <div class="mlist" id="missList" hidden></div>
     <button class="btn" id="dailyGo" type="button">Reclamar</button>
     <div class="status" id="dailyMsg" role="status"></div>
@@ -2616,9 +2631,10 @@
   const fmtWait = ms => { const m = Math.max(1, Math.ceil(ms / 60000)), h = Math.floor(m / 60); return h ? `${h} h ${m % 60} min` : `${m} min`; };
   function renderStreak() {                                                    // chip 🔥, cartel del multiplicador activo y botones para activar los guardados
     const on = AUTH && !!session && streakOk, info = streakInfo(), chip = $('streakChip');
-    chip.hidden = !on; chip.classList.toggle('go', on && info.claimable);
+    chip.hidden = !on; chip.classList.toggle('go', on && (info.claimable || ruletaAvail()));
+    $('tabR').hidden = !(on && RUL && ruletaOk && streak); $('tabR').classList.toggle('dot', ruletaAvail());
     $('streakNum').textContent = info.broken ? 0 : info.n;
-    chip.setAttribute('aria-label', on ? `Racha diaria: ${info.broken ? 0 : info.n} días${info.claimable ? '. Tienes un premio para reclamar' : ''}` : 'Racha diaria');
+    chip.setAttribute('aria-label', on ? `Racha diaria: ${info.broken ? 0 : info.n} días${info.claimable ? '. Tienes un premio para reclamar' : ruletaAvail() ? '. Puedes girar la ruleta' : ''}` : 'Racha diaria');
     $('boostBar').hidden = !(on && info.boostLeft > 0); if (info.boostLeft > 0) { $('boostLeft').textContent = fmtLeft(info.boostLeft); $('boostTxt').textContent = `🤑 Pesos ×${info.boostM}`; }
     $('pocket').classList.toggle('glow', on && info.boostLeft > 0);
     paintBoostGo(on, info);
@@ -2699,6 +2715,8 @@
     c.append(dn, ic, dv); return c;
   }
   function renderDaily(msg) {
+    $('wheelBox').hidden = dailyTab !== 'roulette';
+    if (dailyTab === 'roulette') { renderRoulette(msg); return; }
     if (dailyTab !== 'streak') { renderMissions(msg); return; }
     $('dailyGrid').hidden = false; $('missList').hidden = true; $('dailyTitle').textContent = 'Racha diaria 🔥';
     const info = streakInfo(), grid = $('dailyGrid');
@@ -2714,6 +2732,7 @@
     if (msg !== undefined) { $('dailyMsg').textContent = msg.t; $('dailyMsg').className = 'status' + (msg.ok ? ' ok' : ' err'); }
   }
   function paintDailyButton() {
+    if (dailyTab === 'roulette') { paintRoulette(); return; }
     if (dailyTab !== 'streak') { paintMissButton(); return; }
     const info = streakInfo();
     $('dailySub').textContent = info.broken && info.claimable ? '¡Perdiste la racha! Empieza de nuevo hoy.'
@@ -2725,11 +2744,12 @@
   }
   let dailyFrom = null;
   function openDaily(tab) {
-    tab = tab === 'day' || tab === 'week' || tab === 'ach' ? tab : 'streak';
-    if (!AUTH || !session || (tab === 'streak' ? !streakOk : !MIS_ON())) return;
+    tab = tab === 'day' || tab === 'week' || tab === 'ach' || tab === 'roulette' ? tab : 'streak';
+    if (!AUTH || !session || (tab === 'streak' ? !streakOk : tab === 'roulette' ? !(ruletaOk && streak) : !MIS_ON())) return;
     dailyFrom = document.activeElement; setDailyTab(tab, true);
     $('daily').classList.add('show'); $('dailyGo').focus();
-    if (tab !== 'streak') pullMissions().then(() => { if ($('daily').classList.contains('show') && dailyTab !== 'streak') renderDaily(); });
+    if (tab === 'roulette') pullRuleta().then(() => { if ($('daily').classList.contains('show') && dailyTab === 'roulette') renderDaily(); });
+    else if (tab !== 'streak') pullMissions().then(() => { if ($('daily').classList.contains('show') && dailyTab !== 'streak') renderDaily(); });
   }
   function closeDaily() { $('daily').classList.remove('show'); if (dailyFrom && dailyFrom.focus) { try { dailyFrom.focus(); } catch (e) {} } dailyFrom = null; }
   function autoDaily() {                                                       // al entrar, si hay premio del día, se muestra solo (una vez por día y por visita)
@@ -2793,6 +2813,98 @@
     } catch (e) { return 'error'; }
     finally { streakBusy = false; }
   }
+  /* ---------- ruleta diaria: un giro por día ----------
+     El giro anota la hora del servidor (ruleta/<uid>/t) y de esa hora sale el resultado (t % 20, igual que en las reglas); el cobro es otra escritura que repite la cuenta.
+     El jugador no elige nada: la ruleta solo muestra lo que ya decidió el servidor. */
+  const RUL = (window.TIENDA && window.TIENDA.eco && window.TIENDA.eco.ruleta) || null;
+  const RUL_N = RUL ? RUL.premios.reduce((a, x) => a + x[2], 0) : 20;
+  const rulaSlot = t => { const x = ((t % RUL_N) + RUL_N) % RUL_N; let acc = 0; for (let i = 0; i < RUL.premios.length; i++) { acc += RUL.premios[i][2]; if (x < acc) return i; } return 0; };   // qué premio de la tabla toca con la hora t
+  const RUL_COL = ['#f0a43a', '#e8683a', '#59b86a', '#3d9bd6', '#8a5be0', '#d6478f', '#e0b020'];
+  const rulaLabel = pr => pr[0] > 0 ? money(pr[0]) : '×' + pr[1] + ' 🤑';
+  let ruleta = null, ruletaOk = false, ruletaBusy = false, wheelRot = 0;       // ruleta: { t: hora del último giro, c: hora del último giro cobrado }
+  function renderWheel() {
+    if (!RUL) return;
+    const w = $('wheel'); w.textContent = ''; let a = 0; const stops = [];
+    RUL.premios.forEach((pr, i) => {
+      const sweep = 360 * pr[2] / RUL_N, mid = a + sweep / 2;
+      stops.push(`${pr[1] ? '#8a5be0' : RUL_COL[i % RUL_COL.length]} ${a}deg ${a + sweep}deg`);
+      const sp = document.createElement('span'); sp.textContent = rulaLabel(pr);
+      sp.style.transform = `translate(-50%, -50%) rotate(${mid}deg) translateY(-${sweep < 25 ? 96 : 84}px) rotate(${-mid}deg)`;
+      sp.style.fontSize = sweep < 25 ? '11px' : '13px'; w.appendChild(sp); a += sweep;
+    });
+    w.style.background = `conic-gradient(from 0deg, ${stops.join(', ')})`;
+  }
+  renderWheel();
+  const ruletaState = (now = srvNow()) => !ruleta ? 'spin' : ruleta.c !== ruleta.t ? 'claim' : dayOf(now) > dayOf(ruleta.t) ? 'spin' : 'wait';     // 'spin' = puedes girar · 'claim' = giraste y falta cobrar · 'wait' = ya giraste hoy
+  const ruletaAvail = () => !!(RUL && AUTH && session && ruletaOk && streak && ruletaState() !== 'wait');
+  async function pullRuleta() {
+    if (!AUTH || !session || !RUL) { ruleta = null; ruletaOk = false; return false; }
+    try {
+      const r = await http(`${DB}/ruleta/${session.uid}.json?auth=${encodeURIComponent(await idToken())}`);
+      if (!r.ok) { ruletaOk = false; return false; }                           // 401/403: las reglas nuevas todavía no están publicadas en Firebase
+      const v = await r.json(); ruleta = v && typeof v.t === 'number' ? { t: +v.t, c: +v.c || 0 } : null; ruletaOk = true; return true;
+    } catch (e) { return false; }
+  }
+  function renderRoulette(msg) {
+    $('dailyGrid').hidden = true; $('missList').hidden = true; $('wheelBox').hidden = false; $('dailyTitle').textContent = 'Ruleta diaria 🎡';
+    $('dailySub').textContent = 'Un giro por día · pesos o multiplicadores de regalo';
+    paintDailyButton(); if (!pocketBusy) setPocket(balance());
+    const pi = document.querySelector('#coinChip .ci'); if (pi && pi.getAttribute('src')) $('pocketImg').src = pi.getAttribute('src');
+    if (msg !== undefined) { $('dailyMsg').textContent = msg.t; $('dailyMsg').className = 'status' + (msg.ok ? ' ok' : ' err'); }
+  }
+  function paintRoulette() {
+    const go = $('dailyGo'), st = ruletaState();
+    if (ruletaBusy) { go.disabled = true; go.textContent = 'Girando…'; }
+    else if (st === 'spin') { go.disabled = false; go.textContent = '🎡 Girar la ruleta'; }
+    else if (st === 'claim') { go.disabled = false; go.textContent = 'Cobrar mi premio'; }
+    else { go.disabled = true; go.textContent = `Vuelve en ${fmtWait(streakInfo().toNext)}`; }
+  }
+  function spinWheelTo(slot) {                                                 // solo dibuja: la rueda para donde ya dijo el servidor
+    let a0 = 0; for (let i = 0; i < slot; i++) a0 += 360 * RUL.premios[i][2] / RUL_N;
+    const sweep = 360 * RUL.premios[slot][2] / RUL_N, target = a0 + sweep * (.2 + .6 * Math.random());
+    wheelRot += 360 * (5 + Math.floor(Math.random() * 2)) + ((360 - (target + wheelRot) % 360) % 360);
+    const w = $('wheel'); w.style.transform = `rotate(${wheelRot}deg)`;
+    return reduced() ? Promise.resolve() : new Promise(res => setTimeout(res, 4600));
+  }
+  async function cobrarRuleta(rect) {                                          // 'ok' | 'denied' | 'error'
+    const uid = session.uid, tok = encodeURIComponent(await idToken());
+    const [wr, kr] = await Promise.all([http(`${DB}/wallets/${uid}.json?auth=${tok}`), http(`${DB}/streaks/${uid}.json?auth=${tok}`)]);
+    if (!wr.ok || !kr.ok) return denied4(wr) || denied4(kr) ? 'denied' : 'error';
+    const w = (await wr.json()) || {}, c0 = +w.c || 0, sp0 = +w.sp || 0, sk = parseStreak(await kr.json());
+    const pr = RUL.premios[rulaSlot(ruleta.t)], body = {}; body[`ruleta/${uid}/c`] = ruleta.t;
+    if (pr[0] > 0) { body[`wallets/${uid}/c`] = c0 + pr[0]; body[`wallets/${uid}/sp`] = sp0; }
+    else { if (!sk) return 'error'; body[`streaks/${uid}/x${pr[1]}`] = (sk.x[pr[1]] || 0) + 1; }
+    const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+    if (!r.ok) return denied4(r) ? 'denied' : 'error';
+    const bal0 = balance(); if (pr[0] > 0) { wallet.c = c0 + pr[0]; saveWallet(); }
+    await Promise.all([pullStreak(), pullRuleta()]); renderCoins(); syncWealth();
+    pocketBusy = true; renderStreak();
+    celebrate(rect, pr[0], bal0, balance(), pr[1]);
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .12), 300 + i * 90)); vib([20, 30, 20, 30, 50]);
+    return 'ok';
+  }
+  async function onRoulette() {
+    if (ruletaBusy || !RUL || !AUTH || !session) return;
+    const st0 = ruletaState(); if (st0 === 'wait') return;
+    ruletaBusy = true; paintRoulette(); $('wheelRes').textContent = '';
+    const rect = $('wheel').getBoundingClientRect();
+    try {
+      if (st0 === 'spin') {
+        const uid = session.uid, tok = encodeURIComponent(await idToken());
+        const r = await http(`${DB}/ruleta/${uid}.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify({ t: SV }) });
+        if (!r.ok) { renderRoulette({ t: denied4(r) ? 'Firebase no permitió girar. Revisa que estén publicadas las reglas nuevas (y que no hayas girado ya hoy).' : 'Sin conexión. Inténtalo de nuevo.', ok: false }); return; }
+        if (!(await pullRuleta()) || !ruleta) { renderRoulette({ t: 'No se pudo leer tu giro. Inténtalo de nuevo.', ok: false }); return; }
+      }
+      const slot = rulaSlot(ruleta.t), pr = RUL.premios[slot];
+      await spinWheelTo(slot);
+      $('wheelRes').textContent = pr[0] > 0 ? `¡Te tocó ${money(pr[0])}!` : `¡Te tocó un multiplicador ×${pr[1]}! 🤑`;
+      const res = await cobrarRuleta(rect);
+      if (res === 'ok') renderRoulette({ t: pr[0] > 0 ? `¡Listo! +${money(pr[0])} 🎉` : `¡Listo! Guardaste un multiplicador ×${pr[1]} 🤑💸 Actívalo en el inicio cuando quieras`, ok: true });
+      else renderRoulette({ t: res === 'denied' ? 'Firebase no permitió cobrar el premio. Revisa que estén publicadas las reglas nuevas.' : 'Sin conexión: tu premio sigue guardado, toca «Cobrar mi premio» para reintentar.', ok: false });
+    } catch (e) { renderRoulette({ t: 'Sin conexión: tu premio sigue guardado, toca «Cobrar mi premio» para reintentar.', ok: false }); }
+    finally { ruletaBusy = false; paintRoulette(); renderStreak(); }
+  }
+
   /* ---------- misiones: 3 por día (fácil, media y difícil: más difícil, más premio) y logros de una sola vez ----------
      El servidor (reglas de Firebase) lleva las estadísticas, decide cuál es la misión de cada día, si se cumplió y cuánto se paga; aquí solo se muestra y se pide el cobro. */
   const MIS = (window.TIENDA && window.TIENDA.eco && window.TIENDA.eco.misiones) || null;
@@ -2852,9 +2964,10 @@
   }
   function setDailyTab(t, quiet) {
     dailyTab = t;
-    [['tabS', 'streak'], ['tabD', 'day'], ['tabW', 'week'], ['tabA', 'ach']].forEach(([id, k]) => { $(id).classList.toggle('on', k === t); $(id).setAttribute('aria-selected', String(k === t)); });
+    [['tabS', 'streak'], ['tabD', 'day'], ['tabW', 'week'], ['tabR', 'roulette'], ['tabA', 'ach']].forEach(([id, k]) => { $(id).classList.toggle('on', k === t); $(id).setAttribute('aria-selected', String(k === t)); });
     renderMissChip(); renderDaily(quiet ? { t: '', ok: true } : { t: '', ok: true });
-    if (!quiet && t !== 'streak') pullMissions().then(() => { if (dailyTab !== 'streak') renderDaily(); });
+    if (!quiet && t === 'roulette') pullRuleta().then(() => { if (dailyTab === 'roulette') renderDaily(); });
+    else if (!quiet && t !== 'streak') pullMissions().then(() => { if (dailyTab !== 'streak') renderDaily(); });
   }
   function missionRow(m) {
     const row = document.createElement('div'); row.className = 'mrow' + (m.hecha ? ' done' : m.lista ? ' ready' : '');
@@ -2929,6 +3042,7 @@
     renderMissChip();
   }
   async function onDailyGo() {
+    if (dailyTab === 'roulette') { onRoulette(); return; }
     if (dailyTab !== 'streak') { onMissGo(); return; }
     const before = streakInfo(), n = before.nextN, v = rachaPago(n), mx = rachaMult(n);
     const todayEl = $('dailyGrid').querySelector('.dcard.today'), rect = todayEl ? todayEl.getBoundingClientRect() : null, bal0 = balance();
@@ -2943,7 +3057,7 @@
   }
   $('streakChip').addEventListener('click', () => openDaily('streak'));
   $('openMiss').addEventListener('click', () => openDaily('day'));
-  $('tabS').addEventListener('click', () => setDailyTab('streak')); $('tabD').addEventListener('click', () => setDailyTab('day')); $('tabW').addEventListener('click', () => setDailyTab('week')); $('tabA').addEventListener('click', () => setDailyTab('ach'));
+  $('tabS').addEventListener('click', () => setDailyTab('streak')); $('tabD').addEventListener('click', () => setDailyTab('day')); $('tabW').addEventListener('click', () => setDailyTab('week')); $('tabR').addEventListener('click', () => setDailyTab('roulette')); $('tabA').addEventListener('click', () => setDailyTab('ach'));
   $('dailyGo').addEventListener('click', onDailyGo);
   $('dailyClose').addEventListener('click', closeDaily);
   $('daily').addEventListener('click', e => { if (e.target === $('daily')) closeDaily(); });
@@ -3131,7 +3245,7 @@
     leaderBest = Math.max(leaderBest, player.best); renderMenu(); renderScores(); setInitial(); syncCount();
   }
   function logout() {
-    closeSettings(); closeVip(); session = null; saveSession(); vipRec = undefined; vipFor = ''; streak = null; streakOk = false; misStats = null; statsOk = false; claimedM = {}; dailyTab = 'streak'; closeDaily(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
+    closeSettings(); closeVip(); session = null; saveSession(); vipRec = undefined; vipFor = ''; ruleta = null; ruletaOk = false; streak = null; streakOk = false; misStats = null; statsOk = false; claimedM = {}; dailyTab = 'streak'; closeDaily(); player = { id: '', name: '', best: 0, dirty: false }; savePlayer();
     leaderBest = 0; loadWallet(); applyCosmetics(); setInitial(); renderScores(); setAuthMode('in'); renderMenu(); fetchLeader();
   }
   function beginSession(j, name) {                                 // guarda la sesión con lo que devolvió Firebase; email = el correo real de la cuenta ('' si aún tiene el interno)
@@ -3210,7 +3324,7 @@
       player = { id: j.localId, name, best: 0, dirty: false }; savePlayer();
       mailNote = authMode === 'up' ? '✅ Cuenta creada. Te enviamos un enlace a tu correo para verificarlo (mira también el correo no deseado).' : '';
       $('pass').value = ''; $('acct').value = ''; $('acctMail').value = '';
-      loadWallet(); applyCosmetics(); await pullWallet(); applyCosmetics(); pullStreak().then(() => { renderStreak(); autoDaily(); }); pullMissions();
+      loadWallet(); applyCosmetics(); await pullWallet(); applyCosmetics(); pullStreak().then(() => { renderStreak(); autoDaily(); return pullRuleta(); }).then(() => renderStreak()); pullMissions();
       if (pending) claimRun().then(renderCoins);                   // cobra una partida que quedó pendiente
       setInitial(); renderMenu(); await loadMine(); fetchLeader(); mailBoot(); vipLoad();
     } catch (err) { msg.textContent = authMode === 'in' && /INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND/.test(err.message) && !isMail(idIn) ? 'Nombre o contraseña incorrectos. Si ya agregaste tu correo a la cuenta, entra con tu correo.' : authErr(err.message); }
@@ -3416,7 +3530,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v56';
+  const BUILD = 'v57';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3673,7 +3787,7 @@
   measure(); layout(); setInitial(); duckLook(); renderMenu();
   leaderBest = player.best; renderScores();
   target.style.visibility = 'hidden';
-  if (AUTH && session) { loadMine(); mailBoot(); pullMissions(); pullWallet().then(() => { applyCosmetics(); renderMenu(); vipLoad(); syncWealth(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => { renderStreak(); autoDaily(); }); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
+  if (AUTH && session) { loadMine(); mailBoot(); pullMissions(); pullWallet().then(() => { applyCosmetics(); renderMenu(); vipLoad(); syncWealth(); return claimRun(); }).then(() => { renderCoins(); renderMenu(); return pullStreak(); }).then(() => { renderStreak(); autoDaily(); return pullRuleta(); }).then(() => renderStreak()); }   // trae tu puntaje y tus pesos; cobra una partida pendiente
   fetchLeader();
 })();
 </script>
