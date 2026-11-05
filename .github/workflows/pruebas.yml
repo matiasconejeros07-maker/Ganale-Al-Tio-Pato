@@ -46,6 +46,9 @@ jobs:
       - name: Grupo VIP (WhatsApp de quien desbloquea el personaje secreto)
         working-directory: pruebas
         run: node vip.test.js
+      - name: Marco dorado (quién tiene el personaje secreto y su marco en los marcadores)
+        working-directory: pruebas
+        run: node dorado.test.js
       - name: Los pesos se suman (sesión vencida, saldos enormes y diagnóstico)
         working-directory: pruebas
         run: node pesos.test.js

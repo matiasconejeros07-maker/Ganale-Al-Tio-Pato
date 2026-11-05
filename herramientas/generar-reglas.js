@@ -148,8 +148,8 @@ const rules = { rules: {
       ml: { '.validate': `newData.isNumber() && newData.val() === ${RV('s')} && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val()) && root.child('wallets').child($uid).child('lr').val() === newData.val()` },
       // c = el puntaje que ya está contado en `hist` (así cada cuenta cuenta una sola vez y se puede mover de casilla al mejorar). Solo sube y siempre es igual al puntaje de ese momento.
       c: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && newData.val() === ${P}.child('s').val() && (!data.exists() || newData.val() > data.val())` },
-      // w = la billetera (pesos ganados − gastados) que se ve en el marcador «Millonarios»: solo vale lo que la cartera dice en el momento de escribirlo (se actualiza aparte del cobro, después de cada cambio de saldo)
-      w: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.cMax} && newData.val() === ${P}.parent().parent().child('wallets').child($uid).child('c').val() - ${P}.parent().parent().child('wallets').child($uid).child('sp').val()` },
+      // w = el TOTAL de pesos ganados en el juego (wallets/<uid>/c; lo que se gasta en la tienda no se descuenta) que se ve en el marcador «Millonarios»: solo vale lo que la cartera dice en el momento de escribirlo (se actualiza aparte del cobro, después de cada cobro)
+      w: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.cMax} && newData.val() === ${P}.parent().parent().child('wallets').child($uid).child('c').val()` },
       $other: { '.validate': false }
     }
   },
@@ -175,6 +175,24 @@ const rules = { rules: {
   // ---- insignias del marcador: roles/<uid> = 'tio' (🦆🎩 Tío Patito) · 'tia' (🦆🎀 Tía Patita) · 'dev' (👾 desarrolladores). Lo pone el administrador desde la consola de Firebase;
   //      nadie puede escribirlo desde el juego. Cualquiera lo lee (para dibujar la insignia junto al nombre). ----
   roles: { '.read': true, $uid: { '.validate': "newData.isString() && newData.val().matches(/^(tio|tia|dev)$/)" } },
+
+  // ---- marco dorado: quien desbloquea el personaje secreto (el de los 100 millones) puede llevar un marco dorado animado en su emblema.
+  //      compradores/<uid> = { n: nombre, t: hora en que quedó anotado (la pone el servidor, una sola vez) } → el registro de quiénes tienen el personaje secreto. Solo su dueño lo lee;
+  //      quien administra el proyecto ve la lista completa en la consola de Firebase. Solo lo escribe quien de verdad tiene el personaje (own/ch_<id> en su cartera) y no se puede borrar.
+  //      marco/<uid> = true → «lleva puesto el marco dorado». Es lo único que ven los demás (en los marcadores). Se escribe/borra solo con el personaje secreto y con el registro de arriba ya hecho
+  //      (en el mismo PATCH sirve). Quien se saca el marco no queda expuesto: sin marco no aparece en ninguna lista pública. ----
+  compradores: { $uid: {
+    '.read': 'auth != null && auth.uid === $uid',
+    '.write': `auth != null && auth.uid === $uid && newData.exists() && root.child('wallets').child($uid).child('own').child('ch_${SECRET}').val() === true`,
+    '.validate': "newData.hasChildren(['n', 't'])",
+    n: { '.validate': 'newData.isString() && newData.val().length >= 1 && newData.val().length <= 16' },
+    t: { '.validate': 'newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() === now)' },
+    $other: { '.validate': false }
+  } },
+  marco: { '.read': true, $uid: {
+    '.write': `auth != null && auth.uid === $uid && root.child('wallets').child($uid).child('own').child('ch_${SECRET}').val() === true`,
+    '.validate': "newData.val() === true && newData.parent().parent().child('compradores').child($uid).exists()"
+  } },
 
   // ---- registro de nombres: names/<nombre con las comas en lugar de puntos (Firebase no deja puntos en las claves)> = uid de la cuenta que lo tiene.
   //      Se escribe una sola vez y solo así: (1) una cuenta antigua con el correo interno de ese nombre, o (2) una cuenta con correo real que anota a la vez

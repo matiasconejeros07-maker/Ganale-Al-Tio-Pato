@@ -412,6 +412,21 @@
   .avatar.bot.emb #botEmb { display: block; }
   .chip .uemb { display: inline-flex; flex: none; }
   .pav { display: inline-flex; flex: none; }
+  /* marco dorado (quien desbloquea el personaje de 100 millones): un aro de oro con la forma del emblema, un brillo que gira, un destello que lo recorre y dos estrellitas que titilan */
+  .embw.gold { position: relative; filter: drop-shadow(0 0 3px rgba(255, 196, 40, .9)) drop-shadow(0 1px 3px rgba(0, 0, 0, .4)); }
+  .embw .gfr { position: absolute; inset: 0; overflow: hidden; }
+  .embw .gfr i { position: absolute; left: 50%; top: 50%; width: 150%; height: 150%; margin: -75% 0 0 -75%; background: conic-gradient(from 0deg, #fff6c2, #f7c948, #b87a14, #ffe27a, #fffbe0, #e9a824, #8f5c0d, #ffe27a, #fff6c2); animation: gspin 5s linear infinite; }
+  .embw .gfr::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 36%, rgba(255, 255, 255, .95) 50%, transparent 64%); transform: translateX(-130%); animation: gsheen 3.4s ease-in-out infinite; }
+  .embw .gsp { position: absolute; line-height: 1; color: #fff; text-shadow: 0 0 3px #ffd54a, 0 0 7px #ffb300; pointer-events: none; animation: gtw 2.6s ease-in-out infinite; }
+  .embw .gsp.s1 { right: -5%; top: -5%; }
+  .embw .gsp.s2 { left: -4%; bottom: -4%; animation-delay: 1.3s; }
+  @keyframes gspin { to { transform: rotate(360deg); } }
+  @keyframes gsheen { 0%, 52% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+  @keyframes gtw { 0%, 100% { opacity: 0; transform: scale(.3) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+  body.lite .embw .gfr i, body.lite .embw .gfr::after, body.lite .embw .gsp { animation: none; }
+  body.lite .embw .gfr::after { display: none; }
+  body.lite .embw .gsp { opacity: .9; }
+  @media (prefers-reduced-motion: reduce) { .embw .gfr i, .embw .gfr::after, .embw .gsp { animation: none; } .embw .gfr::after { display: none; } .embw .gsp { opacity: .9; } }
   #list li .nm, #myRow li .nm { display: flex; align-items: center; gap: 14px; min-width: 0; overflow: visible; text-overflow: clip; }
   #list li, #myRow li { padding-top: 9px !important; padding-bottom: 9px !important; }                 /* filas más altas para que el emblema respire */
   #list li .pav .emb, #myRow li .pav .emb { transition: none; }
@@ -1135,7 +1150,7 @@
     <div class="sethead"><h2 id="vipTitle">Grupo VIP 💎</h2></div>
     <button class="setx" id="vipClose" type="button" aria-label="Cerrar">✕</button>
     <div class="setbody mailbody vipbody">
-      <div class="vipcard"><b id="vipHead">¡Desbloqueaste el personaje secreto!</b><span>Ahora tienes acceso exclusivo al grupo VIP 💎</span></div>
+      <div class="vipcard"><b id="vipHead">¡Desbloqueaste el personaje secreto!</b><span>Ahora tienes acceso exclusivo al grupo VIP 💎</span><span>Y un marco dorado 👑 para tu emblema: ponlo o quítalo en Ajustes → Mi emblema</span></div>
       <p class="mailtxt" id="vipTxt"></p>
       <form id="vipForm" autocomplete="on" novalidate>
         <input class="field" id="vipNum" name="tel" type="tel" inputmode="tel" maxlength="24" placeholder="+56 9 1234 5678" autocomplete="tel" aria-label="Tu número de WhatsApp">
@@ -1165,6 +1180,7 @@
       <div class="edlbl">Fondo</div><div class="cgrid" id="edC1"></div>
       <div class="edlbl">Borde</div><div class="cgrid" id="edC2"></div>
       <div class="edlbl">Diseño</div><div class="patgrid" id="edPats"></div>
+      <div id="edFrameBox" hidden><div class="edlbl">Marco</div><div class="edrow"><button class="edchip wide" id="edFrNo" type="button">Sin marco</button><button class="edchip wide" id="edFrGold" type="button">👑 Marco dorado</button></div></div>
       <div class="edact"><button class="btn ghost" id="edRandom" type="button">🎲 Sorpréndeme</button><button class="btn" id="edSave" type="button">Guardar</button></div>
     </div>
   </div>
@@ -1301,8 +1317,15 @@
   const clip = (s, max) => { const t = s.slice(0, max); return /[\ud800-\udbff]$/.test(t) ? t.slice(0, -1) : t; };           // sin partir un emoji por la mitad
   const cleanName = (s, max = NAME_MAX) => clip(stripBad(s).replace(/\s+/g, ' ').trim(), max).trim();
   let player = { id: '', name: '', best: 0, dirty: false };       // best: mayor cantidad de rebotes
-  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); player.id = String(o.id || ''); player.name = cleanName(o.name); player.best = Math.max(0, +o.best || 0); player.dirty = !!o.dirty; player.av = typeof o.av === 'string' ? o.av : ''; player.avDirty = !!o.avDirty; } catch (e) {}
+  try { const o = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); player.id = String(o.id || ''); player.name = cleanName(o.name); player.best = Math.max(0, +o.best || 0); player.dirty = !!o.dirty; player.av = typeof o.av === 'string' ? o.av : ''; player.avDirty = !!o.avDirty; player.fr = o.fr === 0 ? 0 : 1; player.frDirty = !!o.frDirty; } catch (e) {}
   function savePlayer() { try { localStorage.setItem(STORE_KEY, JSON.stringify(player)); } catch (e) {} }
+  /* ---------- marco dorado: quien desbloquea el personaje secreto (100 millones) lo puede llevar en su emblema; los demás lo ven en los marcadores ----------
+     compradores/<uid> (solo su dueño lo lee; el administrador ve la lista en la consola) anota quién tiene el personaje · marco/<uid> = true es lo único público: «lleva el marco puesto». player.fr: 0 = sin marco; otro valor = con marco. */
+  const GOLD_ID = ((((window.TIENDA || {}).ch) || []).find(c => c.secret) || {}).id || '';
+  let gold = {}, goldAt = 0, goldReg = '', goldBusy = false, goldFails = 0;                // gold: uids con el marco puesto · goldReg: tu uid cuando ya se sabe que estás anotado
+  const goldOwner = () => { try { return !!GOLD_ID && owns('ch', GOLD_ID); } catch (e) { return false; } };
+  const goldMine = () => goldOwner() && player.fr !== 0;
+  const goldOf = id => (id && id === player.id) ? goldMine() : gold[id] === true;
 
   /* ---------- cuenta (Firebase Authentication por REST): la sesión queda guardada en el teléfono ---------- */
   const AUTH_KEY = 'gana-al-tio-pato-sesion';
@@ -1771,7 +1794,7 @@
     const r = await http(`${DB}/weekly/${weekNow()}/${session.uid}/s.json`);
     const v = r.ok ? await r.json() : 0; return typeof v === 'number' ? v : 0;
   }
-  async function fetchTopRich(limit = TOP_N) {                     // las billeteras más grandes (índice `w` de las reglas)
+  async function fetchTopRich(limit = TOP_N) {                     // los que más pesos han ganado en total (índice `w` de las reglas)
     const r = await http(`${DB}/scores.json?orderBy=%22w%22&limitToLast=${limit}`);
     if (!r.ok) throw new Error('http ' + r.status);
     const data = (await r.json()) || {};
@@ -1792,6 +1815,16 @@
       roles = nr; rolesAt = Date.now();
     } catch (e) {}
   }
+  async function fetchMarcos() {                                   // quiénes llevan el marco dorado (marco/<uid> = true, público): se baja cada 5 minutos como máximo
+    if (!ONLINE || Date.now() - goldAt < 300000) return;
+    goldAt = Date.now();                                           // (también si falla, para no insistir: se reintenta a los 5 minutos)
+    try {
+      const r = await http(`${DB}/marco.json`); if (!r.ok) return;
+      const v = (await r.json()) || {}, ng = {};
+      for (const k in v) if (v[k] === true) ng[k] = true;
+      gold = ng;
+    } catch (e) {}
+  }
   function roleBadge(id) {
     const r = ROLE[roles[id]]; if (!r) return null;
     const b = document.createElement('span'); b.className = 'rb'; b.textContent = r[0]; b.title = r[1]; b.setAttribute('aria-label', r[1]); return b;
@@ -1807,8 +1840,8 @@
       try {
         const r = await http(`${DB}/scores.json?orderBy=%22s%22&limitToLast=1`);
         if (r.ok) {
-          const rows = Object.values((await r.json()) || {}).filter(v => v && typeof v.s === 'number' && typeof v.n === 'string').sort((a, b) => b.s - a.s);
-          if (rows[0]) { leaderTop = { n: cleanName(rows[0].n) || '—', a: typeof rows[0].a === 'string' ? rows[0].a : '', s: rows[0].s }; top = Math.max(top, rows[0].s); }
+          const rows = Object.entries((await r.json()) || {}).filter(([, v]) => v && typeof v.s === 'number' && typeof v.n === 'string').map(([id, v]) => ({ ...v, id })).sort((a, b) => b.s - a.s);
+          if (rows[0]) { leaderTop = { id: rows[0].id, n: cleanName(rows[0].n) || '—', a: typeof rows[0].a === 'string' ? rows[0].a : '', s: rows[0].s }; top = Math.max(top, rows[0].s); await fetchMarcos(); }
         }
       } catch (e) {}
     }
@@ -1823,7 +1856,7 @@
     const m = Math.floor(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
     return ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : h < 1 ? `${m} min` : d < 1 ? `${h} h ${String(m % 60).padStart(2, '0')} min` : `${d} d ${h % 24} h`;
   };
-  let boardKind = 'r';                                             // 'r' = todo el tiempo (rebotes) · 'w' = semanal (rebotes) · 't' = más tiempo jugado · 'm' = millonarios (billetera)
+  let boardKind = 'r';                                             // 'r' = todo el tiempo (rebotes) · 'w' = semanal (rebotes) · 't' = más tiempo jugado · 'm' = millonarios (total de pesos ganados)
   const BOARD_TABS = [['kindR', 'r'], ['kindW', 'w'], ['kindT', 't'], ['kindM', 'm']];
   const paintKindTabs = () => BOARD_TABS.forEach(([id, k]) => { $(id).classList.toggle('on', k === boardKind); $(id).setAttribute('aria-selected', String(k === boardKind)); });
   const boardVal = (row, k = boardKind) => k === 't' ? fmtPlayed(row.ms) : k === 'm' ? money(row.w) : row.s;
@@ -1842,7 +1875,7 @@
       if (row.id === player.id) li.classList.add('mine');
       const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = medals[i] || (i + 1);
       const nm = document.createElement('span'); nm.className = 'nm';
-      const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(row.id === player.id ? (avParse(player.av) ? player.av : row.a) : row.a), avLetter(row.n), embBoard()));
+      const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(row.id === player.id ? (avParse(player.av) ? player.av : row.a) : row.a), avLetter(row.n), embBoard(), goldOf(row.id)));
       const tx = document.createElement('span'); tx.className = 't'; tx.textContent = row.n; nm.append(pv, tx);   // textContent: nunca HTML
       const rb = roleBadge(row.id); if (rb) nm.appendChild(rb);
       const sc = document.createElement('span'); sc.className = small ? 'sc tm' : 'sc'; sc.textContent = boardVal(row);
@@ -1857,7 +1890,7 @@
       const list = document.createElement('ul'), li = document.createElement('li');
       const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = K !== 'r' ? '—' : '#' + me.rank.toLocaleString('es-CL');
       const nm = document.createElement('span'); nm.className = 'nm';
-      const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(player.av), avLetter(player.name || (session && session.name)), embBoard()));
+      const pv = document.createElement('span'); pv.className = 'pav'; pv.appendChild(emblem(avParse(player.av), avLetter(player.name || (session && session.name)), embBoard(), goldMine()));
       const tx = document.createElement('span'); tx.className = 't'; tx.textContent = cleanName(player.name || (session && session.name)) || 'Tú';
       const you = document.createElement('small'); you.textContent = '(tú)'; nm.append(pv, tx, you);
       const rb = roleBadge(player.id); if (rb) nm.appendChild(rb);
@@ -1918,26 +1951,26 @@
       if (kind !== 'r') {                                         // semanal · tiempo jugado · millonarios: mismo formato, misma frecuencia y mismo límite de tiempo que el de rebotes
         if (kind === 'm') { if (first) syncWealth(true); } else syncRun();
         const [rows, mine] = await Promise.all([kind === 't' ? fetchTopTime(TOP_N) : kind === 'w' ? fetchTopWeek(TOP_N) : fetchTopRich(TOP_N),
-          (kind === 't' ? fetchMyTime() : kind === 'w' ? fetchMyWeek() : Promise.resolve(AUTH && session ? balance() : 0)).catch(() => 0), fetchRoles()]);
+          (kind === 't' ? fetchMyTime() : kind === 'w' ? fetchMyWeek() : Promise.resolve(AUTH && session ? wallet.c : 0)).catch(() => 0), fetchRoles(), fetchMarcos()]);
         if (kind !== boardKind) return;                           // cambió de pestaña mientras cargaba
-        const sig = JSON.stringify([kind, rows.map(r => [r.id, r.ms || r.s || r.w, r.n, roles[r.id]]), mine]);
+        const sig = JSON.stringify([kind, rows.map(r => [r.id, r.ms || r.s || r.w, r.n, roles[r.id], goldOf(r.id)]), mine]);
         if (sig !== lastSig) {
           lastSig = sig; const ul = $('list'), top = ul.scrollTop;
           renderBoard(rows, null, mine); ul.scrollTop = top;
           const n = Math.min(rows.length, TOP_N);
           note.textContent = kind === 't' ? `Top ${n} · gana quien más tiempo lleva jugando (la suma de todas sus partidas, desde que existe este marcador)`
             : kind === 'w' ? `Top ${n} de la semana · gana quien llega más alto en una partida · se reinicia el lunes (en ${fmtWait(streakInfo().toNext + (6 - (dayOf(srvNow()) + 3) % 7) * DAYMS)})`
-            : `Top ${n} · las billeteras más grandes (pesos ganados menos gastados)`;
+            : `Top ${n} · quienes más pesos han ganado en total (lo que se gasta en la tienda no se descuenta)`;
         }
         return;
       }
       if (player.dirty) await syncBest();
       if (countedFor !== (session ? session.uid : '') + ':' + player.best) syncCount();
       const needRank = ONLINE && (first || Date.now() - lastMeAt >= RANK_MS || lastMeBest !== player.best);
-      const [rows, me] = await Promise.all([fetchTop(TOP_N), needRank ? myRank().catch(() => null) : null, fetchRoles()]);
+      const [rows, me] = await Promise.all([fetchTop(TOP_N), needRank ? myRank().catch(() => null) : null, fetchRoles(), fetchMarcos()]);
       if (kind !== boardKind) return;
       if (needRank) { lastMe = me; lastMeAt = Date.now(); lastMeBest = player.best; }
-      const sig = JSON.stringify([rows.map(r => [r.id, r.s, r.n, roles[r.id]]), lastMe && lastMe.rank, lastMe && lastMe.total, player.best]);
+      const sig = JSON.stringify([rows.map(r => [r.id, r.s, r.n, roles[r.id], goldOf(r.id)]), lastMe && lastMe.rank, lastMe && lastMe.total, player.best]);
       if (sig !== lastSig) {                                      // solo se redibuja si algo cambió (así no se pierde el scroll ni parpadea)
         lastSig = sig; const ul = $('list'), top = ul.scrollTop;
         renderBoard(rows, lastMe); ul.scrollTop = top;
@@ -2044,10 +2077,11 @@
   }
   const avEncode = a => 'e' + B64[a.shape] + B64[a.c1] + B64[a.c2] + B64[a.pat] + a.layers.map(l => B64[l.sym] + B64[l.x] + B64[l.y] + B64[l.size * 8 + l.rot]).join('');
   const avLetter = name => ([...(cleanName(name) || '😎')][0] || '😎').toUpperCase();
-  function emblem(a, letter, px) {                                               // dibuja un emblema de px píxeles
+  function emblem(a, letter, px, golden) {                                       // dibuja un emblema de px píxeles (golden: con el marco dorado; el emblema se achica dentro del aro y el total mide lo mismo)
     a = a || DEF_AV;
     const w = document.createElement('span'); w.className = 'embw';
-    const o = document.createElement('span'), inn = document.createElement('span'), p1 = AVT.paleta[a.c1], p2 = AVT.paleta[a.c2], clip = SHAPES[a.shape][1];
+    const o = document.createElement('span'), inn = document.createElement('span'), p1 = AVT.paleta[a.c1], p2 = AVT.paleta[a.c2], clip = SHAPES[a.shape][1], full = px;
+    if (golden) px = Math.round(full * .8);
     o.className = 'emb'; o.style.width = o.style.height = px + 'px'; o.style.clipPath = clip; o.style.background = p2[1];
     inn.className = 'embi'; inn.style.clipPath = clip;
     const pat = PATTERNS[a.pat][1]; inn.style.background = (pat === 'none' ? '' : pat + ', ') + `radial-gradient(circle at 35% 30%, ${p1[0]}, ${p1[1]})`;
@@ -2060,7 +2094,14 @@
       if (l.sym === 0) e.style.color = p1[2] || '#fff';
       o.appendChild(e);
     }
-    w.appendChild(o); return w;
+    if (golden) {
+      w.className = 'embw gold'; w.style.width = w.style.height = full + 'px';
+      const fr = document.createElement('span'); fr.className = 'gfr'; fr.style.clipPath = clip; fr.appendChild(document.createElement('i')); w.appendChild(fr);
+      o.style.position = 'absolute'; o.style.left = o.style.top = (full - px) / 2 + 'px';
+    }
+    w.appendChild(o);
+    if (golden) for (const c of ['s1', 's2']) { const t = document.createElement('b'); t.className = 'gsp ' + c; t.textContent = '✦'; t.style.fontSize = Math.max(8, full * .27).toFixed(1) + 'px'; w.appendChild(t); }
+    return w;
   }
   const EMB_BOARD = 52, embBoard = () => (innerWidth < 360 ? 44 : EMB_BOARD);    // tamaño del emblema en las filas del marcador (px; un poco menor en celulares angostos para que quepa el nombre)
   const mount = (el, node) => { el.textContent = ''; el.appendChild(node); };
@@ -2068,11 +2109,11 @@
   function paintBotAvatar() {                                                    // el rival del encabezado es el emblema de quien va primero
     const b = $('botAv'), t = leaderTop && ONLINE ? leaderTop : null;
     b.classList.toggle('emb', !!t);
-    if (t) { mount($('botEmb'), emblem(avParse(t.a), avLetter(t.n), 44)); b.title = t.n; } else { $('botEmb').textContent = ''; b.removeAttribute('title'); }
+    if (t) { mount($('botEmb'), emblem(avParse(t.a), avLetter(t.n), 44, goldOf(t.id))); b.title = t.n; } else { $('botEmb').textContent = ''; b.removeAttribute('title'); }
   }
   function paintAvatars() {                                                      // tu emblema en el encabezado, el inicio y los ajustes
     const a = avParse(player.av), letter = avLetter(player.name || (session && session.name));
-    mount($('meEmb'), emblem(a, letter, 44)); mount($('userEmb'), emblem(a, letter, 30)); mount($('setEmb'), emblem(a, letter, 40));
+    const gm = goldMine(); mount($('meEmb'), emblem(a, letter, 44, gm)); mount($('userEmb'), emblem(a, letter, 30, gm)); mount($('setEmb'), emblem(a, letter, 40, gm));
     paintBotAvatar();
   }
   // Se guarda en tu cuenta (para tus otros dispositivos) y, si ya tienes puntaje, en tu fila del marcador (para que te vean los demás).
@@ -2113,11 +2154,13 @@
     const c1 = rnd2(AVT.paleta.length); let c2 = rnd2(AVT.paleta.length); if (c2 === c1) c2 = (c2 + 1) % AVT.paleta.length;
     return { shape: rnd2(SHAPES.length), c1, c2, pat: rnd2(PATTERNS.length), layers };
   }
+  const edBox = () => (ed && ed.gold ? Math.round(150 * .8) : 150);
   function edRender(only) {
     const letter = avLetter(player.name || (session && session.name)), L = ed.layers[edSel] || ed.layers[0];
-    const stage = $('edStage'); stage.textContent = ''; stage.appendChild(emblem(ed, letter, 150));
+    const E = edBox(), O = (150 - E) / 2;                                                  // con el marco dorado, el emblema mide 120 dentro de los 150 de la vista previa
+    const stage = $('edStage'); stage.textContent = ''; stage.appendChild(emblem(ed, letter, 150, !!ed.gold));
     const sel = document.createElement('span'); sel.className = 'edsel';
-    const sz = Math.max(26, SZ[L.size] * 150 * 1.1); sel.style.width = sel.style.height = sz + 'px'; sel.style.left = 10 + (L.x + .5) / 32 * 150 + 'px'; sel.style.top = 10 + (L.y + .5) / 32 * 150 + 'px'; stage.appendChild(sel);
+    const sz = Math.max(26, SZ[L.size] * E * 1.1); sel.style.width = sel.style.height = sz + 'px'; sel.style.left = 10 + O + (L.x + .5) / 32 * E + 'px'; sel.style.top = 10 + O + (L.y + .5) / 32 * E + 'px'; stage.appendChild(sel);
     if (only === 'stage') return;
     const lay = $('edLayers'); lay.textContent = '';
     ed.layers.forEach((l, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'edchip' + (i === edSel ? ' on' : ''); b.textContent = l.sym === 0 ? letter : AVT.emojis[l.sym - 1]; b.setAttribute('aria-label', 'Símbolo ' + (i + 1)); b.onclick = () => { edSel = i; edRender(); }; lay.appendChild(b); });
@@ -2126,6 +2169,7 @@
     $('edBack').disabled = ed.layers.length < 2 || edSel === 0; $('edFront').disabled = ed.layers.length < 2 || edSel === ed.layers.length - 1;     // el orden de los símbolos es el orden de las capas: el primero queda al fondo
     const mark = (box, i) => [...box.children].forEach((b, k) => b.classList.toggle('on', k === i));
     mark($('edSyms'), L.sym); mark($('edShapes'), ed.shape); mark($('edC1'), ed.c1); mark($('edC2'), ed.c2); mark($('edPats'), ed.pat);
+    $('edFrNo').classList.toggle('on', !ed.gold); $('edFrGold').classList.toggle('on', !!ed.gold);
   }
   function edBuild() {                                                           // las cuadrículas de opciones (se arman una sola vez)
     if ($('edSyms').children.length) return;
@@ -2137,17 +2181,21 @@
     mk($('edPats'), PATTERNS.length, (b, i) => { b.textContent = PATTERNS[i][0]; b.onclick = () => { ed.pat = i; edRender(); }; });
   }
   function openEmblem() {
-    edBuild(); edFrom = document.activeElement; ed = clone(avParse(player.av) || DEF_AV); edSel = 0; edRender();
+    edBuild(); edFrom = document.activeElement; ed = clone(avParse(player.av) || DEF_AV); ed.gold = goldMine(); edSel = 0;
+    $('edFrameBox').hidden = !goldOwner();                                               // quien no tiene el personaje secreto ni ve la opción (es secreto)
+    edRender();
     $('settings').classList.remove('show'); $('emblem').classList.add('show'); $('embClose').focus();
   }
   function closeEmblem() { $('emblem').classList.remove('show'); if (edFrom && edFrom.focus) { try { edFrom.focus(); } catch (e) {} } edFrom = null; }
   function saveEmblem() {
-    player.av = avEncode(ed); player.avDirty = true; savePlayer(); paintAvatars(); saveAvatarCloud(); closeEmblem();
+    player.av = avEncode(ed); player.avDirty = true; savePlayer();
+    if (goldOwner() && !!ed.gold !== goldMine()) goldSet(!!ed.gold);
+    paintAvatars(); saveAvatarCloud(); closeEmblem();
   }
   // mover el símbolo: tocar o arrastrar sobre la vista previa (libre, en una cuadrícula de 32 × 32)
   (function () {
     const st = $('edStage'); let drag = false, raf = 0;
-    const at = e => { const r = st.getBoundingClientRect(); const px = (e.clientX - r.left - 10) / (r.width - 20) * 32 - .5, py = (e.clientY - r.top - 10) / (r.height - 20) * 32 - .5; return [clamp(Math.round(px), 0, 31), clamp(Math.round(py), 0, 31)]; };
+    const at = e => { const r = st.getBoundingClientRect(), k = edBox() / 150, o = (1 - k) / 2 * (r.width - 20); const px = (e.clientX - r.left - 10 - o) / ((r.width - 20) * k) * 32 - .5, py = (e.clientY - r.top - 10 - o) / ((r.height - 20) * k) * 32 - .5; return [clamp(Math.round(px), 0, 31), clamp(Math.round(py), 0, 31)]; };
     st.addEventListener('pointerdown', e => {
       if (!ed) return; drag = true; try { st.setPointerCapture(e.pointerId); } catch (_) {}
       const [x, y] = at(e); let best = edSel, bd = 1e9;                                    // si tocas otro símbolo, ese pasa a ser el elegido
@@ -2164,7 +2212,9 @@
   $('edBack').addEventListener('click', () => { if (edSel > 0) { ed.layers.unshift(ed.layers.splice(edSel, 1)[0]); edSel = 0; edRender(); } });
   $('edFront').addEventListener('click', () => { if (edSel < ed.layers.length - 1) { ed.layers.push(ed.layers.splice(edSel, 1)[0]); edSel = ed.layers.length - 1; edRender(); } });
   $('edDel').addEventListener('click', () => { if (ed.layers.length > 1) { ed.layers.splice(edSel, 1); edSel = 0; edRender(); } });
-  $('edRandom').addEventListener('click', () => { ed = randomEmblem(); edSel = 0; edRender(); });
+  $('edRandom').addEventListener('click', () => { const g = ed.gold; ed = randomEmblem(); ed.gold = g; edSel = 0; edRender(); });
+  $('edFrNo').addEventListener('click', () => { ed.gold = false; edRender(); });
+  $('edFrGold').addEventListener('click', () => { if (goldOwner()) { ed.gold = true; edRender(); } });
   $('edSave').addEventListener('click', saveEmblem);
   $('embClose').addEventListener('click', closeEmblem);
   $('emblem').addEventListener('click', e => { if (e.target === $('emblem')) closeEmblem(); });
@@ -2597,7 +2647,7 @@
       if (v) { wallet.c = +v.c || 0; wallet.sp = +v.sp || 0; wallet.lr = +v.lr || 0; wallet.own = v.own || {}; if (v.eq) wallet.eq = { ...DEF, ...v.eq }; if (avParse(v.av) && v.av !== player.av && !player.avDirty) { player.av = v.av; savePlayer(); paintAvatars(); } }
       if (player.avDirty && avParse(player.av)) saveAvatarCloud();                // un emblema que no llegó a subirse se reintenta aquí
       for (const k in DEF) if (!itemOf(k, wallet.eq[k]) || !owns(k, wallet.eq[k])) wallet.eq[k] = DEF[k];
-      saveWallet(); return true;
+      saveWallet(); goldSync(); return true;
     } catch (e) { return false; }
   }
 
@@ -2706,16 +2756,16 @@
         }
       }
       setTimePend(pend.tm || pend.st || pend.wk ? pend : null);
-      syncWealth();                                                                                                           // tu billetera cambió con el cobro: se actualiza en «Millonarios»
+      syncWealth();                                                                                                           // tus pesos ganados cambiaron con el cobro: se actualiza en «Millonarios»
     } catch (e) {} finally { timing = false; }
   }
-  /* Marcador «Millonarios»: tu billetera (ganado − gastado) se copia a tu fila del marcador (scores/<uid>/w). Las reglas solo aceptan el valor exacto que dice tu cartera en ese momento;
+  /* Marcador «Millonarios»: el total de pesos que has ganado (wallet.c; lo gastado no se descuenta) se copia a tu fila del marcador (scores/<uid>/w). Las reglas solo aceptan el valor exacto que dice tu cartera en ese momento;
      se hace aparte de cualquier cobro (si falla, no pasa nada) y se repite tras cada cambio de saldo, como mucho cada 15 s. */
   let wealthSent = -1, wealthAt = 0, wealthBusy = false, wealthUid = '', wealthDenied = 0;
   async function syncWealth(force) {
     if (!AUTH || !session || wealthBusy || !(player.best > 0)) return;                 // sin puntaje todavía no hay fila en el marcador donde copiarla
     if (wealthUid !== session.uid) { wealthUid = session.uid; wealthSent = -1; wealthDenied = 0; }
-    const v = balance(); if (v === wealthSent || v <= 0) return;
+    const v = wallet.c; if (v === wealthSent || v <= 0) return;
     if (!force && (Date.now() - wealthAt < 15000 || wealthDenied >= 3)) return;       // (si Firebase la rechaza 3 veces seguidas, por ejemplo sin las reglas nuevas, deja de insistir)
     wealthBusy = true; wealthAt = Date.now();
     try {
@@ -3383,6 +3433,44 @@
     wallet.eq[cat] = id; saveWallet(); applyCosmetics(); renderShop();
     if (AUTH && session) { try { await http(await wurlW(), { method: 'PATCH', headers: JSONH, body: JSON.stringify({ eq: wallet.eq }) }); } catch (e) {} }
   }
+  const marcoPut = async (uid, tok, on) => http(`${DB}/marco/${uid}.json?auth=${tok}&print=silent`, on ? { method: 'PUT', headers: JSONH, body: 'true' } : { method: 'DELETE' });
+  /* Con el personaje secreto: queda anotado en compradores/<uid> (la primera vez, y con el marco puesto) y se trae si lleva el marco. choose = el jugador acaba de elegir ponérselo o sacárselo (esa elección manda sobre lo que diga la nube). */
+  async function goldSync(choose = !!player.frDirty) {
+    if (!AUTH || !session || !goldOwner() || goldBusy || goldReg === session.uid || goldFails >= 3) return;
+    const uid = session.uid; goldBusy = true;
+    try {
+      const tok = encodeURIComponent(await idToken());
+      const [rc, rm] = await Promise.all([http(`${DB}/compradores/${uid}.json?auth=${tok}`), http(`${DB}/marco/${uid}.json`)]);
+      if (!rc.ok || !rm.ok || !session || session.uid !== uid) { goldFails++; return; }
+      const reg = await rc.json(), on = (await rm.json()) === true;
+      if (reg && typeof reg.t === 'number') {                                           // ya estaba anotado
+        goldReg = uid;
+        if (choose) { if (on !== (player.fr !== 0)) { const w = await marcoPut(uid, tok, player.fr !== 0); if (!w.ok) { goldFails++; return; } } player.frDirty = false; }
+        else { player.fr = on ? 1 : 0; player.frDirty = false; }
+      } else {                                                                          // primera vez: se anota (con el marco puesto, salvo que ya lo haya sacado) para que el administrador lo vea y los demás vean su marco
+        const n = cleanName(player.name || session.name, NAME_OLD) || 'Jugador', body = { ['compradores/' + uid]: { n, t: SV } };
+        if (player.fr !== 0) body['marco/' + uid] = true;
+        const w = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+        if (!w.ok) { goldFails++; return; }
+        goldReg = uid; player.frDirty = false;
+      }
+      if (player.fr !== 0) gold[uid] = true; else delete gold[uid];
+      savePlayer(); paintAvatars();
+    } catch (e) { goldFails++; }
+    finally { goldBusy = false; }
+  }
+  async function goldSet(on) {                                                          // ponerse o sacarse el marco dorado
+    player.fr = on ? 1 : 0; player.frDirty = true; savePlayer(); paintAvatars();
+    if (!AUTH || !session || !goldOwner()) { player.frDirty = false; savePlayer(); return; }
+    const uid = session.uid; if (on) gold[uid] = true; else delete gold[uid];
+    goldFails = 0;
+    try {
+      if (goldReg === uid) {
+        const w = await marcoPut(uid, encodeURIComponent(await idToken()), on);
+        if (w.ok) { player.frDirty = false; savePlayer(); }
+      } else await goldSync(true);
+    } catch (e) {}
+  }
   async function buyItem(cat, it) {
     if (shopBusy) return; shopBusy = true; shopMsg('');
     try {
@@ -3738,7 +3826,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v61';
+  const BUILD = 'v62';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
