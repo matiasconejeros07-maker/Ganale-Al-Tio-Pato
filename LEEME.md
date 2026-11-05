@@ -286,6 +286,22 @@ Cada jugador arma su **emblema** (tocando su nombre en el inicio, o en Ajustes �
 - **Ajustes → Mi emblema** dice en qué estado está: «✅ Todos lo ven en el marcador», «⏳ Guardando…», «⏳ Sin conexión» o «⚠️ faltan publicar las reglas nuevas». Si no se pudo subir, queda pendiente y **se reintenta solo cada vez que abres el juego**; también se sube si tu fila del marcador no tiene emblema (por ejemplo, el récord se hizo antes).
 - **Hay que publicar las reglas nuevas** (`firebase-rules.json`): sin ellas el emblema se ve en tu celular pero no se guarda en la cuenta ni en el marcador.
 
+## Potenciadores en la partida (burbujas)
+
+Desde el **rebote 8** aparece en la cancha, de vez en cuando (cada 9 a 16 s), **una burbuja** flotando entre el Pato y tu barra. Dura 8 s en pantalla (parpadea los últimos 2) y se activa cuando **la pelota la toca** (así que conviene apuntar con la barra: el ángulo del rebote depende de dónde pega la pelota en ella). Solo hay una a la vez.
+
+| Burbuja | Efecto | Duración | Probabilidad |
+|---|---|---|---|
+| 🫧 **Burbuja lenta** | La pelota va al **70%** de su rapidez | 6 s | 45% |
+| ❄️ **Tiempo congelado** | La pelota **casi se detiene** (da tiempo a ubicar la barra); el campo se tiñe de hielo | 2,5 s | 20% |
+| 📏 **Barra grande** | La barra y su zona de golpe miden un **50% más** (brillo verde) | 8 s | 35% |
+
+Los efectos activos se ven como cuadritos con la cuenta regresiva a la izquierda de la cancha (🫧 4 · ❄️ 2 · 📏 6) y se limpian al empezar y al terminar cada partida.
+
+- **No cambian lo que paga la partida ni los límites del servidor:** solo ayudan a seguir vivo. Las reglas de Firebase solo limitan cuántos rebotes caben en el tiempo de la partida (como mucho 1 cada 0,45 s); una pelota más lenta nunca pasa ese límite, y el antitrampas del juego (rebotes demasiado rápidos o reloj alterado) no se activa por los efectos. Una barra más grande tampoco acelera los rebotes.
+- **Dónde se ajusta:** `PUPS` (efectos, duración y probabilidad), `PUP_FIRST` (desde qué rebote) y `PUP_LIFE` (cuánto dura la burbuja) en `index.html`.
+- **Pruebas:** `humo.test.js` («Potenciadores»): no hay burbujas antes del rebote 8, aparecen después, desaparecen solas, cada efecto hace lo que dice (rapidez ×0,7, pelota casi quieta, barra ×1,5), vuelven a la normalidad y no queda nada al terminar la partida.
+
 ## El Pato que responde y los botones de redes
 
 - **El Pato no sigue la pelota:** se queda quieto mientras la pelota se aleja (hacia ti) y **solo sale a recibirla cuando vuelve**: calcula dónde va a llegar (con los rebotes en las paredes) y se desplaza justo a tiempo para golpearla. Es solo el movimiento del personaje: la pelota le llega igual y él siempre la devuelve, así que la dificultad y los límites de las reglas no cambian. Una prueba (`humo.test.js`) mide que mientras la pelota se aleja el Pato no se mueve ni un píxel y que cuando vuelve se desplaza sin saltos.
