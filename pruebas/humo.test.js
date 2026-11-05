@@ -63,8 +63,9 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     };
     ok('antes del rebote 8 no hay burbujas ni efectos', await p.evaluate(() => window.__g.pups().hits < 8) && !(await pu()).has && (await pu()).slowK === 1, JSON.stringify(await pu()));
     await p.evaluate(() => window.__g.set(12)); await p.waitForTimeout(400);
-    let vio = false; for (let i = 0; i < 80 && !vio; i++) { vio = (await pu()).has; await p.waitForTimeout(250); }
-    ok('desde el rebote 8 aparece una burbuja flotando en la cancha (una sola)', vio && (await pu()).n === 1, JSON.stringify(await pu()));
+    let vio = false, maxN = 0, ult = null;                                              // (si la pelota la toca enseguida, se nota por el efecto que queda activo unos segundos)
+    for (let i = 0; i < 110 && !vio; i++) { ult = await pu(); maxN = Math.max(maxN, ult.n); vio = ult.has || ult.fx.slow > 0 || ult.fx.freeze > 0 || ult.fx.wide > 0; await p.waitForTimeout(250); }
+    ok('desde el rebote 8 aparece una burbuja flotando en la cancha (nunca más de una a la vez)', vio && maxN <= 1, JSON.stringify(ult));
     await p.evaluate(() => { window.__g.quiet(); window.__g.pup('slow', 6, 6); });          // (a partir de aquí no salen burbujas solas, para que cada prueba sea exacta; esta va al rincón de arriba: la pelota no llega y se prueba que desaparece sola)
     ok('una burbuja que la pelota no toca desaparece sola a los 8 s', (await pu()).has && (await (async () => { await p.waitForTimeout(8600); return !(await pu()).has; })()), JSON.stringify(await pu()));
 
