@@ -186,6 +186,13 @@
   @keyframes chipPulse { 50% { transform: scale(1.07); } }
   .boostbar { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #7b3ff2, #e0149f); color: #fff; font-weight: 800; font-size: 14px; padding: 5px 14px; border-radius: 999px; box-shadow: 0 4px 12px rgba(123, 63, 242, .35); font-variant-numeric: tabular-nums; }
   .boostbar[hidden] { display: none; }
+  .boostgo { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: 100%; margin: 0 0 4px; }
+  .boostgo[hidden] { display: none; }
+  .boostgo button { display: inline-flex; align-items: center; gap: 6px; border: 3px solid #7b3ff2; background: linear-gradient(#fff, #f3e6ff); color: #4a1fb0; font: inherit; font-weight: 900; font-size: 13px; padding: 5px 11px; border-radius: 999px; cursor: pointer; box-shadow: 0 3px 0 #5a2ec0; white-space: nowrap; animation: chipPulse 1.6s ease-in-out infinite; }
+  .boostgo button:active { transform: translateY(3px); box-shadow: 0 1px 0 #5a2ec0; }
+  .boostgo button:disabled { opacity: .6; animation: none; }
+  .boostgo button small { font-size: 11px; font-weight: 800; color: #7b3ff2; margin-left: 2px; }
+  .boostgo .bmsg { width: 100%; text-align: center; font-size: 13px; font-weight: 800; color: #b3261e; }
   .modal { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(12, 10, 40, .6); }
   .modal.show { display: flex; animation: fadeIn .2s ease-out; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -216,8 +223,8 @@
   #menu .tile.wide { width: 100%; position: relative; }
   .mbadge2 { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #e0149f; color: #fff; font-size: 13px; font-weight: 900; line-height: 22px; text-align: center; }
   .mbadge2[hidden] { display: none; }
-  .dgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 14px; }
-  .dcard { position: relative; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 8px 4px 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-weight: 800; }
+  .dgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 16px 0 14px; }
+  .dcard { position: relative; min-width: 0; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 8px 4px 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-weight: 800; }
   .dcard .dn { background: #111; color: #fff; border-radius: 999px; padding: 3px 10px; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
   .dcard .ic { display: flex; align-items: center; justify-content: center; height: 40px; }
   .dcard .ic img { height: 34px; width: auto; object-fit: contain; display: block; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
@@ -225,6 +232,18 @@
   .dcard .ic img:nth-child(even) { transform: translateY(2px) rotate(7deg); }
   .dcard .ic img:nth-child(odd):not(:first-child) { transform: translateY(-1px) rotate(-5deg); }
   .dcard .ic img.bill { height: 36px; }
+  .dcard .ic img.bill + img.bill { margin-left: -44px; }          /* los billetes ocupan mucho más: se apilan casi encima */
+  .dcard .ic { position: relative; max-width: 100%; }
+  .dcard .ic[data-n="4"] img + img:not(.bill) { margin-left: -19px; }
+  .dcard .ic .ix { position: absolute; right: -4px; bottom: -6px; padding: 0 6px; border-radius: 999px; background: #fff; border: 2px solid #ffc928; font-size: 13px; font-weight: 900; line-height: 18px; color: #7a4a00; }
+  .dcard.mx .mxe { position: relative; display: inline-flex; width: 64px; height: 44px; align-items: center; justify-content: center; font-size: 34px; line-height: 1; }
+  .dcard.mx .mxe span { position: absolute; animation: mxBob 1.3s ease-in-out infinite; }
+  .dcard.mx .mxe span:first-child { left: 2px; }
+  .dcard.mx .mxe span:last-child { right: 0; animation-delay: -.65s; font-size: 28px; }
+  @keyframes mxBob { 0%, 100% { transform: translateY(2px) rotate(-8deg) scale(1); } 50% { transform: translateY(-7px) rotate(8deg) scale(1.15); } }
+  .dcard.mx .dv { font-size: 18px; }
+  .dcard.legend .ic img { height: 44px; }
+  .dcard.legend .ic img.bill { height: 44px; }
   .dcard .dv { font-size: 16px; font-variant-numeric: tabular-nums; }
   .dcard.today { border-color: #ffc928; background: linear-gradient(#fff8d6, #ffe98a); box-shadow: 0 0 0 3px rgba(255, 201, 40, .5); animation: dpulse 1.5s ease-in-out infinite; }
   .dcard.today .dn { background: #e5a800; }
@@ -236,7 +255,8 @@
   .dcard.d7 .dn { background: #7b3ff2; }
   .dcard.d7 .bolt { font-size: 34px; line-height: 1; }
   .dcard.d7 .dt { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 2px; }
-  .dcard.d7 .dt small { font-size: 12px; font-weight: 700; color: #6b6840; }
+  .dcard.d7 .dt small { font-size: 12px; font-weight: 700; color: #6b6840; white-space: normal; }
+  .dcard.d7 .dt { min-width: 0; }
   .dcard.d7.today { background: linear-gradient(135deg, #ead2ff, #ffd0ec); border-color: #7b3ff2; box-shadow: 0 0 0 3px rgba(123, 63, 242, .4); }
   .dcard.d7.today .dn { background: #7b3ff2; }
   .dcard.d7.done { background: #eaf7e6; }
@@ -879,7 +899,7 @@
     .bgx, .bgx i, .bgx i::before, .bgx::before, .bgx::after, #paddle, #paddle::before, #paddle::after, .pvbar, .pvbar::before, .pvbar::after { animation: none !important; }
     #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .item .pv.mystery b, .item .pv.mystery i, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .ball.jump::before, .ball.jump::after, .hero, .rain span, #rotate .ico, .item .pv.chpv img { animation: none; }
     #arena.jolt { animation: none; }
-    .screen.show, #hint.on, .chip.streak.go, .dcard.today, .mcard, .modal.show, .pocket.bump { animation: none; }
+    .screen.show, #hint.on, .chip.streak.go, .dcard.today, .mcard, .modal.show, .pocket.bump, .dcard.mx .mxe span, .boostgo button { animation: none; }
     .tog, .tog i { transition: none; }
     .btn, .tile, .seg button, .link { transition: none; }
   }
@@ -920,7 +940,8 @@
         <button class="chip streak" id="streakChip" type="button" hidden aria-label="Racha diaria">🔥 <span id="streakNum">0</span></button>
         <div class="coins" id="coinChip" hidden><img class="ci" src="skins/peso1.webp" alt=""><span id="coinNum">$0</span></div>
       </div>
-      <div class="boostbar" id="boostBar" hidden>⚡ Pesos dobles · <b id="boostLeft">10:00</b></div>
+      <div class="boostbar" id="boostBar" hidden><span id="boostTxt">🤑 Pesos ×2</span> · <b id="boostLeft">10:00</b></div>
+      <div class="boostgo" id="boostGo" hidden></div>
       <div class="mid">
         <div class="stage"><span class="hero" id="heroBox"><span style="font-size:84px">🦆</span></span></div>
         <h1 class="ttl" id="ttl">Gánale al <em id="ttlName">Tío Pato</em></h1>
@@ -1103,7 +1124,7 @@
   let DUCK_CY = 125;              // centro del cuerpo del Pato (para el fuego)
   let SAFE_T = 0, SAFE_B = 0;     // márgenes seguros (notch / barra de gestos)
   const ECO = (window.TIENDA && window.TIENDA.eco) || { tier: 100, msPorRebote: 450, holguraMs: 3000, hMax: 500 };
-  const RACHA = ECO.racha || { dias: [100, 200, 300, 400, 500, 1000, 0], dobleMs: 600000, huso: -3 };   // racha diaria (ver tienda.js)
+  const RACHA = ECO.racha || { dias: [100, 200, 300, 400, 500, 1000, 0], fijo: 10000, fijoDesde: 28, mult: [[7, 2]], dobleMs: 600000, huso: -3 };   // racha diaria (ver tienda.js)
   const TIER = ECO.tier, H_MAX = ECO.hMax;                  // cada TIER rebotes sube lo que vale cada rebote · tope de rebotes que cuentan por partida
   // Del rebote 1 al 99 el juego es amable y ágil; desde el 100 sube de verdad, pero de a poco: la pelota sigue acelerando (cada rebote suma menos que el anterior)
   // hacia un techo que casi nunca se alcanza del todo, y la barra se achica hasta el 28% recién en el rebote 200.
@@ -2327,7 +2348,7 @@
       const w = JSON.parse(localStorage.getItem(WKEY()) || 'null');
       if (w) { wallet.c = +w.c || 0; wallet.sp = +w.sp || 0; wallet.lr = +w.lr || 0; wallet.own = w.own || {}; wallet.eq = { ...DEF, ...(w.eq || {}) }; }
       const p = AUTH && session ? JSON.parse(localStorage.getItem(PKEY()) || 'null') : null;
-      if (p && +p.s > 0 && +p.h > 0) pending = { s: +p.s, h: +p.h, r: +p.r || 1, m: +p.m === 2 ? 2 : 1, t: +p.t > 0 ? Math.round(+p.t) : 0 };
+      if (p && +p.s > 0 && +p.h > 0) pending = { s: +p.s, h: +p.h, r: +p.r || 1, m: [2, 3, 4].includes(+p.m) ? +p.m : 1, t: +p.t > 0 ? Math.round(+p.t) : 0 };
     } catch (e) {}
     for (const k in DEF) if (!itemOf(k, wallet.eq[k])) wallet.eq[k] = DEF[k];
   }
@@ -2458,7 +2479,7 @@
       const w = (await wr.json()) || {}, sv = await sr.json(), best = +sv || 0, rowExists = typeof sv === 'number';
       if (+w.lr === pr.s) { pending = null; savePending(); markRun(pr.s, pr.t); syncRun(); await pullWallet(); return 'ok'; }      // ya estaba cobrada (se perdió la respuesta)
       if (!kr.ok && kr.status !== 401 && kr.status !== 403) return 'error';
-      const kv = kr.ok ? await kr.json() : null, mult = boostMult(pr.s, kv && +kv.bx || 0);      // ¿la partida empezó con «pesos dobles»? lo decide la racha que guarda el servidor
+      const kv = kr.ok ? await kr.json() : null, mult = boostMult(pr.s, kv && +kv.bx || 0, kv && +kv.bm || 0);      // ¿la partida empezó con un multiplicador activo? lo decide la racha que guarda el servidor
       const c0 = +w.c || 0, sp0 = +w.sp || 0, p = pr.r * pesosFor(pr.h) * mult, body = {}, rowSeen = rowExists;
       body[`runs/${uid}/e`] = SV; body[`runs/${uid}/h`] = pr.h; body[`runs/${uid}/p`] = p;
       body[`wallets/${uid}/c`] = c0 + p; body[`wallets/${uid}/sp`] = sp0; body[`wallets/${uid}/lr`] = pr.s;
@@ -2480,11 +2501,16 @@
   }
   /* ---------- racha diaria: entrar cada día da premios ----------
      El servidor (reglas de Firebase) decide el día, si la racha sigue o se corta y cuánto se paga; aquí solo se muestra y se pide el cobro.
-     Día 1 a 6: pesos · día 7: «pesos dobles» durante 10 minutos (las partidas que EMPIEZAN en ese lapso pagan el doble) · después vuelve a empezar el ciclo. */
-  const DAYMS = 86400000, RLEN = RACHA.dias.length, HUSO_MS = RACHA.huso * 3600000;
+     Los días de pesos pagan según la tabla de tienda.js (desde el día 28, $10.000 diarios) · los días 7, 14 y 21 se guarda un multiplicador (×2, ×3, ×4) que el jugador activa con un botón:
+     las partidas que EMPIEZAN en los 10 minutos siguientes pagan ×N. La racha sigue mientras no te saltes un día. */
+  const DAYMS = 86400000, HUSO_MS = RACHA.huso * 3600000;
+  const rachaPago = n => (n >= RACHA.fijoDesde ? RACHA.fijo : (RACHA.dias[n - 1] || 0));                 // pesos del día n de la racha (el servidor usa la misma tabla)
+  const rachaMult = n => { const f = RACHA.mult.find(x => x[0] === n); return f ? f[1] : 0; };         // multiplicador que regala el día n (0 = ninguno)
+  const MULTS = RACHA.mult.map(x => x[1]);
+  const parseStreak = kv => (kv && typeof kv.n === 'number' ? { n: +kv.n, t: +kv.t || 0, bx: +kv.bx || 0, bm: +kv.bm || 0, x: { 2: +kv.x2 || 0, 3: +kv.x3 || 0, 4: +kv.x4 || 0 } } : null);
   const dayOf = ms => Math.floor((ms + HUSO_MS) / DAYMS);                      // número de día (el día cambia a medianoche del huso de Chile)
-  const boostMult = (runS, bx) => (bx && runS >= bx && runS < bx + RACHA.dobleMs ? 2 : 1);
-  let streak = null, streakOk = false, streakDayShown = -1, streakBusy = false;   // streak: { n: días seguidos, t: último cobro, bx: inicio del último «pesos dobles» }
+  const boostMult = (runS, bx, bm) => (bx && runS >= bx && runS < bx + RACHA.dobleMs ? (bm || 2) : 1);       // las activaciones antiguas (sin bm) eran ×2
+  let streak = null, streakOk = false, streakDayShown = -1, streakBusy = false;   // streak: { n: días seguidos, t: último cobro, bx: cuándo activaste el último multiplicador, bm: cuál era, x: cuántos guardados tienes de cada uno }
   function streakInfo(now = Date.now()) {
     const today = dayOf(now), claimable = !streak || today > dayOf(streak.t);
     return {
@@ -2493,6 +2519,7 @@
       n: streak ? streak.n : 0,
       nextN: !streak ? 1 : (today === dayOf(streak.t) + 1 ? streak.n + 1 : 1),   // la racha que tendrás si cobras hoy
       boostLeft: streak && streak.bx ? Math.max(0, streak.bx + RACHA.dobleMs - now) : 0,
+      boostM: streak && streak.bm ? streak.bm : 2,
       toNext: (today + 1) * DAYMS - HUSO_MS - now                                // ms que faltan para el día siguiente
     };
   }
@@ -2502,53 +2529,105 @@
       const r = await http(`${DB}/streaks/${session.uid}.json?auth=${encodeURIComponent(await idToken())}`);
       if (!r.ok) { streakOk = false; return false; }                           // 401/403: las reglas nuevas todavía no están publicadas en Firebase
       const v = await r.json();
-      streak = v && typeof v.n === 'number' ? { n: +v.n, t: +v.t || 0, bx: +v.bx || 0 } : null; streakOk = true; return true;
+      streak = parseStreak(v); streakOk = true; return true;
     } catch (e) { return false; }
   }
   const fmtLeft = ms => { const s = Math.ceil(ms / 1000), m = Math.floor(s / 60); return `${m}:${String(s % 60).padStart(2, '0')}`; };
   const fmtWait = ms => { const m = Math.max(1, Math.ceil(ms / 60000)), h = Math.floor(m / 60); return h ? `${h} h ${m % 60} min` : `${m} min`; };
-  function renderStreak() {                                                    // chip 🔥 y cartel de «pesos dobles» del inicio
+  function renderStreak() {                                                    // chip 🔥, cartel del multiplicador activo y botones para activar los guardados
     const on = AUTH && !!session && streakOk, info = streakInfo(), chip = $('streakChip');
     chip.hidden = !on; chip.classList.toggle('go', on && info.claimable);
     $('streakNum').textContent = info.broken ? 0 : info.n;
     chip.setAttribute('aria-label', on ? `Racha diaria: ${info.broken ? 0 : info.n} días${info.claimable ? '. Tienes un premio para reclamar' : ''}` : 'Racha diaria');
-    $('boostBar').hidden = !(on && info.boostLeft > 0); if (info.boostLeft > 0) $('boostLeft').textContent = fmtLeft(info.boostLeft);
+    $('boostBar').hidden = !(on && info.boostLeft > 0); if (info.boostLeft > 0) { $('boostLeft').textContent = fmtLeft(info.boostLeft); $('boostTxt').textContent = `🤑 Pesos ×${info.boostM}`; }
     $('pocket').classList.toggle('glow', on && info.boostLeft > 0);
+    paintBoostGo(on, info);
     renderMissChip();
     if ($('daily').classList.contains('show')) paintDailyButton();                      // cada segundo solo se actualiza el texto del botón (la cuadrícula no se redibuja)
   }
-  // Los dibujos de cada día son los pesos que regalan: $100 = una moneda de $100 · $200 = dos monedas de $100 · $300 = tres · $400 = cuatro · $500 = la moneda de $500 · $1.000 = el billete de $1.000.
-  const DENOM = [[1000, 'skins/b1000.webp'], [500, 'skins/peso500.webp'], [100, 'skins/peso100.webp'], [50, 'skins/peso50.webp'], [10, 'skins/peso10.webp'], [5, 'skins/peso5.webp'], [1, 'skins/peso1.webp']];
+  /* Botones del inicio para activar un multiplicador guardado (no se activa solo): uno por cada multiplicador que tengas; desaparecen mientras hay uno activo (dura 10 min). */
+  let boostBusy = false, boostSig = '', boostMsgT = 0;
+  function paintBoostGo(on, info) {
+    const box = $('boostGo');
+    const stock = on ? MULTS.filter(m => streak && streak.x[m] > 0 && info.boostLeft <= 0) : [];
+    const sig = stock.map(m => m + ':' + streak.x[m]).join(',') + '|' + boostBusy + '|' + boostMsgT;
+    if (sig === boostSig) return; boostSig = sig;
+    box.textContent = '';
+    for (const m of stock) {
+      const b = document.createElement('button'); b.type = 'button'; b.disabled = boostBusy; b.dataset.m = m;
+      b.append(`🤑 Activar ×${m}${streak.x[m] > 1 ? ' (' + streak.x[m] + ')' : ''}`); const sm = document.createElement('small'); sm.textContent = `· ${Math.round(RACHA.dobleMs / 60000)} min`; b.appendChild(sm);
+      b.addEventListener('click', () => activateBoost(m)); box.appendChild(b);
+    }
+    if (boostMsgT) { const g = document.createElement('div'); g.className = 'bmsg'; g.textContent = boostMsgT; box.appendChild(g); }
+    box.hidden = !box.childNodes.length;
+  }
+  async function activateBoost(m) {
+    if (!AUTH || !session || boostBusy) return;
+    boostBusy = true; boostMsgT = 0; renderStreak();
+    try {
+      const uid = session.uid, tok = encodeURIComponent(await idToken());
+      const kr = await http(`${DB}/streaks/${uid}.json?auth=${tok}`);
+      if (!kr.ok) throw new Error('lectura');
+      streak = parseStreak(await kr.json());                                   // manda lo que dice el servidor
+      const have = streak ? streak.x[m] : 0;
+      if (!have || streakInfo().boostLeft > 0) return;
+      const body = {}; body[`streaks/${uid}/bx`] = SV; body[`streaks/${uid}/bm`] = m; body[`streaks/${uid}/x${m}`] = have - 1;
+      const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
+      if (r.ok) { await pullStreak(); [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .12), i * 90)); vib([20, 30, 20, 30, 50]); }
+      else boostMsgT = r.status === 401 || r.status === 403 ? 'Firebase no permitió activarlo (revisa que las reglas nuevas estén publicadas).' : 'No se pudo activar. Inténtalo de nuevo.';
+    } catch (e) { boostMsgT = 'Sin conexión. Inténtalo de nuevo.'; }
+    finally { boostBusy = false; boostSig = ''; renderStreak(); if (boostMsgT) setTimeout(() => { boostMsgT = 0; boostSig = ''; renderStreak(); }, 5000); }
+  }
+  // Los dibujos de cada día son los pesos que regalan: $100 = una moneda de $100 · $200 = dos monedas de $100 · $300 = tres · $400 = cuatro · $500 = la moneda de $500 · $1.000 = el billete de $1.000 ·
+  // semana 2: de 1 a 6 monedas de $500 · semana 3: de 1 a 6 billetes de $1.000 · semana 4 y siguientes: los billetes que sumen el premio (hasta el de $10.000).
+  const DENOM = [[10000, 'skins/b10000.webp'], [5000, 'skins/b5000.webp'], [2000, 'skins/b2000.webp'], [1000, 'skins/b1000.webp'], [500, 'skins/peso500.webp'], [100, 'skins/peso100.webp'], [50, 'skins/peso50.webp'], [10, 'skins/peso10.webp'], [5, 'skins/peso5.webp'], [1, 'skins/peso1.webp']];
   function coinsFor(v) {
     const out = []; let rest = v;
     for (const [d, src] of DENOM) while (rest >= d && out.length < 5) { out.push(src); rest -= d; }
     return out;
+  }
+  function imgsFor(d) {                                                          // [dibujos, cuántos son en total] del día d
+    if (d >= 8 && d <= 13) return [['skins/peso500.webp'], d - 7];
+    if (d >= 15 && d <= 20) return [['skins/b1000.webp'], d - 14];
+    return [coinsFor(rachaPago(d)), 0];
+  }
+  function dayCard(d, dayN, claimable) {
+    const c = document.createElement('div'), m = rachaMult(d), v = rachaPago(d);
+    const done = d < dayN || (d === dayN && !claimable), today = claimable && d === dayN;
+    c.className = 'dcard' + (m ? ' d7 mx' : '') + (d >= RACHA.fijoDesde ? ' d7 legend' : '') + (done ? ' done' : '') + (today ? ' today' : '');
+    const dn = document.createElement('span'); dn.className = 'dn'; dn.textContent = 'Día ' + d;
+    if (m) {                                                                     // día de multiplicador: 🤑💸 animados (se guarda y lo activas tú)
+      const e = document.createElement('span'); e.className = 'mxe'; e.setAttribute('aria-hidden', 'true'); e.append(...['🤑', '💸'].map(t => { const x = document.createElement('span'); x.textContent = t; return x; }));
+      const dt = document.createElement('div'); dt.className = 'dt';
+      const b = document.createElement('span'); b.className = 'dv'; b.textContent = `Multiplicador ×${m}`;
+      const sm = document.createElement('small'); sm.textContent = `${Math.round(RACHA.dobleMs / 60000)} minutos · lo activas tú cuando quieras`;
+      dt.append(dn, b, sm); c.append(e, dt); return c;
+    }
+    if (d >= RACHA.fijoDesde) {                                                  // día 28: el billete de $10.000 (y todos los días siguientes)
+      const ic = document.createElement('div'); ic.className = 'ic'; const im = new Image(); im.src = 'skins/b10000.webp'; im.alt = ''; im.draggable = false; im.className = 'bill'; ic.appendChild(im);
+      const dt = document.createElement('div'); dt.className = 'dt';
+      const b = document.createElement('span'); b.className = 'dv'; b.textContent = `${money(RACHA.fijo)} cada día`;
+      const sm = document.createElement('small'); sm.textContent = d === RACHA.fijoDesde ? 'Del día 28 en adelante 💵' : '¡Racha legendaria! 💵';
+      dt.append(dn, b, sm); c.append(ic, dt); return c;
+    }
+    const [srcs, k] = imgsFor(d), maxN = srcs[0] && srcs[0].includes('/b') ? 3 : 4, shown = [];
+    if (k) for (let i = 0; i < Math.min(k, maxN); i++) shown.push(srcs[0]); else shown.push(...srcs);
+    const ic = document.createElement('div'); ic.className = 'ic'; ic.dataset.n = shown.length;
+    for (const src of shown) { const im = new Image(); im.src = src; im.alt = ''; im.draggable = false; if (/\/b\d/.test(src)) im.className = 'bill'; ic.appendChild(im); }
+    if (k > maxN) { const x = document.createElement('span'); x.className = 'ix'; x.textContent = '×' + k; ic.appendChild(x); }
+    const dv = document.createElement('span'); dv.className = 'dv'; dv.textContent = money(v);
+    c.append(dn, ic, dv); return c;
   }
   function renderDaily(msg) {
     if (dailyTab !== 'streak') { renderMissions(msg); return; }
     $('dailyGrid').hidden = false; $('missList').hidden = true; $('dailyTitle').textContent = 'Racha diaria 🔥';
     const info = streakInfo(), grid = $('dailyGrid');
     // tarjeta de hoy (o la última cobrada): si hoy se puede cobrar, las anteriores del ciclo ya están hechas; si ya cobraste, la de hoy también
-    const ti = info.claimable ? (info.nextN - 1) % RLEN : (info.n - 1) % RLEN, doneTo = info.claimable ? ti - 1 : ti;
+    // se muestra la semana (7 días) de la racha de hoy: las anteriores están hechas, la de hoy brilla y las siguientes son lo que viene; pasado el día 28 queda la tarjeta de los $10.000 diarios
+    const dayN = info.claimable ? info.nextN : info.n, start = dayN > RACHA.fijoDesde ? dayN : Math.floor((Math.max(1, dayN) - 1) / 7) * 7 + 1;
     grid.textContent = '';
-    RACHA.dias.forEach((v, i) => {
-      const c = document.createElement('div'), last = i === RLEN - 1;
-      c.className = 'dcard' + (last ? ' d7' : '') + (i <= doneTo ? ' done' : '') + (info.claimable && i === ti ? ' today' : '');
-      const dn = document.createElement('span'); dn.className = 'dn'; dn.textContent = 'Día ' + (i + 1);
-      if (last) {
-        const bolt = document.createElement('span'); bolt.className = 'bolt'; bolt.textContent = '⚡';
-        const dt = document.createElement('div'); dt.className = 'dt';
-        const b = document.createElement('span'); b.className = 'dv'; b.textContent = 'Pesos dobles';
-        const sm = document.createElement('small'); sm.textContent = `Durante ${Math.round(RACHA.dobleMs / 60000)} minutos`;
-        dt.append(dn, b, sm); c.append(bolt, dt);
-      } else {
-        const ic = document.createElement('div'); ic.className = 'ic'; ic.dataset.n = coinsFor(v).length;
-        for (const src of coinsFor(v)) { const im = new Image(); im.src = src; im.alt = ''; im.draggable = false; if (src.includes('/b1000')) im.className = 'bill'; ic.appendChild(im); }
-        const dv = document.createElement('span'); dv.className = 'dv'; dv.textContent = money(v);
-        c.append(dn, ic, dv);
-      }
-      grid.appendChild(c);
-    });
+    if (dayN > RACHA.fijoDesde) grid.appendChild(dayCard(dayN, dayN, info.claimable));
+    else for (let d = start; d < start + 7; d++) grid.appendChild(dayCard(d, dayN, info.claimable));
     paintDailyButton();
     if (!pocketBusy) setPocket(balance());
     const pi = document.querySelector('#coinChip .ci'); if (pi && pi.getAttribute('src')) $('pocketImg').src = pi.getAttribute('src');   // en el bolsillo se ve la pelota que llevas puesta
@@ -2561,7 +2640,7 @@
       : info.n > 0 ? `Llevas ${info.broken ? 0 : info.n} día${info.n === 1 ? '' : 's'} seguido${info.n === 1 ? '' : 's'} 🔥` : 'Entra cada día y gana premios.';
     const go = $('dailyGo');
     if (streakBusy) { go.disabled = true; go.textContent = 'Reclamando…'; }
-    else if (info.claimable) { go.disabled = false; const v = RACHA.dias[(info.nextN - 1) % RLEN]; go.textContent = v > 0 ? `Reclamar ${money(v)}` : 'Reclamar bono ⚡'; }
+    else if (info.claimable) { go.disabled = false; const v = rachaPago(info.nextN); go.textContent = v > 0 ? `Reclamar ${money(v)}` : `Reclamar ×${rachaMult(info.nextN)} 🤑`; }
     else { go.disabled = true; go.textContent = `Vuelve en ${fmtWait(info.toNext)}`; }
   }
   let dailyFrom = null;
@@ -2583,7 +2662,7 @@
   const setPocket = n => { $('pocketNum').textContent = money(n); };
   const bumpPocket = () => { const e = $('pocket'); e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); };
   const reduced = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function celebrate(rect, v, bal0, bal1) {
+  function celebrate(rect, v, bal0, bal1, mx) {
     const pocket = $('pocket');
     if (!rect || reduced() || !pocket.animate) { pocketBusy = false; setPocket(bal1); bumpPocket(); return; }
     pocketBusy = true; setPocket(bal0);
@@ -2591,12 +2670,12 @@
     const rayo = v <= 0, N = rayo ? 8 : Math.min(14, Math.max(6, Math.round(v / 60))), srcs = rayo ? [] : coinsFor(v);
     let shown = bal0, llegadas = 0;
     // «+$300» grande que sube desde la tarjeta
-    const g = document.createElement('div'); g.className = 'gain'; g.textContent = rayo ? '⚡ ¡Pesos dobles!' : '+' + money(v); document.body.appendChild(g);
+    const g = document.createElement('div'); g.className = 'gain'; g.textContent = rayo ? `🤑 ¡Multiplicador ×${mx || 2}!` : '+' + money(v); document.body.appendChild(g);
     g.style.left = cx - g.offsetWidth / 2 + 'px'; g.style.top = cy - 26 + 'px';
     g.animate([{ transform: 'translateY(10px) scale(.3)', opacity: 0 }, { transform: 'translateY(-6px) scale(1.25)', opacity: 1, offset: .22 }, { transform: 'translateY(-14px) scale(1)', opacity: 1, offset: .6 }, { transform: 'translateY(-90px) scale(.9)', opacity: 0 }], { duration: 1500, easing: 'ease-out' }).onfinish = () => g.remove();
     for (let i = 0; i < N; i++) {
       const el = rayo ? document.createElement('span') : new Image();
-      if (rayo) { el.textContent = '⚡'; el.className = 'fly bolt'; } else { el.src = srcs[i % srcs.length]; el.alt = ''; el.className = 'fly'; }
+      if (rayo) { el.textContent = i % 2 ? '💸' : '🤑'; el.className = 'fly bolt'; } else { el.src = srcs[i % srcs.length]; el.alt = ''; el.className = 'fly'; }
       const sx = cx + (Math.random() - .5) * rect.width * .6, sy = cy + (Math.random() - .5) * rect.height * .3;
       el.style.left = sx - 17 + 'px'; el.style.top = sy - 17 + 'px'; document.body.appendChild(el);
       const dx = tx - sx, dy = ty - sy;
@@ -2619,11 +2698,11 @@
         const [wr, kr] = await Promise.all([http(`${DB}/wallets/${uid}.json?auth=${tok}`), http(`${DB}/streaks/${uid}.json?auth=${tok}`)]);
         if (!wr.ok || !kr.ok) return wr.status === 401 || wr.status === 403 || kr.status === 401 || kr.status === 403 ? 'denied' : 'error';
         const w = (await wr.json()) || {}, c0 = +w.c || 0, sp0 = +w.sp || 0, kv = await kr.json();
-        streak = kv && typeof kv.n === 'number' ? { n: +kv.n, t: +kv.t || 0, bx: +kv.bx || 0 } : null;       // manda lo que dice el servidor
+        streak = parseStreak(kv);                                                // manda lo que dice el servidor
         const info = streakInfo(); if (!info.claimable) return 'ya';
-        const n = info.nextN, v = RACHA.dias[(n - 1) % RLEN], body = {};
+        const n = info.nextN, v = rachaPago(n), m = rachaMult(n), body = {};
         body[`streaks/${uid}/n`] = n; body[`streaks/${uid}/t`] = SV;
-        if ((n - 1) % RLEN === RLEN - 1) body[`streaks/${uid}/bx`] = SV;        // día 7: empieza el «pesos dobles»
+        if (m) body[`streaks/${uid}/x${m}`] = (streak && streak.x[m] || 0) + 1;     // día de multiplicador: se guarda uno (lo activas tú con el botón del inicio)
         if (v > 0) { body[`wallets/${uid}/c`] = c0 + v; body[`wallets/${uid}/sp`] = sp0; }       // la cartera nueva necesita c y sp
         const r = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(body) });
         if (r.ok) { if (v > 0) { wallet.c = c0 + v; saveWallet(); } await pullStreak(); renderCoins(); return 'ok'; }
@@ -2757,13 +2836,13 @@
   }
   async function onDailyGo() {
     if (dailyTab !== 'streak') { onMissGo(); return; }
-    const before = streakInfo(), n = before.nextN, v = RACHA.dias[(n - 1) % RLEN];
+    const before = streakInfo(), n = before.nextN, v = rachaPago(n), mx = rachaMult(n);
     const todayEl = $('dailyGrid').querySelector('.dcard.today'), rect = todayEl ? todayEl.getBoundingClientRect() : null, bal0 = balance();
     const res = await claimStreak();
     if (res === 'ok') {
       pocketBusy = true;                                                          // el bolsillo no salta al total nuevo: lo suben las monedas al llegar
-      renderStreak(); renderDaily({ t: v > 0 ? `¡Listo! +${money(v)} · racha de ${n} día${n === 1 ? '' : 's'} 🔥` : '¡Listo! Pesos dobles durante 10 minutos ⚡', ok: true });
-      celebrate(rect, v, bal0, balance());
+      renderStreak(); renderDaily({ t: v > 0 ? `¡Listo! +${money(v)} · racha de ${n} día${n === 1 ? '' : 's'} 🔥` : `¡Listo! Guardaste un multiplicador ×${mx} 🤑💸 Actívalo en el inicio cuando quieras (dura ${Math.round(RACHA.dobleMs / 60000)} min)`, ok: true });
+      celebrate(rect, v, bal0, balance(), mx);
       [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .14, 'triangle', .12), 900 + i * 90)); vib([20, 30, 20, 30, 50]);
     } else if (res === 'ya') { renderStreak(); renderDaily({ t: 'Ya reclamaste el premio de hoy.', ok: true }); }
     else renderDaily({ t: res === 'denied' ? 'Firebase no permitió reclamar. Revisa la fecha y la hora de tu celular y que estén publicadas las reglas nuevas.' : 'Sin conexión. Inténtalo de nuevo.', ok: false });
@@ -3243,7 +3322,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v53';
+  const BUILD = 'v54';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -3314,9 +3393,9 @@
         : 'Firebase no permitió registrar la partida: hay que publicar las reglas nuevas (firebase-rules.json).';
       $('bestResult').textContent = `Tu mejor puntaje: ${player.best}`; $('diagBtn').hidden = false; return;
     }
-    const mult = boostMult(rn.s, streak && streak.bx), pp = p * mult;                              // «pesos dobles» de la racha: vale si la partida empezó dentro de los 10 minutos
+    const mult = boostMult(rn.s, streak && streak.bx, streak && streak.bm), pp = p * mult;          // multiplicador de la racha: vale si la partida empezó dentro de los 10 minutos de activarlo
     pending = { s: rn.s, h: hp, r: rn.r, m: mult, t: Math.round(elapsed * 1000) }; savePending(); renderCoins();          // t = lo que duró de verdad la partida (el «Aguantaste» de abajo): es lo que se suma al tiempo jugado
-    if (mult === 2) $('finalSub').textContent += '\n⚡ ¡Pesos dobles de tu racha!';
+    if (mult > 1) $('finalSub').textContent += `\n🤑 ¡Pesos ×${mult} de tu multiplicador!`;
     countUp(cl, pp, n => `+${money(n)}`);
     st.textContent = 'Guardando tu partida…';
     for (let i = 0; i < 4; i++) {

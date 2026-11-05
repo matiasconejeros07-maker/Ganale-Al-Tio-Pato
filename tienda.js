@@ -25,8 +25,12 @@ window.TIENDA = {
         ['e1', 'e', 1, 100], ['c1', 'c', 1, 100], ['v1', 'v', 1, 300]
       ]
     },
-    // Racha diaria: entrar cada día da premios. dias = pesos del día 1 al 7 (el 7 no da pesos: da «pesos dobles» durante dobleMs) · el día cambia a medianoche de Chile en horario de verano (huso -3)
-    racha: { dias: [100, 200, 300, 400, 500, 1000, 0], dobleMs: 600000, huso: -3 } },
+    // Racha diaria: entrar cada día da premios y la racha sigue mientras no te saltes un día. El día cambia a medianoche de Chile en horario de verano (huso -3).
+    // dias = pesos del día 1 al 27 (0 = ese día regala un multiplicador, ver mult): semana 1: $100 a $500 y el billete de $1.000 · semana 2: de 1 a 6 monedas de $500 · semana 3: de 1 a 6 billetes de $1.000 ·
+    //        semana 4: $2.000 a $8.000. Desde el día `fijoDesde` en adelante se paga `fijo` cada día (el billete de $10.000).
+    // mult = [día, multiplicador]: ese día se guarda un multiplicador en la cuenta; NO se activa solo: el jugador lo activa con un botón y dura dobleMs (las partidas que EMPIEZAN en ese lapso pagan ×N).
+    racha: { dias: [100, 200, 300, 400, 500, 1000, 0,   500, 1000, 1500, 2000, 2500, 3000, 0,   1000, 2000, 3000, 4000, 5000, 6000, 0,   2000, 3000, 4000, 5000, 6000, 8000],
+      fijo: 10000, fijoDesde: 28, mult: [[7, 2], [14, 3], [21, 4]], dobleMs: 600000, huso: -3 } },
 
   // Foto de perfil = un emblema que cada jugador arma en el editor: forma, colores de fondo y borde, diseño y hasta 5 símbolos puestos donde quiera.
   // Se guarda en 25 caracteres como máximo («e» + forma + fondo + borde + diseño + 4 por símbolo), así pesa casi nada en la base de datos y se dibuja con CSS (sin imágenes).

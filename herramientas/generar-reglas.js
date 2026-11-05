@@ -32,8 +32,11 @@ const STR = "newData.parent().parent().parent().child('streaks').child($uid)";  
 const STR_ROOT = "root.child('streaks').child($uid)";                                    // la racha de esta cuenta, vista desde una partida
 // n que le toca a la racha: la primera vez 1 · al día siguiente del último cobro n+1 · después de saltarse un día, 1 · el mismo día, -1 (no vale)
 const NEXT_N = "(data.parent().child('n').exists() ? (" + `${TODAY} === ${dayOf("data.parent().child('t').val()")} + 1 ? data.parent().child('n').val() + 1 : (${TODAY} > ${dayOf("data.parent().child('t').val()")} ? 1 : -1)` + ") : 1)";
-const rewardExp = n => '(' + R.dias.map((v, i) => `((${n} - 1) % ${R.dias.length}) === ${i} ? ${v}`).join(' : ') + ' : 0)';
-const BOOST = `(${STR_ROOT}.child('bx').exists() && ${P_ROOT_S()} >= ${STR_ROOT}.child('bx').val() && ${P_ROOT_S()} < ${STR_ROOT}.child('bx').val() + ${R.dobleMs} ? 2 : 1)`;
+// pesos del día n de la racha: la tabla de los primeros días (los de multiplicador valen 0) y, desde `fijoDesde`, el pago fijo de cada día
+const rewardExp = n => `(${n} >= ${R.fijoDesde} ? ${R.fijo} : (` + R.dias.map((v, i) => [v, i]).filter(([v]) => v > 0).map(([v, i]) => `${n} === ${i + 1} ? ${v}`).join(' : ') + ' : 0))';
+const MULTS = R.mult.map(([d, m]) => m);                                                    // multiplicadores que se pueden guardar y activar (2, 3, 4)
+// multiplicador de una partida: si empezó dentro de los dobleMs de una activación (bx), paga ×bm (las activaciones antiguas, sin bm, eran ×2)
+const BOOST = `(${STR_ROOT}.child('bx').exists() && ${P_ROOT_S()} >= ${STR_ROOT}.child('bx').val() && ${P_ROOT_S()} < ${STR_ROOT}.child('bx').val() + ${R.dobleMs} ? (${STR_ROOT}.child('bm').exists() ? ${STR_ROOT}.child('bm').val() : 2) : 1)`;
 function P_ROOT_S() { return "newData.parent().child('s').val()"; }
 // contador de puestos (hist): SC = tu fila de scores antes de la escritura · NS = tu fila de scores después
 const SC = "root.child('scores').child(auth.uid)", NS = "newData.parent().parent().child('scores').child(auth.uid)";
@@ -86,6 +89,8 @@ const NEWDC = "(newData.parent().parent().parent().child('stats').child($uid).ch
 const OLDDC = "(root.child('stats').child($uid).child('dc').exists() ? root.child('stats').child($uid).child('dc').val() : 0)";
 const MIS_SUM = '(' + M.logros.map(([id, , , premio]) => `(${NEWM}.child('${id}').exists() && !${OLDM}.child('${id}').exists() ? ${premio} : 0)`).join(' + ') + ')';
 const DIA_SUM = '(' + M.dia.map((x, k) => `(${bit(NEWDC, k)} && !${bit(OLDDC, k)} ? ${x.premio} : 0)`).join(' + ') + ')';
+const INV_OLD = m => `(data.exists() ? data.val() : 0)`;                                      // (se usa dentro de x<m>: su valor anterior)
+const INV_DEC = m => `(${P}.child('x${m}').exists() && data.parent().child('x${m}').exists() && ${P}.child('x${m}').val() + 1 === data.parent().child('x${m}').val())`;       // desde bx: ¿el contador x<m> bajó en 1 en esta escritura?
 const P = "newData.parent()";
 const rules = { rules: {
   '.read': false, '.write': false,
@@ -155,15 +160,21 @@ const rules = { rules: {
     }
   },
 
-  // ---- racha diaria: n = días seguidos · t = hora del último cobro (la pone el servidor) · bx = hora en que empezó el último «pesos dobles» (día 7).
-  //      Cada cobro mueve n y t juntos al valor exacto que toca; la recompensa en pesos la valida la cartera (c) y no se puede borrar la racha para cobrar otra vez. ----
+  // ---- racha diaria: n = días seguidos · t = hora del último cobro (la pone el servidor) · x2/x3/x4 = multiplicadores guardados que aún no se activaron ·
+  //      bx = hora en que se activó el último multiplicador · bm = cuál era (×2, ×3 o ×4; sin bm = ×2, de las activaciones antiguas).
+  //      Cada cobro mueve n y t juntos al valor exacto que toca; los días de multiplicador (7, 14, 21) suman 1 a su contador en esa misma escritura. Activar uno resta 1 a su contador
+  //      (solo si hay) y pone bx = ahora y bm: solo se puede activar otro cuando el anterior ya venció. La recompensa en pesos la valida la cartera (c); no se puede borrar la racha para cobrar otra vez. ----
   streaks: { $uid: {
     '.read': 'auth != null && auth.uid === $uid',
     '.write': 'auth != null && auth.uid === $uid && newData.exists()',
     '.validate': "newData.hasChildren(['n', 't'])",
     n: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && newData.val() <= 100000 && newData.val() === ${NEXT_N} && ${P}.child('t').val() === now` },
     t: { '.validate': `newData.isNumber() && newData.val() === now && ${P}.child('n').val() === ${NEXT_N}` },
-    bx: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (newData.val() === now && ${P}.child('t').val() === now && (${P}.child('n').val() - 1) % ${R.dias.length} === ${R.dias.length - 1}))` },
+    bx: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (newData.val() === now && (!data.exists() || data.val() + ${R.dobleMs} <= now) && (` + MULTS.map(m => `(${P}.child('bm').val() === ${m} && ${INV_DEC(m)})`).join(' || ') + '))) ' },
+    bm: { '.validate': `newData.isNumber() && (newData.val() === data.val() || (${P}.child('bx').val() === now && (` + MULTS.map(m => `newData.val() === ${m}`).join(' || ') + '))) ' },
+    ...Object.fromEntries(R.mult.map(([dia, m]) => ['x' + m, { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 99 && (newData.val() === ${INV_OLD(m)}`
+      + ` || (newData.val() === ${INV_OLD(m)} + 1 && ${P}.child('n').val() === ${dia} && ${P}.child('t').val() === now)`
+      + ` || (newData.val() === ${INV_OLD(m)} - 1 && ${P}.child('bm').val() === ${m} && ${P}.child('bx').val() === now))` }])),
     $other: { '.validate': false }
   } },
 

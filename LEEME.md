@@ -172,7 +172,7 @@ Revisión hecha con las skills de seguridad y calidad de jeffallan (escaneo est�
   4. *App Check* (reCAPTCHA Enterprise/Play Integrity/App Attest) cuando lo subas a las tiendas: frena a quien llama a Firebase desde fuera del juego.
 - **Límite que no se puede cerrar sin un servidor:** un programa que juegue perfecto (bot) puede llegar a los 500 rebotes; las reglas solo garantizan que no se pueda llegar más rápido que 1 rebote cada 0,45 s y que los pesos coincidan con la partida.
 
-**Pruebas** (carpeta `pruebas/`): `cd pruebas && npm install && npx playwright install chromium && npm test`. `reglas.test.js` prueba las reglas de Firebase con el simulador oficial (265 casos, con la racha, los pesos dobles y el emblema), `racha.test.js` y `perfil.test.js` prueban la racha y el emblema de punta a punta (el juego real contra un Firebase de mentira con las reglas reales) y `humo.test.js` abre el juego en Chromium y comprueba que cargue sin errores, que la CSP no bloquee nada, que el campo se adapte a cada forma de celular, el aviso de ventana chica, el multitáctil, el teclado y que los 8 personajes carguen. `.github/workflows/pruebas.yml` las corre solas en cada cambio.
+**Pruebas** (carpeta `pruebas/`): `cd pruebas && npm install && npx playwright install chromium && npm test`. `reglas.test.js` prueba las reglas de Firebase con el simulador oficial (más de 450 casos, con la racha y sus multiplicadores, el emblema, las misiones y el grupo VIP), `racha.test.js` y `perfil.test.js` prueban la racha y el emblema de punta a punta (el juego real contra un Firebase de mentira con las reglas reales) y `humo.test.js` abre el juego en Chromium y comprueba que cargue sin errores, que la CSP no bloquee nada, que el campo se adapte a cada forma de celular, el aviso de ventana chica, el multitáctil, el teclado y que los 8 personajes carguen. `.github/workflows/pruebas.yml` las corre solas en cada cambio.
 
 ## Qué hace el marcador
 
@@ -215,21 +215,25 @@ Para agregar otro personaje: prepara sus dos imágenes, añade una entrada en `c
 
 Con cuenta, al entrar cada día aparece la **Racha diaria** (también desde el chip 🔥 del inicio, con un punto rojo cuando hay premio):
 
-| Día | Premio |
+| Días | Premio |
 |---|---|
-| 1 | $100 |
-| 2 | $200 |
-| 3 | $300 |
-| 4 | $400 |
-| 5 | $500 |
+| 1 a 5 | $100, $200, $300, $400 y $500 |
 | 6 | $1.000 |
-| 7 | ⚡ **Pesos dobles durante 10 minutos** (las partidas que EMPIEZAN en ese lapso pagan el doble de pesos; los rebotes del marcador no se duplican) |
+| **7** | 🤑💸 **Multiplicador ×2** (se guarda: lo activas tú) |
+| 8 a 13 | de 1 a 6 monedas de $500: $500, $1.000, $1.500, $2.000, $2.500 y $3.000 |
+| **14** | 🤑💸 **Multiplicador ×3** |
+| 15 a 20 | de 1 a 6 billetes de $1.000: $1.000 a $6.000 |
+| **21** | 🤑💸 **Multiplicador ×4** |
+| 22 a 27 | $2.000, $3.000, $4.000, $5.000, $6.000 y $8.000 |
+| **28 en adelante** | **$10.000 cada día** (el billete de $10.000) |
 
-- Los dibujos de cada día son los pesos que regalan: $100 = una moneda de $100, $200 = dos monedas de $100, $300 = tres, $400 = cuatro, $500 = la moneda de $500 y $1.000 = el billete de $1.000 (se calculan solos a partir del premio, con monedas y billetes de `skins/`).
-- Si pasas un día entero sin entrar, la racha vuelve al día 1. Después del día 7 el ciclo empieza otra vez (día 8 = premio del día 1) y cada séptimo día vuelven los pesos dobles.
-- **El día cambia a medianoche de Chile en horario de verano** (`huso: -3` en `eco.racha` de `tienda.js`; en invierno es una hora antes). Los premios y el tiempo de los pesos dobles también están en `eco.racha`; si los cambias, ejecuta `node herramientas/generar-reglas.js` y vuelve a pegar `firebase-rules.json`.
-- **Lo valida el servidor** (reglas de Firebase, nodo `streaks/<uid>`): el día y la hora los pone Firebase, la racha solo avanza al valor exacto que toca, el premio en pesos tiene que coincidir con la tabla, la racha no se puede borrar para cobrar de nuevo, y el pago doble de una partida solo vale si empezó dentro de los 10 minutos del último día 7. Cambiar el reloj del celular no sirve: si no coincide, Firebase lo rechaza.
-- **Hay que publicar las reglas nuevas** (`firebase-rules.json`). Mientras no estén publicadas, el juego funciona igual pero la racha no aparece.
+- **La racha no se reinicia cada 7 días:** sigue sumando (día 8, 9, 10…) mientras no te saltes un día. La pantalla muestra la semana de hoy (7 días); pasado el día 28 queda la tarjeta de los $10.000 diarios.
+- **Los multiplicadores (7, 14 y 21) no se activan solos:** al reclamarlos se **guardan** en tu cuenta (`x2`, `x3`, `x4`) y en el inicio aparece un botón **«🤑 Activar ×N · 10 min»** por cada uno que tengas. Al tocarlo empieza el tiempo (se ve el cartel «🤑 Pesos ×N» con la cuenta regresiva) y **las partidas que EMPIEZAN en ese lapso pagan ×N** (los rebotes del marcador no se multiplican; se suma a las «Monedas dobles» del rebote 100). No se puede activar otro mientras uno corre; los guardados no vencen. Los días 7, 14 y 21 muestran 🤑💸 animados en vez del rayo ⚡.
+- Los dibujos de cada día son lo que regalan: monedas y billetes de `skins/` (día 9 = dos monedas de $500, día 16 = dos billetes de $1.000; si son más de 4 monedas o 3 billetes se dibujan 4 o 3 con una insignia «×5», «×6»; de la semana 4 en adelante son los billetes que sumen el premio).
+- Si pasas un día entero sin entrar, la racha vuelve al día 1 (los multiplicadores guardados se conservan).
+- **El día cambia a medianoche de Chile en horario de verano** (`huso: -3` en `eco.racha` de `tienda.js`; en invierno es una hora antes). Todo está en `eco.racha`: la tabla `dias` (días 1 a 27; 0 = día de multiplicador), `fijo`/`fijoDesde` (los $10.000 diarios desde el día 28), `mult` (`[día, ×N]`) y `dobleMs` (la duración). Si cambias algo, ejecuta `node herramientas/generar-reglas.js` y vuelve a pegar `firebase-rules.json`.
+- **Lo valida el servidor** (reglas de Firebase, nodo `streaks/<uid>`): el día y la hora los pone Firebase, la racha solo avanza al valor exacto que toca, el premio en pesos tiene que coincidir con la tabla (también el de los $10.000), los multiplicadores solo se guardan el día que tocan (uno por reclamo) y activar uno exige tenerlo guardado y gastarlo en esa misma escritura, sin otro activo; la racha no se puede borrar para cobrar de nuevo y el pago de una partida solo vale ×N si empezó dentro de los 10 minutos de la activación (las activaciones antiguas, sin `bm`, siguen valiendo ×2). Cambiar el reloj del celular no sirve: si no coincide con el de Firebase, el servidor rechaza el cobro.
+- **Hay que publicar las reglas nuevas** (`firebase-rules.json`). Mientras no estén publicadas, el juego funciona igual pero la racha no aparece o no deja reclamar los días nuevos.
 
 ## Foto de perfil: el emblema (editor libre)
 
