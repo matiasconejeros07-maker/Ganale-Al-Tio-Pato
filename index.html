@@ -121,7 +121,9 @@
   @keyframes wring { from { transform: scale(.4); opacity: 1; } to { transform: scale(7); opacity: 0; } }
   #paddle.wide { filter: drop-shadow(0 0 9px #7be07b); }
   #pups { position: absolute; left: 8px; top: 40%; z-index: 5; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
-  #pups span { background: rgba(0, 0, 0, .58); color: #fff; font-weight: 800; font-size: 13px; line-height: 1; padding: 4px 9px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  #pups button { pointer-events: auto; display: flex; align-items: center; gap: 5px; min-height: 38px; padding: 0 12px; border: 0; border-radius: 999px; background: rgba(0, 0, 0, .58); color: #fff; font-family: inherit; font-weight: 800; font-size: 14px; line-height: 1; font-variant-numeric: tabular-nums; cursor: pointer; touch-action: none; -webkit-tap-highlight-color: transparent; }
+  #pups button i { font-style: normal; font-size: 11px; opacity: .65; margin-left: 2px; }
+  #pups button:active { transform: scale(.93); background: rgba(0, 0, 0, .78); }
   #field.boxed { box-shadow: 0 0 0 1px rgba(255, 255, 255, .4), 0 0 0 100vmax rgba(0, 0, 0, .2); }
   body.end #field.boxed, body:not(.ingame) #field.boxed { box-shadow: none; }                /* el marco solo se ve mientras juegas */
   #arena.jolt { animation: jolt .16s linear; }
@@ -1010,7 +1012,7 @@
       <div id="duck" aria-hidden="true" data-face="0"><div class="rig" id="rig"></div><div id="bubble"></div></div>
       <div id="target"><div class="ball"></div></div>
       <div id="mult" aria-hidden="true"><b></b><span></span><small></small></div>
-      <div id="pups" aria-hidden="true"></div>
+      <div id="pups"></div>
       <div id="paddle" aria-hidden="true"></div>
       <div id="hint" aria-hidden="true">👆 Arrastra el dedo para mover la barra</div>
     </div>
@@ -1261,7 +1263,7 @@
   let x = 0, y = 0, vx = 0, vy = 0, last = 0;
   let px = 0, pw = 140, basePw = 140, keyDir = 0, dragX = null, dragId = null;
   let duckX = 0, duckShow = 0, prevShow = 0, bubbleTimer = null, bubbleW = 0, lastFace = -1, lastSay = '';
-  let pup = null, pupFx = { slow: 0, freeze: 0, wide: 0 }, pupWait = 8, slowK = 1, padBoost = 1, pupHud = 0, pupOn = { slow: false, freeze: false, wide: false };      // potenciadores (ver más abajo)
+  let pup = null, pupFx = { slow: 0, freeze: 0, wide: 0 }, pupNext = 12, slowK = 1, padBoost = 1, pupHud = 0, pupOn = { slow: false, freeze: false, wide: false };      // potenciadores (ver más abajo)
   let cdTimer = null, audio = null;
   let playT0 = 0, playD0 = 0, lastHitT = 0, tampered = false;
   const MIN_HIT_MS = 300;   // el ciclo real más corto posible es ~490 ms (ver LEEME)
@@ -2308,12 +2310,16 @@
   // El Pato NO sigue la pelota: se queda quieto mientras ella se aleja y solo sale a recibirla cuando vuelve (calcula dónde va a llegar y se desplaza justo a tiempo, sin pasarse ni llegar tarde).
   /* ---------- potenciadores: burbujas que flotan en la cancha; al tocarlas con la pelota se activa su efecto ----------
      Todos duran 10 s. 🫧 Burbujas: la pelota baja al 60% y suben burbujas de jabón · ❄️ Hielo cristal: la pelota baja al 40% y el fondo se cubre de cristales y escarcha · 📏 Barra grande: la barra mide un 50% más.
-     La idea es hacer más rebotes con ellos. Aparecen desde el rebote 8, una a la vez (cada 10 a 18 s) y la burbuja dura 8 s en pantalla. Solo ayudan a seguir vivo: no cambian lo que paga la partida y las reglas de Firebase ya aceptan partidas más lentas. */
+     La idea es hacer más rebotes con ellos, pero que sean un privilegio y no una costumbre: salen por REBOTES (no por tiempo). Del rebote 1 al 55 sale una cada 10 a 14 rebotes (siempre al menos 3); de ahí en adelante, una cada 10, 15 o 20 rebotes.
+     Nunca sale otra mientras haya una burbuja flotando o un efecto activo, ni tampoco justo cuando termina uno (hay que dar al menos 3 rebotes más). La burbuja dura 8 s en pantalla. Solo ayudan a seguir vivo: no cambian lo que paga la partida y las reglas de Firebase ya aceptan partidas más lentas. */
   const PUPS = { slow: { em: '🫧', n: '¡Burbujas!', ms: 10000, k: .6, w: 40 }, freeze: { em: '❄️', n: '¡Hielo cristal!', ms: 10000, k: .4, w: 30 }, wide: { em: '📏', n: '¡Barra grande!', ms: 10000, w: 30 } };
-  const PUP_FIRST = 8, PUP_LIFE = 8;
+  const PUP_LIFE = 8, PUP_EARLY = 55, PUP_BREATH = 3;
+  const nextPupAt = h => { const e = 10 + Math.floor(Math.random() * 5); return h + (h + e <= PUP_EARLY ? e : [10, 15, 20][Math.floor(Math.random() * 3)]); };   // en qué rebote sale la siguiente (desde el h en que salió la anterior)
+  const pupBusy = () => pupFx.slow > 0 || pupFx.freeze > 0 || pupFx.wide > 0;
+  const pupRest = () => { pupNext = Math.max(pupNext, hits + PUP_BREATH); };    // al terminar (o apagar) un efecto no sale otra al tiro: al menos 3 rebotes de respiro
   function removePup() { if (pup) { pup.el.remove(); pup = null; } }
   function clearPups() {                                                       // al empezar y al terminar la partida: nada queda activo
-    removePup(); pupFx = { slow: 0, freeze: 0, wide: 0 }; slowK = 1; padBoost = 1; pupWait = 6 + Math.random() * 4; pupHud = 0; pupOn = { slow: false, freeze: false, wide: false };
+    removePup(); pupFx = { slow: 0, freeze: 0, wide: 0 }; slowK = 1; padBoost = 1; pupNext = nextPupAt(0); pupHud = 0; pupOn = { slow: false, freeze: false, wide: false };
     field.classList.remove('frozen', 'thaw', 'bubbly', 'thaw2'); paddle.classList.remove('wide'); $('pups').textContent = ''; $('fxice').textContent = ''; $('fxbub').textContent = '';
   }
   function spawnPup(type, ax, ay) {                                            // ax, ay: dónde (si no, al azar entre el Pato y la barra, lejos de la pelota)
@@ -2333,9 +2339,19 @@
   }
   function paintPupHud() {
     const box = $('pups'); let html = '';
-    for (const k of ['slow', 'freeze', 'wide']) if (pupFx[k] > 0) html += `<span>${PUPS[k].em} ${Math.ceil(pupFx[k] / 1000)}</span>`;
+    for (const k of ['slow', 'freeze', 'wide']) if (pupFx[k] > 0) html += `<button type="button" data-k="${k}" tabindex="-1" aria-label="Apagar ${PUPS[k].n.replace(/[¡!]/g, '')}">${PUPS[k].em} ${Math.ceil(pupFx[k] / 1000)}<i>✕</i></button>`;
     if (box.innerHTML !== html) box.innerHTML = html;
   }
+  function offPup(k) {                                                         // el jugador apaga un efecto antes de tiempo (el juego vuelve a la normalidad con la transición de siempre)
+    if (!(pupFx[k] > 0)) return;
+    pupFx[k] = 0; pupRest(); paintPupHud(); spawn('pop gold', 64, H * .4 - 14, 'Apagado'); tone(330, .1, 'triangle', .1); vib(10);
+  }
+  $('pups').addEventListener('pointerdown', e => {                             // (se usa pointerdown y no click: el cuadrito se repinta cada segundo y un click podría perderse)
+    e.stopPropagation();                                                       // el toque no empieza a arrastrar la barra
+    if (!e.isTrusted) return;
+    const b = e.target.closest && e.target.closest('button[data-k]'); if (!b) return;
+    e.preventDefault(); offPup(b.dataset.k);
+  });
   function iceOn() {                                                           // copos que caen sobre el fondo de cristal
     const box = $('fxice'); box.textContent = ''; if (document.body.classList.contains('lite')) return;
     for (let i = 0; i < 14; i++) {
@@ -2356,14 +2372,14 @@
   }
   function wideRing() { const r = document.createElement('div'); r.className = 'widering'; r.style.left = px + 'px'; r.style.top = (paddleTop() + PADDLE_H / 2) + 'px'; field.appendChild(r); setTimeout(() => r.remove(), 850); }
   function pupTick(dt) {
-    for (const k in pupFx) if (pupFx[k] > 0) pupFx[k] = Math.max(0, pupFx[k] - dt * 1000);
+    for (const k in pupFx) if (pupFx[k] > 0) { pupFx[k] = Math.max(0, pupFx[k] - dt * 1000); if (pupFx[k] === 0) pupRest(); }          // al terminar un efecto, antes de decidir nada más
     let kT = 1; for (const k in PUPS) if (pupFx[k] > 0 && PUPS[k].k) kT = Math.min(kT, PUPS[k].k);          // con dos a la vez manda el más lento
     slowK += (kT - slowK) * Math.min(1, dt * 6);
     padBoost += ((pupFx.wide > 0 ? 1.5 : 1) - padBoost) * Math.min(1, dt * 6);
     if (pup) { pup.life -= dt; if (pup.life < 2 && !pup.el.classList.contains('fade')) pup.el.classList.add('fade'); if (pup.life <= 0) removePup(); }
-    else if (hits >= PUP_FIRST) {
-      pupWait -= dt;
-      if (pupWait <= 0) { let r = Math.random() * 100, t = 'slow'; for (const k in PUPS) { if (r < PUPS[k].w) { t = k; break; } r -= PUPS[k].w; } spawnPup(t); pupWait = 10 + Math.random() * 8; }
+    else if (hits >= pupNext && !pupBusy()) {                                     // toca otra (por rebotes), pero nunca con un efecto activo
+      let r = Math.random() * 100, t = 'slow'; for (const k in PUPS) { if (r < PUPS[k].w) { t = k; break; } r -= PUPS[k].w; }
+      spawnPup(t); pupNext = nextPupAt(hits);
     }
     pupHud += dt;
     for (const k of ['slow', 'freeze', 'wide']) {                                // al empezar y al terminar cada efecto
@@ -2497,6 +2513,7 @@
   function movePaddle(e) {
     if (!e.isTrusted) return;
     if (state !== 'play' && state !== 'countdown') return;
+    if (e.pointerType === 'mouse' && e.target && e.target.closest && e.target.closest('#pups')) return;      // con el mouse, pasar por encima de los cuadritos de los efectos no mueve la barra
     const r = field.getBoundingClientRect();
     if (e.pointerType === 'mouse') px = e.clientX - r.left;
     else if (dragX !== null && e.pointerId === dragId) px += (e.clientX - dragX) * 1.25 * K;     // el mismo recorrido del dedo cruza el campo en cualquier ventana (una chica no exige menos que una grande)
@@ -3721,7 +3738,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v60';
+  const BUILD = 'v61';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];

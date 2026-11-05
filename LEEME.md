@@ -291,7 +291,14 @@ Cada jugador arma su **emblema** (tocando su nombre en el inicio, o en Ajustes �
 
 ## Potenciadores en la partida (burbujas)
 
-Desde el **rebote 8** aparece en la cancha, de vez en cuando (cada 10 a 18 s), **una burbuja** flotando entre el Pato y tu barra. Dura 8 s en pantalla (parpadea los últimos 2) y se activa cuando **la pelota la toca** (así que conviene apuntar con la barra: el ángulo del rebote depende de dónde pega la pelota en ella). Solo hay una a la vez. **Todos los efectos duran 10 s** y están pensados para que hagas más rebotes:
+Las burbujas flotan en la cancha, entre el Pato y tu barra, y se activan cuando **la pelota las toca** (así que conviene apuntar con la barra: el ángulo del rebote depende de dónde pega la pelota en ella). Son un **privilegio, no una costumbre**: salen por **rebotes** (no por tiempo) y de a una:
+
+- **Del rebote 1 al 55:** la primera sale entre los rebotes 10 y 14, y después una cada 10 a 14 rebotes. Siempre salen **al menos 3** en ese tramo (lo normal son 4).
+- **Del rebote 55 en adelante:** una cada **10, 15 o 20 rebotes** (al azar, promedio 15).
+- **Nunca otra mientras flota una burbuja o hay un efecto activo, y tampoco al tiro cuando termina uno:** después de que acaba un efecto (o lo apagas) hay que dar **al menos 3 rebotes más** para que pueda salir la siguiente.
+- La burbuja dura 8 s en pantalla (parpadea los últimos 2). Todas las partidas empiezan de cero.
+
+Todos los efectos duran **10 s** y están pensados para que hagas más rebotes:
 
 | Burbuja | Efecto | Animación | Probabilidad |
 |---|---|---|---|
@@ -299,11 +306,11 @@ Desde el **rebote 8** aparece en la cancha, de vez en cuando (cada 10 a 18 s), *
 | ❄️ **Hielo cristal** | La pelota baja al **40%** (lenta, pero sin detenerse) | Destello blanco y el fondo se cubre de cristales de hielo y escarcha, con copos que caen; en el último segundo se derrite | 30% |
 | 📏 **Barra grande** | La barra y su zona de golpe miden un **50% más** | Brillo verde y un aro que se expande desde la barra | 30% |
 
-Los efectos activos se ven como cuadritos con la cuenta regresiva a la izquierda de la cancha (🫧 8 · ❄️ 9 · 📏 6) y se limpian (burbujas, copos y hielo incluidos) al empezar y al terminar cada partida. Si dos efectos de lentitud coinciden, manda el más lento. En celulares que van justos el juego pasa solo al «modo liviano» y no dibuja copos ni burbujas.
+Los efectos activos se ven como cuadritos con la cuenta regresiva a la izquierda de la cancha (🫧 8 ✕ · ❄️ 9 ✕ · 📏 6 ✕). **Cada cuadrito es un botón: si lo tocas, ese efecto se apaga al tiro** (por ejemplo, si la barra grande te estorba o ya no quieres la pelota lenta). El toque no mueve la barra; apagar uno también cuenta como «terminó», así que no sale otra burbuja hasta dar 3 rebotes. Los efectos se limpian (burbujas, copos y hielo incluidos) al empezar y al terminar cada partida. Si dos efectos de lentitud coinciden, manda el más lento. En celulares que van justos el juego pasa solo al «modo liviano» y no dibuja copos ni burbujas.
 
 - **No cambian lo que paga la partida ni los límites del servidor:** solo ayudan a seguir vivo. Las reglas de Firebase solo limitan cuántos rebotes caben en el tiempo de la partida (como mucho 1 cada 0,45 s); una pelota más lenta nunca pasa ese límite, y el antitrampas del juego (rebotes demasiado rápidos o reloj alterado) no se activa por los efectos. Una barra más grande tampoco acelera los rebotes.
-- **Dónde se ajusta:** `PUPS` (duración `ms`, factor de rapidez `k` y probabilidad `w`), `PUP_FIRST` (desde qué rebote) y `PUP_LIFE` (cuánto dura la burbuja en pantalla) en `index.html`.
-- **Pruebas:** `humo.test.js` («Potenciadores»): no hay burbujas antes del rebote 8, aparecen después, desaparecen solas, cada efecto dura 10 s y hace lo que dice (rapidez ×0,6, ×0,4 sin detenerse, barra ×1,5), se ven sus animaciones, vuelven a la normalidad y no queda nada al terminar la partida. `CPU=3 node humo.test.js` la corre con el procesador frenado, como en la CI.
+- **Dónde se ajusta:** `PUPS` (duración `ms`, factor de rapidez `k` y probabilidad `w`), `nextPupAt` (los plazos en rebotes: 10 a 14 hasta el 55 y 10/15/20 después), `PUP_EARLY` (el rebote 55), `PUP_BREATH` (los 3 rebotes de respiro tras un efecto) y `PUP_LIFE` (cuánto dura la burbuja en pantalla) en `index.html`.
+- **Pruebas:** `humo.test.js` («Potenciadores»): no hay burbujas antes del rebote 10; se avanza el marcador de a uno y se comprueba el calendario (la primera entre el 10 y el 14, al menos 3 hasta el 55, plazos de 10 a 14 hasta el 55 y 10/15/20 después, y la distribución de los plazos); nunca salen dos a la vez ni con un efecto activo ni justo al terminar uno; una burbuja que la pelota no toca desaparece sola; cada efecto dura 10 s y hace lo que dice (rapidez ×0,6, ×0,4 sin detenerse, barra ×1,5); se ven sus animaciones; **tocar el cuadrito de cada efecto (con el dedo y con el mouse) lo apaga al tiro**; vuelve todo a la normalidad y no queda nada al terminar la partida. `CPU=3 node humo.test.js` la corre con el procesador frenado, como en la CI.
 
 ## El Pato que responde y los botones de redes
 
