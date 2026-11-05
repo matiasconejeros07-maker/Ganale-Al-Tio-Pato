@@ -797,5 +797,49 @@ console.log('Grupo VIP (WhatsApp)');
   ok('leer los números sin sesión', targaryen.database(rules, shiftObj({ vip: { u1: { w: '+56911111111', n: 'M', t: 1, c: true } } }, 0)).as(null).read('/vip/u1'), false);
 }
 
+// ---------- marco dorado: registro de quiénes tienen el personaje secreto (compradores) y quién lleva el marco puesto (marco) ----------
+console.log('Marco dorado (compradores y marco)');
+{
+  const SEC = cx.window.TIENDA.ch.find(c => c.secret).id, TIENE = { wallets: { u1: { c: 5e8, sp: 1e8, own: { ['ch_' + SEC]: true } } } }, SIN = { wallets: { u1: { c: 5e8, sp: 0 } } };
+  const reg = (o = {}) => ({ n: 'Matías', t: SV, ...o });
+  const REG = { ...TIENE, compradores: { u1: { n: 'Matías', t: T0 - 9e5 } } }, PUESTO = { ...REG, marco: { u1: true } };
+  const sinSesion = (data, f) => f(targaryen.database(rules, shiftObj(data, 0)).as(null));
+  // el registro de compradores
+  ok('quien tiene el personaje secreto queda anotado (nombre y hora del servidor)', db(TIENE, T0).write('/compradores/u1', reg()), true);
+  ok('sin el personaje secreto no', db(SIN, T0).write('/compradores/u1', reg()), false);
+  ok('sin cartera tampoco', db({}, T0).write('/compradores/u1', reg()), false);
+  ok('comprar otro personaje no sirve', db({ wallets: { u1: { c: 9e6, sp: 1e6, own: { ch_conejo: true } } } }, T0).write('/compradores/u1', reg()), false);
+  ok('anotar a otra cuenta (u2 escribe en compradores/u1)', db(TIENE, T0, 'u2').write('/compradores/u1', reg()), false);
+  ok('sin sesión', sinSesion(TIENE, d => d.write('/compradores/u1', reg())), false);
+  ok('con una hora inventada', db(TIENE, T0).write('/compradores/u1', reg({ t: T0 - 5000 })), false);
+  ok('sin nombre', db(TIENE, T0).write('/compradores/u1', reg({ n: '' })), false);
+  ok('con un nombre de 17 letras', db(TIENE, T0).write('/compradores/u1', reg({ n: 'x'.repeat(17) })), false);
+  ok('con un nombre de 16 letras (cuentas antiguas)', db(TIENE, T0).write('/compradores/u1', reg({ n: 'x'.repeat(16) })), true);
+  ok('con un campo extra', db(TIENE, T0).write('/compradores/u1', reg({ extra: 1 })), false);
+  ok('sin la hora', db(TIENE, T0).write('/compradores/u1', { n: 'M' }), false);
+  ok('volver a anotarse con otra hora (la hora no se puede cambiar)', db(REG, T0).write('/compradores/u1', reg()), false);
+  ok('cambiar solo el nombre (la hora queda igual)', db(REG, T0).update('/compradores/u1', { n: 'Otro' }), true);
+  ok('cambiar la hora a mano', db(REG, T0).update('/compradores/u1', { t: T0 - 1 }), false);
+  ok('borrar el registro', db(REG, T0).write('/compradores/u1', null), false);
+  ok('leer su propio registro', db(REG, T0).read('/compradores/u1'), true);
+  ok('leer el registro de otra cuenta', db(REG, T0, 'u2').read('/compradores/u1'), false);
+  ok('listar todos los registros', db(REG, T0).read('/compradores'), false);
+  ok('leer el registro sin sesión', sinSesion(REG, d => d.read('/compradores/u1')), false);
+  // el marco puesto (lo único público)
+  ok('ponerse el marco con el registro ya hecho', db(REG, T0).write('/marco/u1', true), true);
+  ok('registrarse y ponerse el marco en la misma escritura', db(TIENE, T0).update('/', { 'compradores/u1': reg(), 'marco/u1': true }), true);
+  ok('ponerse el marco sin haberse registrado', db(TIENE, T0).write('/marco/u1', true), false);
+  ok('ponerse el marco sin el personaje secreto', db({ ...SIN, compradores: { u1: { n: 'M', t: T0 - 9e5 } } }, T0).write('/marco/u1', true), false);
+  ok('ponerle el marco a otra cuenta (u2 escribe en marco/u1)', db(REG, T0, 'u2').write('/marco/u1', true), false);
+  ok('ponerse el marco sin sesión', sinSesion(REG, d => d.write('/marco/u1', true)), false);
+  for (const [m, v] of [['false', false], ['1', 1], ['«si»', 'si'], ['un objeto', { a: 1 }]]) ok(`marco con el valor ${m}`, db(REG, T0).write('/marco/u1', v), false);
+  ok('marco con un campo adentro', db(REG, T0).write('/marco/u1/x', true), false);
+  ok('sacarse el marco', db(PUESTO, T0).write('/marco/u1', null), true);
+  ok('sacarle el marco a otra cuenta', db(PUESTO, T0, 'u2').write('/marco/u1', null), false);
+  ok('los demás ven quién lleva marco (lectura pública, con sesión)', db(PUESTO, T0, 'u2').read('/marco'), true);
+  ok('y también sin sesión', sinSesion(PUESTO, d => d.read('/marco')), true);
+  ok('quien se sacó el marco no aparece en lo público (el registro sigue cerrado)', db(REG, T0, 'u2').read('/compradores'), false);
+}
+
 console.log(`\n${pass} correctas, ${fail} fallas`);
 process.exit(fail ? 1 : 0);

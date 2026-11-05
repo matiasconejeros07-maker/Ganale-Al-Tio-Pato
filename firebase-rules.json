@@ -106,6 +106,29 @@
         ".validate": "newData.isString() && newData.val().matches(/^(tio|tia|dev)$/)"
       }
     },
+    "compradores": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && newData.exists() && root.child('wallets').child($uid).child('own').child('ch_millonario').val() === true",
+        ".validate": "newData.hasChildren(['n', 't'])",
+        "n": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
+        },
+        "t": {
+          ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() === now)"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "marco": {
+      ".read": true,
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid && root.child('wallets').child($uid).child('own').child('ch_millonario').val() === true",
+        ".validate": "newData.val() === true && newData.parent().parent().child('compradores').child($uid).exists()"
+      }
+    },
     "names": {
       "$k": {
         ".read": true,

@@ -289,6 +289,20 @@ Cada jugador arma su **emblema** (tocando su nombre en el inicio, o en Ajustes �
 - **Ajustes → Mi emblema** dice en qué estado está: «✅ Todos lo ven en el marcador», «⏳ Guardando…», «⏳ Sin conexión» o «⚠️ faltan publicar las reglas nuevas». Si no se pudo subir, queda pendiente y **se reintenta solo cada vez que abres el juego**; también se sube si tu fila del marcador no tiene emblema (por ejemplo, el récord se hizo antes).
 - **Hay que publicar las reglas nuevas** (`firebase-rules.json`): sin ellas el emblema se ve en tu celular pero no se guarda en la cuenta ni en el marcador.
 
+### Marco dorado (para quien desbloquea el personaje de 100 millones)
+
+Quien compra el **Tío Pato Dorado** ($100.000.000) puede llevar un **marco dorado animado** en su emblema, y **todos los demás lo ven en los marcadores** (los 4, el primer lugar del encabezado y tu propio emblema en el inicio y en Ajustes) para distinguirlo.
+
+- **Cómo se ve:** un aro de oro con la forma de su emblema (círculo, estrella, escudo…), un brillo dorado que gira, un destello blanco que lo recorre y dos estrellitas que titilan. No cambia el tamaño: el emblema se achica un poco dentro del aro. En el «modo liviano» y con «reducir movimiento» queda quieto (sin animación).
+- **Cómo se equipa:** Ajustes → **Mi emblema** → sección **Marco** (**Sin marco** / **👑 Marco dorado**) y **Guardar**. La vista previa lo muestra al tiro. Quien no tiene el personaje secreto **ni ve esa sección** (el personaje es secreto).
+- **Al desbloquearlo** el marco queda **puesto solo** (se puede sacar cuando quiera) y la tarjeta del grupo VIP lo avisa. **Quien ya tenía el personaje antes** de esta actualización queda anotado y con el marco puesto **la próxima vez que abra el juego**.
+- **¿Quiénes tienen el personaje secreto? (para el administrador):** Firebase → Realtime Database → nodo **`compradores`**: una fila por jugador (la clave es su `uid`) con `n` (nombre) y `t` (hora en que quedó anotado). Esa lista solo se ve en la consola (ni el juego ni nadie más la puede leer). Para saber quién es un `uid`, busca ese mismo `uid` en `scores/<uid>` (ahí está el nombre y el puntaje). **Ojo:** solo aparece quien ya abrió el juego con la versión nueva (es lo que anota a los antiguos); las compras de antes están en `wallets/<uid>/own/ch_millonario`, que solo ve la consola.
+- **Lo público:** `marco/<uid> = true` es lo único que ven los demás (quién lleva el marco puesto). **Quien se saca el marco no aparece en ninguna lista pública** (su fila en `compradores` sigue cerrada).
+- **Seguridad (reglas):** solo escribe quien de verdad tiene el personaje (`own/ch_<id>` en su cartera, que ya se valida con el precio), la hora de `compradores` la pone el servidor, una sola vez, y no se puede borrar ni cambiar; el marco solo se puede poner si el registro ya existe. Nadie puede ponerle el marco a otra cuenta.
+- **Dónde se ajusta:** estilos `.embw.gold` (colores y velocidades) y la función `emblem()` en `index.html`; `goldSync` / `goldSet` (la conversación con Firebase) y `fetchMarcos` (los demás: se baja cada 5 minutos como máximo).
+- **Pruebas:** `pruebas/dorado.test.js` (juego + reglas reales: anotarse al comprar, equipar/quitar, ver el marco de otros en el marcador y que quien se lo saca deja de verse, quien ya lo tenía antes, quien no lo tiene no puede ni intentarlo a mano, y el juego sin las reglas nuevas) y la sección «Marco dorado» de `pruebas/reglas.test.js`.
+- **Hay que publicar las reglas nuevas** (nodos `compradores` y `marco`). Sin ellas el dueño ve su marco en su celular, pero los demás no.
+
 ## Potenciadores en la partida (burbujas)
 
 Las burbujas flotan en la cancha, entre el Pato y tu barra, y se activan cuando **la pelota las toca** (así que conviene apuntar con la barra: el ángulo del rebote depende de dónde pega la pelota en ella). Son un **privilegio, no una costumbre**: salen por **rebotes** (no por tiempo) y de a una:
