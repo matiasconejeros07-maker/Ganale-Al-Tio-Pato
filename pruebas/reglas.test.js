@@ -138,23 +138,27 @@ ok('… con récord inflado', db(started, T0 + 60000).update('/', Object.assign(
 
 // ---------- 5. tienda ----------
 console.log('Tienda');
-const rich = { wallets: { u1: { c: 1000, sp: 0, lr: T0 } } };
-ok('comprar Tía Patita ($150) pagando 150', db(rich, T0).update('/wallets/u1', { sp: 150, 'own/ch_tia': true }), true);
-ok('comprar Tía Patita pagando 149', db(rich, T0).update('/wallets/u1', { sp: 149, 'own/ch_tia': true }), false);
-ok('… con el precio de antes ($50)', db(rich, T0).update('/wallets/u1', { sp: 50, 'own/ch_tia': true }), false);
-ok('comprar Tío Pato Conejo ($300) pagando 299', db(rich, T0).update('/wallets/u1', { sp: 299, 'own/ch_conejo': true }), false);
-ok('comprar Tío Pato Conejo ($300) pagando 300', db(rich, T0).update('/wallets/u1', { sp: 300, 'own/ch_conejo': true }), true);
-ok('comprar Tía Patita Conejita ($300) pagando 300', db(rich, T0).update('/wallets/u1', { sp: 300, 'own/ch_conejita': true }), true);
-ok('… pagando 200 (precio de antes)', db(rich, T0).update('/wallets/u1', { sp: 200, 'own/ch_conejita': true }), false);
-ok('comprar Tíos Patitos ($600) pagando 600', db(rich, T0).update('/wallets/u1', { sp: 600, 'own/ch_tios': true }), true);
-ok('comprar Tío Pato Simi ($600) pagando 599', db(rich, T0).update('/wallets/u1', { sp: 599, 'own/ch_bigotes': true }), false);
-ok('comprar Tío Pato Simi pagando 600', db(rich, T0).update('/wallets/u1', { sp: 600, 'own/ch_bigotes': true }), true);
+const CH = cx.window.TIENDA.ch, BG = cx.window.TIENDA.bg, PR = (lista, id) => lista.find(x => x.id === id).price;       // precios del catálogo (tienda.js)
+const pTia = PR(CH, 'tia'), pConejo = PR(CH, 'conejo'), pConejita = PR(CH, 'conejita'), pTios = PR(CH, 'tios'), pSimi = PR(CH, 'bigotes'), pGal = PR(CH, 'galactico');
+ok('los personajes cuestan 10 veces lo de antes (Tía Patita $1.500, Conejo y Conejita $3.000, Simi y Tíos $6.000, Galáctico $50.000) y el secreto sigue en $100.000.000', { allowed: pTia === 1500 && pConejo === 3000 && pConejita === 3000 && pSimi === 6000 && pTios === 6000 && pGal === 50000 && PR(CH, 'millonario') === 100000000 }, true);
+const rich = { wallets: { u1: { c: 100000, sp: 0, lr: T0 } } }, pobre = { wallets: { u1: { c: 1000, sp: 0, lr: T0 } } };
+ok('comprar Tía Patita ($1.500) pagando 1.500', db(rich, T0).update('/wallets/u1', { sp: pTia, 'own/ch_tia': true }), true);
+ok('comprar Tía Patita pagando 1.499', db(rich, T0).update('/wallets/u1', { sp: pTia - 1, 'own/ch_tia': true }), false);
+ok('… con el precio de antes ($150)', db(rich, T0).update('/wallets/u1', { sp: 150, 'own/ch_tia': true }), false);
+ok('comprar Tío Pato Conejo ($3.000) pagando 2.999', db(rich, T0).update('/wallets/u1', { sp: pConejo - 1, 'own/ch_conejo': true }), false);
+ok('comprar Tío Pato Conejo ($3.000) pagando 3.000', db(rich, T0).update('/wallets/u1', { sp: pConejo, 'own/ch_conejo': true }), true);
+ok('comprar Tía Patita Conejita ($3.000) pagando 3.000', db(rich, T0).update('/wallets/u1', { sp: pConejita, 'own/ch_conejita': true }), true);
+ok('… pagando 300 (precio de antes)', db(rich, T0).update('/wallets/u1', { sp: 300, 'own/ch_conejita': true }), false);
+ok('comprar Tíos Patitos ($6.000) pagando 6.000', db(rich, T0).update('/wallets/u1', { sp: pTios, 'own/ch_tios': true }), true);
+ok('comprar Tío Pato Simi ($6.000) pagando 5.999', db(rich, T0).update('/wallets/u1', { sp: pSimi - 1, 'own/ch_bigotes': true }), false);
+ok('comprar Tío Pato Simi pagando 6.000', db(rich, T0).update('/wallets/u1', { sp: pSimi, 'own/ch_bigotes': true }), true);
 ok('comprar la moneda de $5 pagando 5', db(rich, T0).update('/wallets/u1', { sp: 5, 'own/ball_peso5': true }), true);
 ok('comprar la moneda de $5 pagando 4', db(rich, T0).update('/wallets/u1', { sp: 4, 'own/ball_peso5': true }), false);
 ok('comprar sin pagar', db(rich, T0).update('/wallets/u1', { 'own/ch_tia': true }), false);
-ok('comprar pagando de más', db(rich, T0).update('/wallets/u1', { sp: 900, 'own/ch_tia': true }), true);
-ok('gastar más de lo ganado', db(rich, T0).update('/wallets/u1', { sp: 1500, 'own/ch_tia': true }), false);
-ok('billete de 20.000 sin saldo', db(rich, T0).update('/wallets/u1', { sp: 20000, 'own/ball_b20000': true }), false);
+ok('comprar pagando de más', db(rich, T0).update('/wallets/u1', { sp: 9000, 'own/ch_tia': true }), true);
+ok('gastar más de lo ganado', db(rich, T0).update('/wallets/u1', { sp: 150000, 'own/ch_tia': true }), false);
+ok('la Tía Patita sin saldo (c = 1.000)', db(pobre, T0).update('/wallets/u1', { sp: pTia, 'own/ch_tia': true }), false);
+ok('billete de 20.000 sin saldo', db(pobre, T0).update('/wallets/u1', { sp: 20000, 'own/ball_b20000': true }), false);
 ok('artículo inexistente', db(rich, T0).update('/wallets/u1', { sp: 10, 'own/ball_regalo': true }), false);
 ok('own = false', db(rich, T0).update('/wallets/u1', { 'own/ch_tia': false }), false);
 ok('gastar bajando sp', db({ wallets: { u1: { c: 1000, sp: 400, lr: T0 } } }, T0).update('/wallets/u1', { sp: 100 }), false);
@@ -201,20 +205,24 @@ ok('equipar el personaje secreto ya comprado', db({ wallets: { u1: { c: 30000000
 ok('equipar el personaje secreto sin comprarlo', db(rica, T0).update('/wallets/u1', { eq: { ch: 'millonario' } }), false);
 
 // --- personajes nuevos: Ángel ($1.000), Galáctico ($5.000) y Dorado secreto ($50.000.000) ---
-ok('comprar el Tío Pato Galáctico ($5.000) pagando 5.000', db(rica, T0).update('/wallets/u1', { sp: 5000, 'own/ch_galactico': true }), true);
-ok('… pagando 4.999', db(rica, T0).update('/wallets/u1', { sp: 4999, 'own/ch_galactico': true }), false);
+ok('comprar el Tío Pato Galáctico ($50.000) pagando 50.000', db(rica, T0).update('/wallets/u1', { sp: pGal, 'own/ch_galactico': true }), true);
+ok('… pagando 49.999', db(rica, T0).update('/wallets/u1', { sp: pGal - 1, 'own/ch_galactico': true }), false);
+ok('… con el precio de antes ($5.000)', db(rica, T0).update('/wallets/u1', { sp: 5000, 'own/ch_galactico': true }), false);
 ok('equipar el Galáctico ya comprado', db({ wallets: { u1: { c: 300000000, sp: 5000, own: { ch_galactico: true } } } }, T0).update('/wallets/u1', { eq: { ch: 'galactico' } }), true);
 
 console.log('Fondos y barras (precios +100) y artículos para millonarios');
-const precios = { bg_atardecer: 200, bg_cristal: 220, bg_aurora: 300, bg_galaxia: 400, bg_holo: 450, bg_synth: 550,
+const precios = Object.assign(Object.fromEntries(BG.filter(b => b.price > 0).map(b => ['bg_' + b.id, b.price])), {          // fondos: del catálogo (×10); barras: las de siempre
   pad_dorada: 220, pad_fuego: 280, pad_cristal: 300, pad_neon: 350, pad_galaxia: 400, pad_arcoiris: 450, pad_holo: 500,
-  bg_boveda: 2000000, bg_prisma: 5000000, bg_agujero: 10000000, pad_midas: 3000000, pad_diamante: 6000000, pad_plasma: 12000000 };
-const rico = { wallets: { u1: { c: 90000000, sp: 0, lr: T0 } } };
+  pad_midas: 3000000, pad_diamante: 6000000, pad_plasma: 12000000 });
+ok('los fondos cuestan 10 veces lo de antes: Atardecer $2.000, Cristal $2.200, Aurora $3.000, Galaxia $4.000, Holográfico $4.500, Synthwave $5.500, Bóveda $20.000.000, Palacio $50.000.000, Agujero negro $100.000.000', { allowed: precios.bg_atardecer === 2000 && precios.bg_cristal === 2200 && precios.bg_aurora === 3000 && precios.bg_galaxia === 4000 && precios.bg_holo === 4500 && precios.bg_synth === 5500 && precios.bg_boveda === 20000000 && precios.bg_prisma === 50000000 && precios.bg_agujero === 100000000 }, true);
+ok('las barras y las pelotas no cambian de precio (Llamarada $280, Rey Midas $3.000.000, moneda $5, diamante $1.000.000)', { allowed: precios.pad_fuego === 280 && precios.pad_midas === 3000000 && PR(cx.window.TIENDA.ball, 'peso5') === 5 && PR(cx.window.TIENDA.ball, 'diamante') === 1000000 }, true);
+const rico = { wallets: { u1: { c: 5000000000, sp: 0, lr: T0 } } };
 for (const [k, pr] of Object.entries(precios)) {
   ok(`comprar ${k} ($${pr}) pagando ${pr}`, db(rico, T0).update('/wallets/u1', { sp: pr, ['own/' + k]: true }), true);
   ok(`… pagando ${pr - 1}`, db(rico, T0).update('/wallets/u1', { sp: pr - 1, ['own/' + k]: true }), false);
 }
-ok('fondo de oro sin saldo suficiente (c = 1.000.000)', db({ wallets: { u1: { c: 1000000, sp: 0 } } }, T0).update('/wallets/u1', { sp: 2000000, 'own/bg_boveda': true }), false);
+ok('fondo de oro sin saldo suficiente (c = 10.000.000)', db({ wallets: { u1: { c: 10000000, sp: 0 } } }, T0).update('/wallets/u1', { sp: precios.bg_boveda, 'own/bg_boveda': true }), false);
+ok('la bóveda de oro con el precio de antes ($2.000.000)', db(rico, T0).update('/wallets/u1', { sp: 2000000, 'own/bg_boveda': true }), false);
 ok('barra eléctrica con el precio de una barra común', db(rico, T0).update('/wallets/u1', { sp: 500, 'own/pad_plasma': true }), false);
 ok('el precio antiguo de la llamarada ($180)', db(rico, T0).update('/wallets/u1', { sp: 180, 'own/pad_fuego': true }), false);
 const vip = { wallets: { u1: { c: 90000000, sp: 11000000, lr: T0, own: { bg_boveda: true, pad_midas: true } } } };
@@ -227,7 +235,8 @@ ok('equipar la tormenta eléctrica sin comprarla', db(vip, T0).update('/wallets/
 console.log('Colores del juego (th)');
 {
   const TH = cx.window.TIENDA.th, precioTh = Object.fromEntries(TH.filter(t => t.price > 0).map(t => ['th_' + t.id, t.price]));
-  const rico2 = { wallets: { u1: { c: 90000000, sp: 0, lr: T0 } } };
+  const rico2 = { wallets: { u1: { c: 5000000000, sp: 0, lr: T0 } } };
+  ok('los colores cuestan 10 veces lo de antes: Amarillo $1.000, Verde y Rosa $2.000, Violeta $3.000, Rojo $3.500, Noche $4.000, Negro y oro $10.000.000, Hielo diamante $25.000.000', { allowed: precioTh.th_clasico === 1000 && precioTh.th_bosque === 2000 && precioTh.th_rosa === 2000 && precioTh.th_violeta === 3000 && precioTh.th_fuego === 3500 && precioTh.th_noche === 4000 && precioTh.th_oro === 10000000 && precioTh.th_diamante === 25000000 }, true);
   ok('el catálogo tiene el azul gratis primero y 8 colores de pago (2 para millonarios)', { allowed: TH[0].price === 0 && TH.length === 9 && TH.filter(t => t.vip).length === 2 }, true);
   for (const [k, pr] of Object.entries(precioTh)) {
     ok(`comprar ${k} ($${pr}) pagando ${pr}`, db(rico2, T0).update('/wallets/u1', { sp: pr, ['own/' + k]: true }), true);
@@ -235,8 +244,9 @@ console.log('Colores del juego (th)');
   }
   ok('comprar el azul gratis (no se vende: ya es tuyo)', db(rico2, T0).update('/wallets/u1', { sp: 0, ['own/th_' + TH[0].id]: true }), false);
   ok('comprar un color que no existe', db(rico2, T0).update('/wallets/u1', { sp: 100, 'own/th_verde_limon': true }), false);
-  ok('«Negro y oro» sin saldo suficiente (c = 500.000)', db({ wallets: { u1: { c: 500000, sp: 0 } } }, T0).update('/wallets/u1', { sp: 1000000, 'own/th_oro': true }), false);
-  ok('«Hielo diamante» con el precio de «Negro y oro»', db(rico2, T0).update('/wallets/u1', { sp: 1000000, 'own/th_diamante': true }), false);
+  ok('«Negro y oro» sin saldo suficiente (c = 5.000.000)', db({ wallets: { u1: { c: 5000000, sp: 0 } } }, T0).update('/wallets/u1', { sp: precioTh.th_oro, 'own/th_oro': true }), false);
+  ok('«Negro y oro» con el precio de antes ($1.000.000)', db(rico2, T0).update('/wallets/u1', { sp: 1000000, 'own/th_oro': true }), false);
+  ok('«Hielo diamante» con el precio de «Negro y oro»', db(rico2, T0).update('/wallets/u1', { sp: precioTh.th_oro, 'own/th_diamante': true }), false);
   ok('comprar un color como si fuera un fondo (bg_violeta)', db(rico2, T0).update('/wallets/u1', { sp: 300, 'own/bg_violeta': true }), false);
   const conViolet = { wallets: { u1: { c: 90000000, sp: 300, lr: T0, own: { th_violeta: true } } } };
   ok('equipar el violeta ya comprado', db(conViolet, T0).update('/wallets/u1', { eq: { th: 'violeta' } }), true);

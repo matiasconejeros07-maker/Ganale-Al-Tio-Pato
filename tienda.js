@@ -65,17 +65,17 @@ window.TIENDA = {
   ch: [
     { id: 'tio', n: 'Tío Pato',   price: 0,   stat: 'trajes/angel.webp', stat2: 'trajes/angel-demonio.webp', asp: 1.723, asp2: 1.172, name: 'el Tío Pato', g: 'm', devil: true,
       av: { w: 55, fx: .545, fy: .309 }, av2: { w: 66, fx: .55, fy: .261 }, css: { steam: '60% 17%' }, note: 'El de siempre: ángel que baja al infierno' },
-    { id: 'tia', n: 'Tía Patita', price: 150, stat: 'trajes/patita-angel.webp', stat2: 'trajes/patita-diabla.webp', asp: 1.547, asp2: 1.179, name: 'la Tía Patita', g: 'f', devil: true,
+    { id: 'tia', n: 'Tía Patita', price: 1500, stat: 'trajes/patita-angel.webp', stat2: 'trajes/patita-diabla.webp', asp: 1.547, asp2: 1.179, name: 'la Tía Patita', g: 'f', devil: true,
       av: { w: 51, fx: .465, fy: .296 }, av2: { w: 77, fx: .525, fy: .273 }, css: { steam: '62% 14%' }, note: 'Ángel que se vuelve diabla' },
-    { id: 'conejo',   n: 'Tío Pato Conejo',     price: 300, stat: 'trajes/conejo.webp',   stat2: 'trajes/conejo-enojado.webp',   asp: 1.905, asp2: 1.65, name: 'el Tío Pato Conejo',     g: 'm',
+    { id: 'conejo',   n: 'Tío Pato Conejo',     price: 3000, stat: 'trajes/conejo.webp',   stat2: 'trajes/conejo-enojado.webp',   asp: 1.905, asp2: 1.65, name: 'el Tío Pato Conejo',     g: 'm',
       av: { w: 46, fx: .47, fy: .333 }, av2: { w: 57, fx: .525, fy: .354 }, css: { steam: '66% 12%' }, note: 'Se enoja cuando avanzas' },
-    { id: 'conejita', n: 'Tía Patita Conejita', price: 300, stat: 'trajes/conejita.webp', stat2: 'trajes/conejita-enojada.webp', asp: 1.63, asp2: 1.45, name: 'la Tía Patita Conejita', g: 'f',
+    { id: 'conejita', n: 'Tía Patita Conejita', price: 3000, stat: 'trajes/conejita.webp', stat2: 'trajes/conejita-enojada.webp', asp: 1.63, asp2: 1.45, name: 'la Tía Patita Conejita', g: 'f',
       av: { w: 56, fx: .535, fy: .388 }, av2: { w: 59, fx: .52, fy: .397 }, css: { steam: '70% 16%' }, note: 'Se enoja cuando avanzas' },
-    { id: 'bigotes',  n: 'Tío Pato Simi',       price: 600, stat: 'trajes/bigotes.webp',  stat2: 'trajes/bigotes-enojado.webp',  asp: 1.92, asp2: 1.61, name: 'el Tío Pato Simi',       g: 'm',
+    { id: 'bigotes',  n: 'Tío Pato Simi',       price: 6000, stat: 'trajes/bigotes.webp',  stat2: 'trajes/bigotes-enojado.webp',  asp: 1.92, asp2: 1.61, name: 'el Tío Pato Simi',       g: 'm',
       av: { w: 48, fx: .46, fy: .319 }, av2: { w: 55, fx: .52, fy: .333 }, css: { steam: '64% 12%' }, note: 'Bigote, sombrero de copa y bata' },
-    { id: 'tios',     n: 'Tíos Patitos',        price: 600, stat: 'trajes/tios.webp',     stat2: 'trajes/tios-enojados.webp',    asp: .826,  asp2: .86,  name: 'los Tíos Patitos',       g: 'p', dw: 1.5,
+    { id: 'tios',     n: 'Tíos Patitos',        price: 6000, stat: 'trajes/tios.webp',     stat2: 'trajes/tios-enojados.webp',    asp: .826,  asp2: .86,  name: 'los Tíos Patitos',       g: 'p', dw: 1.5,
       av: { w: 58, fx: .525, fy: .264 }, av2: { w: 58, fx: .525, fy: .28 }, css: { steam: '48% 6%' }, note: 'La pareja: te devuelven la pelota de la mano' },
-    { id: 'galactico', n: 'Tío Pato Galáctico',  price: 5000, stat: 'trajes/galactico.webp', stat2: 'trajes/galactico-furia.webp', asp: 1.918, asp2: 1.56, name: 'el Tío Pato Galáctico',  g: 'm',
+    { id: 'galactico', n: 'Tío Pato Galáctico',  price: 50000, stat: 'trajes/galactico.webp', stat2: 'trajes/galactico-furia.webp', asp: 1.918, asp2: 1.56, name: 'el Tío Pato Galáctico',  g: 'm',
       av: { w: 45, fx: .46, fy: .337 }, av2: { w: 61, fx: .525, fy: .404 }, css: { steam: '60% 14%' }, note: 'Un trozo del universo: se enoja y se le eriza la melena' },
     // Personaje secreto: aparece como una carta misteriosa hasta que lo compras. Es el Tío Pato Dorado (rey de oro con corona que al enojarse se enciende al rojo vivo).
     // Su id sigue siendo «millonario» para que quien ya lo compró no lo pierda (las reglas de Firebase guardan lo comprado como ch_millonario).
@@ -86,15 +86,15 @@ window.TIENDA = {
   // vip: true = artículo para millonarios (la tienda los separa y los marca con 💎; el precio ya los deja fuera del alcance de quien recién empieza).
   bg: [
     { id: 'clasico',   n: 'Clásico',          price: 0,   base: '#003454', dark: true, note: 'Parte azul y cambia de color con tus puntos' },
-    { id: 'atardecer', n: 'Atardecer',        price: 200, base: '#ffb199', note: 'Sol sobre el mar y nubes que pasan' },
-    { id: 'cristal',   n: 'Cristal helado',   price: 220, base: '#dcecff', note: 'Témpanos, escarcha y destellos' },
-    { id: 'aurora',    n: 'Aurora boreal',    price: 300, base: '#0b1b34', dark: true, note: 'Cortinas de luz sobre las montañas' },
-    { id: 'galaxia',   n: 'Galaxia',          price: 400, base: '#0a0a1f', dark: true, note: 'Espiral girando y estrellas fugaces' },
-    { id: 'holo',      n: 'Holográfico',      price: 450, base: '#e9c8ff', note: 'Reflejos iridiscentes y burbujas' },
-    { id: 'synth',     n: 'Synthwave',        price: 550, base: '#3d0a6b', dark: true, note: 'Sol neón, montañas y cuadrícula' },
-    { id: 'boveda',    n: 'Bóveda de oro',    price: 2000000,  base: '#1c1204', dark: true, vip: true, note: 'Una montaña de lingotes y polvo de oro' },
-    { id: 'prisma',    n: 'Palacio de diamante', price: 5000000, base: '#0b1747', dark: true, vip: true, note: 'Un brillante gigante y rayos de arcoíris' },
-    { id: 'agujero',   n: 'Agujero negro',    price: 10000000, base: '#02020a', dark: true, vip: true, note: 'Disco de fuego que gira sin parar' }
+    { id: 'atardecer', n: 'Atardecer',        price: 2000, base: '#ffb199', note: 'Sol sobre el mar y nubes que pasan' },
+    { id: 'cristal',   n: 'Cristal helado',   price: 2200, base: '#dcecff', note: 'Témpanos, escarcha y destellos' },
+    { id: 'aurora',    n: 'Aurora boreal',    price: 3000, base: '#0b1b34', dark: true, note: 'Cortinas de luz sobre las montañas' },
+    { id: 'galaxia',   n: 'Galaxia',          price: 4000, base: '#0a0a1f', dark: true, note: 'Espiral girando y estrellas fugaces' },
+    { id: 'holo',      n: 'Holográfico',      price: 4500, base: '#e9c8ff', note: 'Reflejos iridiscentes y burbujas' },
+    { id: 'synth',     n: 'Synthwave',        price: 5500, base: '#3d0a6b', dark: true, note: 'Sol neón, montañas y cuadrícula' },
+    { id: 'boveda',    n: 'Bóveda de oro',    price: 20000000,  base: '#1c1204', dark: true, vip: true, note: 'Una montaña de lingotes y polvo de oro' },
+    { id: 'prisma',    n: 'Palacio de diamante', price: 50000000, base: '#0b1747', dark: true, vip: true, note: 'Un brillante gigante y rayos de arcoíris' },
+    { id: 'agujero',   n: 'Agujero negro',    price: 100000000, base: '#02020a', dark: true, vip: true, note: 'Disco de fuego que gira sin parar' }
   ],
 
   // Barras: cada una con sus propios efectos (brillos, chispas, anillos al rebotar).
@@ -138,13 +138,13 @@ window.TIENDA = {
   // Opcionales: on = color del texto sobre el fondo · on2 = el texto más suave · g = [1, 2] del lema dorado · t = [1, 2] del título. vip = solo para millonarios (se muestran aparte).
   th: [
     { id: 'oceano',   n: 'Azul profundo',   price: 0,       dark: true, c: ['#00223b', '#003454', '#001d35'], s: ['#0a6b8a', '#0a4e65', '#06384d'], note: 'El de siempre: azul marino con toques dorados' },
-    { id: 'clasico',  n: 'Amarillo clásico', price: 100,    c: ['#ffec96', '#fff7c2', '#fff7c2'], s: ['#fffef0', '#fff1a8', '#f7d85a'], note: 'El amarillo de antes' },
-    { id: 'bosque',   n: 'Verde bosque',    price: 200,     dark: true, c: ['#05261a', '#0b3d2b', '#04201a'], s: ['#1f8a5c', '#126343', '#0a3f2b'], note: 'Verde profundo, como de noche en el bosque' },
-    { id: 'rosa',     n: 'Rosa chicle',     price: 200,     c: ['#ffc2e0', '#ffd9ec', '#ffd0e8'], s: ['#fff5fb', '#ffc2e0', '#f58fc4'], on: '#3d0a2a', on2: '#8a3a68', g: ['#b0156b', '#e0458f'], t: ['#3d0a2a', '#9a1560'], note: 'Dulce y brillante' },
-    { id: 'violeta',  n: 'Violeta',         price: 300,     dark: true, c: ['#1f0a3d', '#341a63', '#1a0838'], s: ['#7a45d6', '#5329a6', '#341a63'], note: 'Morado intenso con aire de magia' },
-    { id: 'fuego',    n: 'Rojo fuego',      price: 350,     dark: true, c: ['#2e0505', '#6b1410', '#2a0705'], s: ['#e8572a', '#b02a12', '#6b1410'], note: 'Brasas y llamas' },
-    { id: 'noche',    n: 'Noche',           price: 400,     dark: true, c: ['#05050a', '#12121c', '#05050a'], s: ['#3a3a55', '#23233a', '#12121c'], note: 'Negro elegante' },
-    { id: 'oro',      n: 'Negro y oro',     price: 1000000, dark: true, vip: true, c: ['#140e02', '#2a1c04', '#100a01'], s: ['#f2c24a', '#b8860b', '#6b4a06'], on: '#fff3d0', on2: 'rgba(255, 236, 180, .78)', g: ['#ffe27a', '#ffb300'], t: ['#fff3b0', '#ffc928'], note: 'Negro con oro por todos lados' },
-    { id: 'diamante', n: 'Hielo diamante',  price: 2500000, vip: true, c: ['#d8f3ff', '#eafaff', '#cdeeff'], s: ['#ffffff', '#bfeaff', '#7fd0f5'], on: '#0a2a40', on2: '#3a6a88', g: ['#0a7aa8', '#2fb4e8'], t: ['#0a2a40', '#1a6a98'], note: 'Celeste cristalino, solo para millonarios' }
+    { id: 'clasico',  n: 'Amarillo clásico', price: 1000,    c: ['#ffec96', '#fff7c2', '#fff7c2'], s: ['#fffef0', '#fff1a8', '#f7d85a'], note: 'El amarillo de antes' },
+    { id: 'bosque',   n: 'Verde bosque',    price: 2000,     dark: true, c: ['#05261a', '#0b3d2b', '#04201a'], s: ['#1f8a5c', '#126343', '#0a3f2b'], note: 'Verde profundo, como de noche en el bosque' },
+    { id: 'rosa',     n: 'Rosa chicle',     price: 2000,     c: ['#ffc2e0', '#ffd9ec', '#ffd0e8'], s: ['#fff5fb', '#ffc2e0', '#f58fc4'], on: '#3d0a2a', on2: '#8a3a68', g: ['#b0156b', '#e0458f'], t: ['#3d0a2a', '#9a1560'], note: 'Dulce y brillante' },
+    { id: 'violeta',  n: 'Violeta',         price: 3000,     dark: true, c: ['#1f0a3d', '#341a63', '#1a0838'], s: ['#7a45d6', '#5329a6', '#341a63'], note: 'Morado intenso con aire de magia' },
+    { id: 'fuego',    n: 'Rojo fuego',      price: 3500,     dark: true, c: ['#2e0505', '#6b1410', '#2a0705'], s: ['#e8572a', '#b02a12', '#6b1410'], note: 'Brasas y llamas' },
+    { id: 'noche',    n: 'Noche',           price: 4000,     dark: true, c: ['#05050a', '#12121c', '#05050a'], s: ['#3a3a55', '#23233a', '#12121c'], note: 'Negro elegante' },
+    { id: 'oro',      n: 'Negro y oro',     price: 10000000, dark: true, vip: true, c: ['#140e02', '#2a1c04', '#100a01'], s: ['#f2c24a', '#b8860b', '#6b4a06'], on: '#fff3d0', on2: 'rgba(255, 236, 180, .78)', g: ['#ffe27a', '#ffb300'], t: ['#fff3b0', '#ffc928'], note: 'Negro con oro por todos lados' },
+    { id: 'diamante', n: 'Hielo diamante',  price: 25000000, vip: true, c: ['#d8f3ff', '#eafaff', '#cdeeff'], s: ['#ffffff', '#bfeaff', '#7fd0f5'], on: '#0a2a40', on2: '#3a6a88', g: ['#0a7aa8', '#2fb4e8'], t: ['#0a2a40', '#1a6a98'], note: 'Celeste cristalino, solo para millonarios' }
   ]
 };
