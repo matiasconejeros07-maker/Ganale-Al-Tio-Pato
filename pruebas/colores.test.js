@@ -24,16 +24,16 @@ let n = 0; const nombre = () => 'Col' + (++n) + 'x' + String(Date.now()).slice(-
   ok('el marcador blanco se lee sobre cada color del fondo de la partida (contraste ≥ 3 para texto grande)', malos.length === 0, malos.join(' '));
 }
 
-// El final de la partida es un azul degradado en movimiento (body.end en index.html): el texto va blanco, así que cada tono tiene que dar contraste de al menos 4,5:1
+// El final de la partida es un azul degradado en movimiento por defecto (--end-bg en index.html; con otro color de la tienda cambia, ver más abajo): el texto va blanco, así que cada tono tiene que dar contraste de al menos 4,5:1
 {
-  const html = fs.readFileSync(JUEGO + 'index.html', 'utf8'), m = /body\.end \{ background: linear-gradient\(([^;]+)\);/.exec(html), pal = m ? m[1].match(/#[0-9a-fA-F]{6}/g) : [];
+  const html = fs.readFileSync(JUEGO + 'index.html', 'utf8'), m = /--end-bg: linear-gradient\(([^;]+)\);/.exec(html), pal = m ? m[1].match(/#[0-9a-fA-F]{6}/g) : [];
   const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
   const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   ok('el degradado del final tiene al menos 5 tonos', pal.length >= 5, JSON.stringify(pal));
   ok('todos los tonos del final son azules (sin morado ni rosado)', pal.every(h => { const c = rgb(h); return c[2] > c[0] + 40 && c[2] >= c[1]; }), pal.join(' '));
   const malos = pal.filter(h => { const c = rgb(h), mez = c.map(v => 255 * .85 + v * .15); return (lum(mez) + .05) / (lum(c) + .05) < 4.5; });
   ok('el texto blanco del final se lee sobre cada tono del degradado (contraste ≥ 4,5)', malos.length === 0, malos.join(' '));
-  ok('en el final ya no queda ningún morado (#7b3ff2, #b21ee0, #e0149f, #8e2bea) en el fondo ni en la barra del navegador', !/body\.end \{[^}]*(7b3ff2|b21ee0|e0149f)/i.test(html) && !/setTheme\('#8e2bea'\)/.test(html));
+  ok('en el final ya no queda ningún morado (#7b3ff2, #b21ee0, #e0149f, #8e2bea) en el fondo ni en la barra del navegador', !/--end-bg:[^;]*(7b3ff2|b21ee0|e0149f)/i.test(html) && !/body\.end \{[^}]*(7b3ff2|b21ee0|e0149f)/i.test(html) && !/setTheme\('#8e2bea'\)/.test(html));
 }
 
 // La barra del navegador y la de Android (manifiesto) y la pantalla de carga son azules; no queda el amarillo crema de antes (#fff7c2) en lo que pinta la barra
@@ -131,8 +131,60 @@ let n = 0; const nombre = () => 'Col' + (++n) + 'x' + String(Date.now()).slice(-
     ok(`${t.n}: tono ${m.h}° · notas ${m.nota.toFixed(1)}, nombres ${m.nombre.toFixed(1)}, botón de compra ${m.compra.toFixed(1)}, «Equipado» ${m.equipado.toFixed(1)}, ventanas ${m.ventana.toFixed(1)} (todo ≥ 4,5)`, m.nota >= 4.5 && m.nombre >= 4.5 && m.compra >= 4.5 && m.equipado >= 4.5 && m.ventana >= 4.5, JSON.stringify(m));
     await p.evaluate(() => document.getElementById('shopBack').click());
   }
+
+  console.log('El final de la partida sigue el color elegido (degradado en movimiento de ese color)');
+  for (const t of TH) {
+    st.db.wallets[uid] = { c: 9000000, sp: 0, lr: 0, own: rico, eq: { th: t.id } };
+    await p.reload(); await p.waitForTimeout(2500); await cerrarDiario(p);
+    const f = await p.evaluate(() => {
+      document.body.classList.add('end');                                              // se simula el final (no hace falta jugar para mirar su estilo)
+      const cs = el => getComputedStyle(document.querySelector(el)), body = getComputedStyle(document.body);
+      const r = { img: body.backgroundImage, anim: body.animationName, size: body.backgroundSize, th: document.documentElement.style.getPropertyValue('--end-bg'), dark: document.body.classList.contains('th-dark'),
+        txt: ['#result .final', '#result .sub', '#result .best', '#result .status', '#result .link', '#result .btn.ghost'].map(x => cs(x).color), bar: cs('#close svg').stroke };
+      document.body.classList.remove('end'); return r;
+    });
+    const cols = (f.img.match(/rgb\((\d+), (\d+), (\d+)\)/g) || []).map(c => c.match(/\d+/g).map(Number));
+    const lum = c => { const g = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * g(c[0]) + .7152 * g(c[1]) + .0722 * g(c[2]); };
+    const rgba = x => { const m = x.match(/[\d.]+/g).map(Number); return { c: m.slice(0, 3), a: m.length > 3 ? m[3] : 1 }; };
+    const hue = c => { const [r, g, b] = c.map(v => v / 255), mx = Math.max(r, g, b), d = mx - Math.min(r, g, b); if (!d) return -1; return (60 * (mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4)) % 360; };
+    const sat = c => { const [r, g, b] = c.map(v => v / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; return mx === mn ? 0 : (mx - mn) / (1 - Math.abs(2 * l - 1)); };
+    const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+    // contraste de cada texto del final contra el peor de los tonos del degradado
+    const peor = f.txt.map(x => { const { c, a } = rgba(x); return Math.min(...cols.map(f0 => { const mez = c.map((v, i) => v * a + f0[i] * (1 - a)), l1 = lum(mez), l2 = lum(f0); return (Math.max(l1, l2) + .05) / (Math.min(l1, l2) + .05); })); });
+    const minC = Math.min(...peor);
+    const esperado = t.id === TH[0].id ? 'el azul de siempre' : t.dark ? 'tono del color' : 'sus propios colores';
+    let bien = cols.length === 7 && f.anim === 'endFlow' && /300%/.test(f.size);
+    let det = '';
+    if (t.id === TH[0].id) bien = bien && f.th === '' && cols[0].join() === '0,42,71' && cols[2].join() === '26,86,176';            // sin variable propia: es el azul de la hoja de estilos
+    else if (t.dark) {                                                                                                       // oscuros: el tono sale del color (± 30°) y se lee con texto blanco
+      const hs = hex(t.s[1]), hc = hue(hs), sc = sat(hs), vivos = cols.filter(c => sat(c) > .12), dif = c => { const d = Math.abs(hue(c) - hc); return Math.min(d, 360 - d); };
+      bien = bien && f.dark && (sc < .2 || (vivos.length >= 5 && vivos.every(c => dif(c) <= 30))) && f.txt.every(x => /rgb\(255, 255, 255|rgba\(255, 255, 255/.test(x));
+      det = ` (tono ${Math.round(hc)}°)`;
+    } else {                                                                                                                 // claros: sus propios colores y el texto oscuro del tema
+      const propios = [t.c[0], t.s[1], t.s[2], t.c[1], t.s[0]].map(h => hex(h).join());
+      bien = bien && !f.dark && cols.every(c => propios.includes(c.join())) && f.txt.every(x => lum(rgba(x).c) < .25);
+    }
+    ok(`${t.n}: el final es un degradado en movimiento de ${esperado}${det}; todos los textos se leen (contraste ${minC.toFixed(1)})`, bien && minC >= 4.5, JSON.stringify({ cols: cols.length, th: f.th.slice(0, 60), txt: f.txt, minC }));
+  }
   ok('sin errores de página en todo el recorrido', errs.length === 0, errs.join('|'));
   await ctx.close();
+
+  console.log('Jugando de verdad: la partida termina con el color elegido');
+  {
+    for (const [id, claro] of [['fuego', false], ['rosa', true]]) {
+      const { ctx: cj, p: pj, errs: ej } = await newPage(b, { viewport: { width: 390, height: 780 } });
+      const uj = await registrar(pj, 'Final ' + id); await cerrarDiario(pj);
+      st.db.wallets[uj] = { c: 9000000, sp: 0, lr: 0, own: rico, eq: { th: id } };
+      await pj.reload(); await pj.waitForTimeout(2800); await cerrarDiario(pj);
+      await pj.tap('#play'); await pj.waitForSelector('#result.show', { timeout: 40000 }); await pj.waitForTimeout(500);
+      const r = await pj.evaluate(() => ({ end: document.body.classList.contains('end'), meta: document.querySelector('meta[name=theme-color]').content, img: getComputedStyle(document.body).backgroundImage, anim: getComputedStyle(document.body).animationName, txt: getComputedStyle(document.querySelector('#result .final')).color }));
+      const t = TH.find(x => x.id === id);
+      ok(`con «${t.n}» la partida termina con su degradado (${claro ? 'claro, texto oscuro' : 'oscuro, texto blanco'}) y en movimiento`, r.end && r.anim === 'endFlow' && /linear-gradient/.test(r.img) && (claro ? r.txt !== 'rgb(255, 255, 255)' && r.img.includes('rgb(255, 194, 224)') : r.txt === 'rgb(255, 255, 255)' && !r.img.includes('rgb(0, 42, 71)')), JSON.stringify(r).slice(0, 300));
+      ok(`y la barra del navegador toma el color del final (${r.meta})`, claro ? r.meta === t.s[1] : (m => m && m[0] > m[2])([1, 3, 5].map(i => parseInt(r.meta.slice(i, i + 2), 16))), r.meta);
+      ok('sin errores de página', ej.length === 0, ej.join('|'));
+      await cj.close();
+    }
+  }
 
   console.log('Las 5 pestañas caben también en pantallas angostas');
   for (const [w, h] of [[360, 740], [320, 568]]) {
