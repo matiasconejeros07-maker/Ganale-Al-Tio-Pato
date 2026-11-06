@@ -195,6 +195,30 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     await ctx.close();
   }
 
+  console.log('Final de la partida: azul degradado en movimiento (sin morado)');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    await jugar(p);
+    await p.waitForSelector('#result.show', { timeout: 40000 });
+    await p.waitForTimeout(500);
+    const leer = () => p.evaluate(() => { const cs = getComputedStyle(document.body); return { end: document.body.classList.contains('end'), anim: cs.animationName, pos: cs.backgroundPosition, img: cs.backgroundImage, meta: document.querySelector('meta[name=theme-color]').content }; });
+    const a = await leer();
+    const cols = (a.img.match(/rgb\((\d+), (\d+), (\d+)\)/g) || []).map(c => c.match(/\d+/g).map(Number));
+    ok('al terminar, el fondo es un degradado con varios tonos', a.end && /linear-gradient/.test(a.img) && cols.length >= 5, a.img);
+    ok('todos los tonos del degradado son azules (ninguno morado ni rosado)', cols.length > 0 && cols.every(([r, g, bl]) => bl > r + 40 && bl >= g), JSON.stringify(cols));
+    ok('el degradado tiene animación (se mueve)', a.anim === 'endFlow', a.anim);
+    await p.waitForTimeout(1500);
+    const c = await leer();
+    ok('y de verdad se mueve: la posición cambia con el tiempo', c.pos !== a.pos, a.pos + ' → ' + c.pos);
+    const mc = (c.meta.match(/[0-9a-f]{2}/gi) || []).map(h => parseInt(h, 16));
+    ok('el color de la barra del navegador también es azul', mc.length === 3 && mc[2] > mc[0] + 40, c.meta);
+    await p.emulateMedia({ reducedMotion: 'reduce' }); await p.waitForTimeout(200);
+    const r = await leer();
+    ok('con «reducir movimiento» el azul se queda quieto', r.anim === 'none', r.anim);
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
   console.log('Botones de redes sociales con estilo patito');
   {
     const sin = await abrir(b, 390, 844);

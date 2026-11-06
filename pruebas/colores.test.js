@@ -24,6 +24,18 @@ let n = 0; const nombre = () => 'Col' + (++n) + 'x' + String(Date.now()).slice(-
   ok('el marcador blanco se lee sobre cada color del fondo de la partida (contraste ≥ 3 para texto grande)', malos.length === 0, malos.join(' '));
 }
 
+// El final de la partida es un azul degradado en movimiento (body.end en index.html): el texto va blanco, así que cada tono tiene que dar contraste de al menos 4,5:1
+{
+  const html = fs.readFileSync(JUEGO + 'index.html', 'utf8'), m = /body\.end \{ background: linear-gradient\(([^;]+)\);/.exec(html), pal = m ? m[1].match(/#[0-9a-fA-F]{6}/g) : [];
+  const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  ok('el degradado del final tiene al menos 5 tonos', pal.length >= 5, JSON.stringify(pal));
+  ok('todos los tonos del final son azules (sin morado ni rosado)', pal.every(h => { const c = rgb(h); return c[2] > c[0] + 40 && c[2] >= c[1]; }), pal.join(' '));
+  const malos = pal.filter(h => { const c = rgb(h), mez = c.map(v => 255 * .85 + v * .15); return (lum(mez) + .05) / (lum(c) + .05) < 4.5; });
+  ok('el texto blanco del final se lee sobre cada tono del degradado (contraste ≥ 4,5)', malos.length === 0, malos.join(' '));
+  ok('en el final ya no queda ningún morado (#7b3ff2, #b21ee0, #e0149f, #8e2bea) en el fondo ni en la barra del navegador', !/body\.end \{[^}]*(7b3ff2|b21ee0|e0149f)/i.test(html) && !/setTheme\('#8e2bea'\)/.test(html));
+}
+
 (async () => {
   const b = await chromium.launch(fs.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {});
 

@@ -42,7 +42,8 @@
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
   }
   #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
-  body.end { background: linear-gradient(180deg, #7b3ff2 0%, #b21ee0 55%, #e0149f 100%); transition: none; }
+  body.end { background: linear-gradient(135deg, #002a47 0%, #0a5a8f 18%, #1a56b0 36%, #0a6b8a 54%, #003454 72%, #0b4f86 88%, #002a47 100%); background-size: 300% 300%; animation: endFlow 16s ease-in-out infinite alternate; transition: none; }      /* final: azul degradado en movimiento */
+  @keyframes endFlow { 0% { background-position: 0% 0%; } 50% { background-position: 100% 35%; } 100% { background-position: 30% 100%; } }
   body.end #close svg, body.hell #close svg { stroke: #fff; }
   body.end .num, body.hell .num { color: rgba(255,255,255,.78); }
   body.hell { --ghost: rgba(255,255,255,.12); }
@@ -511,7 +512,7 @@
   .link { background: none; border: 0; font: inherit; font-size: 14px; font-weight: 600; color: #6b6840; cursor: pointer; padding: 12px 14px; min-height: 44px; text-decoration: underline; }
   @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
-  /* final: pantalla morada con lluvia de billetes */
+  /* final: pantalla azul en movimiento con lluvia de billetes */
   #result { background: transparent; overflow: hidden; gap: 6px; color: #fff; }
   #result > * { position: relative; z-index: 1; }
   #result .rain { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
@@ -520,7 +521,7 @@
   .verdict { font-size: 24px; font-weight: 800; text-shadow: 0 2px 12px rgba(0,0,0,.25); }
   .final { font-size: 72px; font-weight: 800; line-height: 1; text-shadow: 0 2px 12px rgba(0,0,0,.25); font-variant-numeric: tabular-nums; }
   .final small { font-size: 28px; font-weight: 800; }
-  .sub { white-space: pre-line; font-size: 15px; font-weight: 600; opacity: .95; text-shadow: 0 1px 6px rgba(60,0,90,.55); max-width: 32ch; }
+  .sub { white-space: pre-line; font-size: 15px; font-weight: 600; opacity: .95; text-shadow: 0 1px 6px rgba(0,25,55,.6); max-width: 32ch; }
   #result .hero { height: clamp(84px, 15vh, 128px); animation: none; }
   #result .btn { background: #111; width: min(100%, 340px); display: flex; align-items: center; justify-content: center; gap: 10px; }
   #result .btn.ghost { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.7); }
@@ -528,8 +529,8 @@
   #result .status { color: rgba(255,255,255,.95); }
   #result .status.err { color: #ffd6d0; }
   #result .best { color: rgba(255,255,255,.85); }
-  #result .status, #result .best, #result .link { text-shadow: 0 1px 6px rgba(60,0,90,.55); }
-  #diagOut { margin: 0; width: min(100%, 340px); text-align: left; white-space: pre-wrap; word-break: break-word; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; color: #fff; background: rgba(20,0,40,.55); border-radius: 12px; padding: 10px 12px; -webkit-user-select: text; user-select: text; }
+  #result .status, #result .best, #result .link { text-shadow: 0 1px 6px rgba(0,25,55,.6); }
+  #diagOut { margin: 0; width: min(100%, 340px); text-align: left; white-space: pre-wrap; word-break: break-word; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; color: #fff; background: rgba(0,20,45,.6); border-radius: 12px; padding: 10px 12px; -webkit-user-select: text; user-select: text; }
   #diagOut[hidden], #diagBtn[hidden] { display: none; }
 
   /* ---------- marcadores ---------- */
@@ -1013,6 +1014,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    body.end { animation: none; background-position: 40% 40%; }
     .bgx, .bgx i, .bgx i::before, .bgx::before, .bgx::after, #paddle, #paddle::before, #paddle::after, .pvbar, .pvbar::before, .pvbar::after { animation: none !important; }
     #duck .wl, #duck .wr, #duck .halo, #duck .trident, #duck .tail, #duck .stat, #duck.mad .rig, #steam, .item .pv.mystery b, .item .pv.mystery i, .ball.emoji, .ball img, .ball.spin::before, .ball.spin::after, .ball.jump::before, .ball.jump::after, .hero, .rain span, #rotate .ico, .item .pv.chpv img { animation: none; }
     #arena.jolt { animation: none; }
@@ -2061,7 +2063,7 @@
     const c = PALETTE[Math.min(Math.floor((hits + 5) / 10), PALETTE.length - 1)];
     document.body.style.backgroundColor = c; setTheme(c);
   }
-  function setEnd(on) { document.body.classList.toggle('end', on); if (on) setTheme('#8e2bea'); }
+  function setEnd(on) { document.body.classList.toggle('end', on); if (on) setTheme('#0a4e82'); }
   function bump(el) { el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 140); }
   /* ---------- foto de perfil: emblema 100% personalizable ----------
      Un emblema = forma + color de fondo + color de borde + diseño + hasta 5 símbolos (emoji o la inicial) puestos, girados y agrandados como quiera el jugador.
@@ -3854,7 +3856,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v67';
+  const BUILD = 'v68';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
