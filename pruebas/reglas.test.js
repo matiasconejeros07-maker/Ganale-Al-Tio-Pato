@@ -223,6 +223,32 @@ ok('equipar la barra Rey Midas ya comprada', db(vip, T0).update('/wallets/u1', {
 ok('equipar el agujero negro sin comprarlo', db(vip, T0).update('/wallets/u1', { eq: { bg: 'agujero' } }), false);
 ok('equipar la tormenta eléctrica sin comprarla', db(vip, T0).update('/wallets/u1', { eq: { pad: 'plasma' } }), false);
 
+// ---------- colores del juego (th): se compran con su precio, el azul de siempre es gratis y solo se equipa lo que se tiene ----------
+console.log('Colores del juego (th)');
+{
+  const TH = cx.window.TIENDA.th, precioTh = Object.fromEntries(TH.filter(t => t.price > 0).map(t => ['th_' + t.id, t.price]));
+  const rico2 = { wallets: { u1: { c: 90000000, sp: 0, lr: T0 } } };
+  ok('el catálogo tiene el azul gratis primero y 8 colores de pago (2 para millonarios)', { allowed: TH[0].price === 0 && TH.length === 9 && TH.filter(t => t.vip).length === 2 }, true);
+  for (const [k, pr] of Object.entries(precioTh)) {
+    ok(`comprar ${k} ($${pr}) pagando ${pr}`, db(rico2, T0).update('/wallets/u1', { sp: pr, ['own/' + k]: true }), true);
+    ok(`… pagando ${pr - 1}`, db(rico2, T0).update('/wallets/u1', { sp: pr - 1, ['own/' + k]: true }), false);
+  }
+  ok('comprar el azul gratis (no se vende: ya es tuyo)', db(rico2, T0).update('/wallets/u1', { sp: 0, ['own/th_' + TH[0].id]: true }), false);
+  ok('comprar un color que no existe', db(rico2, T0).update('/wallets/u1', { sp: 100, 'own/th_verde_limon': true }), false);
+  ok('«Negro y oro» sin saldo suficiente (c = 500.000)', db({ wallets: { u1: { c: 500000, sp: 0 } } }, T0).update('/wallets/u1', { sp: 1000000, 'own/th_oro': true }), false);
+  ok('«Hielo diamante» con el precio de «Negro y oro»', db(rico2, T0).update('/wallets/u1', { sp: 1000000, 'own/th_diamante': true }), false);
+  ok('comprar un color como si fuera un fondo (bg_violeta)', db(rico2, T0).update('/wallets/u1', { sp: 300, 'own/bg_violeta': true }), false);
+  const conViolet = { wallets: { u1: { c: 90000000, sp: 300, lr: T0, own: { th_violeta: true } } } };
+  ok('equipar el violeta ya comprado', db(conViolet, T0).update('/wallets/u1', { eq: { th: 'violeta' } }), true);
+  ok('equipar solo el color (eq/th) sin tocar lo demás', db(conViolet, T0).update('/wallets/u1', { 'eq/th': 'violeta' }), true);
+  ok('equipar el rosa sin comprarlo', db(conViolet, T0).update('/wallets/u1', { eq: { th: 'rosa' } }), false);
+  ok('volver al azul de siempre sin tener nada comprado', db(rico2, T0).update('/wallets/u1', { eq: { th: TH[0].id } }), true);
+  ok('equipar un color que no existe', db(conViolet, T0).update('/wallets/u1', { eq: { th: 'verde_limon' } }), false);
+  ok('equipar el violeta en la categoría de fondos', db(conViolet, T0).update('/wallets/u1', { eq: { bg: 'violeta' } }), false);
+  ok('equipar el color de otra cuenta (u2)', db(conViolet, T0, 'u2').update('/wallets/u1', { eq: { th: 'violeta' } }), false);
+  ok('equipar todo junto (personaje, fondo, barra, pelota y color) con lo que ya es tuyo', db(conViolet, T0).update('/wallets/u1', { eq: { ch: 'tio', bg: 'clasico', pad: 'clasica', ball: 'peso1', th: 'violeta' } }), true);
+}
+
 console.log('Contador de puestos (hist) y marcador con filas por campo');
 const row = (s, c) => Object.assign({ n: 'Matías', k: 'matias', s, t: 5 }, c === undefined ? {} : { c });
 const H = (scores, hist = {}) => ({ scores, hist });
@@ -717,21 +743,12 @@ console.log('Marcadores: semanal, millonarios e insignias');
   ok('leer el marcador semanal sin sesión', targaryen.database(rules, shiftObj(ya, 0)).as(null).read(`/weekly/${WK}`), true);
   ok('leer cualquier semana vieja', targaryen.database(rules, shiftObj(ya, 0)).as(null).read(`/weekly/${WK - 3}`), true);
 
-  console.log(' Millonarios (el total de pesos ganados en el marcador)');
+  console.log(' El top Millonarios ya no existe (scores/<uid>/w se rechaza)');
   const cart = { wallets: { u1: { c: 5000, sp: 1200, lr: T0 - 99999 } }, scores: { u1: fila } };
-  ok('tu total ganado ($5.000, sin descontar lo gastado) en tu fila del marcador', as(cart, { 'scores/u1/w': 5000 }), true);
-  ok('un total más grande que el real ($5.001)', as(cart, { 'scores/u1/w': 5001 }), false);
-  ok('descontando lo gastado ($3.800): ya no es lo que cuenta', as(cart, { 'scores/u1/w': 3800 }), false);
-  ok('un total menor que el real ($4.999)', as(cart, { 'scores/u1/w': 4999 }), false);
-  ok('total negativo', as(cart, { 'scores/u1/w': -1 }), false);
-  ok('total con decimales', as({ ...cart, wallets: { u1: { c: 5000.5, sp: 1200, lr: T0 - 99999 } } }, { 'scores/u1/w': 5000.5 }), false);
-  ok('total de otra cuenta', as({ ...cart, scores: { u1: fila, u2: { ...fila, n: 'Otra', k: 'otra' } } }, { 'scores/u2/w': 5000 }), false);
-  ok('total sin tener cartera', as({ scores: { u1: fila } }, { 'scores/u1/w': 100 }), false);
-  ok('total enorme de verdad ($600.000.000.000)', as({ wallets: { u1: { c: 600000000000, sp: 100000000000, lr: T0 - 99999 } }, scores: { u1: fila } }, { 'scores/u1/w': 600000000000 }), true);
-  ok('gastar en la tienda no baja el total: con sp 2.000 sigue valiendo $5.000', as({ wallets: { u1: { c: 5000, sp: 2000, lr: T0 - 99999 } }, scores: { u1: { ...fila, w: 5000 } } }, { 'scores/u1/w': 5000 }), true);
-  ok('y un total viejo calculado como ganado − gastado ($3.000) ya no vale', as({ wallets: { u1: { c: 5000, sp: 2000, lr: T0 - 99999 } }, scores: { u1: { ...fila, w: 3800 } } }, { 'scores/u1/w': 3000 }), false);
-  ok('al ganar más pesos el total sube con la cartera ($5.000 → $6.000)', as({ wallets: { u1: { c: 6000, sp: 2000, lr: T0 - 99999 } }, scores: { u1: { ...fila, w: 5000 } } }, { 'scores/u1/w': 6000 }), true);
-  ok('leer todas las filas del marcador (incluido el total ganado)', targaryen.database(rules, shiftObj({ scores: { u1: { ...fila, w: 3800 } } }, 0)).as(null).read('/scores'), true);
+  ok('guardar un total ganado ($5.000) en tu fila del marcador', as(cart, { 'scores/u1/w': 5000 }), false);
+  ok('guardar la billetera ($3.800) en tu fila del marcador', as(cart, { 'scores/u1/w': 3800 }), false);
+  ok('una fila vieja que todavía tiene el campo w sigue pudiendo cambiar su emblema (el dato viejo no estorba)', as({ ...cart, scores: { u1: { ...fila, w: 3800 } } }, { 'scores/u1/a': 'e41A33GGG' }), true);
+  ok('leer todas las filas del marcador', targaryen.database(rules, shiftObj({ scores: { u1: { ...fila, w: 3800 } } }, 0)).as(null).read('/scores'), true);
 
   console.log(' Insignias (roles)');
   ok('ponerte una insignia de desarrollador desde el juego', as(base, { 'roles/u1': 'dev' }), false);

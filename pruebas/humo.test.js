@@ -50,6 +50,23 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     await ctx.close();
   }
 
+  console.log('El fondo de la partida parte en azul y pasa por índigo, morado y rojo');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    await jugar(p); await p.waitForTimeout(1500);
+    await p.evaluate(() => { window.__auto = true; window.__g.quiet(); });
+    const fondo = async n => { await p.evaluate(n => window.__g.set(n), n); await p.waitForTimeout(250); return p.evaluate(() => ({ bg: document.body.style.backgroundColor, dark: document.body.classList.contains('dark'), hell: document.body.classList.contains('hell') })); };
+    let f = await fondo(0);
+    ok('al empezar (0 rebotes) el fondo es el azul del inicio (#003454) y el texto va claro', f.bg === 'rgb(0, 52, 84)' && f.dark && !f.hell, JSON.stringify(f));
+    f = await fondo(25); ok('con 25 rebotes se vuelve azul más vivo (#17479a)', f.bg === 'rgb(23, 71, 154)' && f.dark && !f.hell, JSON.stringify(f));
+    f = await fondo(45); ok('con 45 rebotes, morado (#8f2a9c)', f.bg === 'rgb(143, 42, 156)' && f.dark && !f.hell, JSON.stringify(f));
+    f = await fondo(60); ok('desde el 55 entra el infierno: rojo (#c2312f)', f.bg === 'rgb(194, 49, 47)' && f.dark && f.hell, JSON.stringify(f));
+    f = await fondo(100); ok('con 100 rebotes, casi negro (#2a0508)', f.bg === 'rgb(42, 5, 8)' && f.dark && f.hell, JSON.stringify(f));
+    await p.evaluate(() => { window.__auto = false; });
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
   console.log('Potenciadores (10 s cada uno): burbujas, hielo cristal y barra grande');
   {
     const { ctx, p, errs } = await abrir(b, 390, 844);
@@ -174,6 +191,30 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     await p.waitForSelector('#result.show', { timeout: 40000 });
     const fin = await pu();
     ok('al terminar la partida se limpian las burbujas, los efectos, el hielo y los cuadros', fin.n === 0 && !fin.has && fin.slowK === 1 && fin.padBoost === 1 && fin.hud === '' && !fin.frozen && !fin.bubbly && !fin.wide && fin.snow === 0 && fin.bub === 0, JSON.stringify(fin));
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
+  console.log('Final de la partida: azul degradado en movimiento (sin morado)');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    await jugar(p);
+    await p.waitForSelector('#result.show', { timeout: 40000 });
+    await p.waitForTimeout(500);
+    const leer = () => p.evaluate(() => { const cs = getComputedStyle(document.body); return { end: document.body.classList.contains('end'), anim: cs.animationName, pos: cs.backgroundPosition, img: cs.backgroundImage, meta: document.querySelector('meta[name=theme-color]').content }; });
+    const a = await leer();
+    const cols = (a.img.match(/rgb\((\d+), (\d+), (\d+)\)/g) || []).map(c => c.match(/\d+/g).map(Number));
+    ok('al terminar, el fondo es un degradado con varios tonos', a.end && /linear-gradient/.test(a.img) && cols.length >= 5, a.img);
+    ok('todos los tonos del degradado son azules (ninguno morado ni rosado)', cols.length > 0 && cols.every(([r, g, bl]) => bl > r + 40 && bl >= g), JSON.stringify(cols));
+    ok('el degradado tiene animación (se mueve)', a.anim === 'endFlow', a.anim);
+    await p.waitForTimeout(1500);
+    const c = await leer();
+    ok('y de verdad se mueve: la posición cambia con el tiempo', c.pos !== a.pos, a.pos + ' → ' + c.pos);
+    const mc = (c.meta.match(/[0-9a-f]{2}/gi) || []).map(h => parseInt(h, 16));
+    ok('el color de la barra del navegador también es azul', mc.length === 3 && mc[2] > mc[0] + 40, c.meta);
+    await p.emulateMedia({ reducedMotion: 'reduce' }); await p.waitForTimeout(200);
+    const r = await leer();
+    ok('con «reducir movimiento» el azul se queda quieto', r.anim === 'none', r.anim);
     ok('sin errores de página', errs.length === 0, errs.join('|'));
     await ctx.close();
   }

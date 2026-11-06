@@ -64,7 +64,7 @@ async function mocks(ctx) {
       const rd = db().read(path === '/' ? '/' : path);
       if (!rd.allowed) { st.denied.push('GET ' + path); return J(r, { error: 'Permission denied' }, 401); }
       const obq = (u.searchParams.get('orderBy') || '').replace(/"/g, '');
-      if ((parts[0] === 'scores' && parts.length === 1 && obq === 'w') || (parts[0] === 'weekly' && parts.length === 2)) {      // marcador de millonarios (scores ordenado por w) y semanal (weekly/<semana> ordenado por s)
+      if (parts[0] === 'weekly' && parts.length === 2) {      // marcador semanal (weekly/<semana> ordenado por s)
         const idx = parts[0] === 'scores' ? ((rules().rules.scores || {})['.indexOn'] || []) : ((((rules().rules.weekly || {})['$week']) || {})['.indexOn'] || []);
         if (obq && !idx.includes(obq)) return J(r, { error: `Index not defined, add ".indexOn": "${obq}", for path "/${parts.join('/')}", to the rules` }, 400);
         const coll = parts[0] === 'scores' ? (st.db.scores || {}) : ((st.db.weekly || {})[parts[1]] || {});

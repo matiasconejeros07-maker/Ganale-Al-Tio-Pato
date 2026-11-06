@@ -7,7 +7,7 @@ const dir = path.join(__dirname, '..');
 const ctx = { window: {} }; vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(dir, 'tienda.js'), 'utf8'), ctx);
 const T = ctx.window.TIENDA, ECO = T.eco, E = ECO.tier;
-const CATS = ['ch', 'bg', 'pad', 'ball'];
+const CATS = ['ch', 'bg', 'pad', 'ball', 'th'];                  // th = colores del juego
 const MAIL = '@tio-pato.invalid';
 const SECRET = T.ch.find(c => c.secret).id;       // el personaje secreto (sus compras se guardan como own/ch_<id>)
 // pesos por punto de cada pelota (ball[].rate): se escribe como una cadena de «?:» sobre el id de la pelota que quedó anotada al empezar la partida
@@ -135,7 +135,7 @@ const rules = { rules: {
 
   // ---- marcadores: cada cuenta escribe solo lo suyo, nunca baja y no puede superar los rebotes de su partida terminada ----
   scores: {
-    '.read': true, '.indexOn': ['s', 'k', 'ms', 'w'],                                 // `k` sirve para ver si un nombre ya lo usa alguien en el marcador · `w` ordena el marcador «Millonarios»
+    '.read': true, '.indexOn': ['s', 'k', 'ms'],                                 // `k` sirve para ver si un nombre ya lo usa alguien en el marcador 
     $uid: {
       '.write': "auth != null && auth.uid === $uid && (!data.exists() || newData.child('s').val() >= data.child('s').val())",
       '.validate': "newData.hasChildren(['n', 'k', 's', 't'])",
@@ -151,8 +151,6 @@ const rules = { rules: {
       ml: { '.validate': `newData.isNumber() && newData.val() === ${RV('s')} && ${RUN}.child('e').exists() && (!data.exists() || newData.val() > data.val()) && root.child('wallets').child($uid).child('lr').val() === newData.val()` },
       // c = el puntaje que ya está contado en `hist` (así cada cuenta cuenta una sola vez y se puede mover de casilla al mejorar). Solo sube y siempre es igual al puntaje de ese momento.
       c: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.hMax} && newData.val() === ${P}.child('s').val() && (!data.exists() || newData.val() > data.val())` },
-      // w = el TOTAL de pesos ganados en el juego (wallets/<uid>/c; lo que se gasta en la tienda no se descuenta) que se ve en el marcador «Millonarios»: solo vale lo que la cartera dice en el momento de escribirlo (se actualiza aparte del cobro, después de cada cobro)
-      w: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= ${ECO.cMax} && newData.val() === ${P}.parent().parent().child('wallets').child($uid).child('c').val()` },
       $other: { '.validate': false }
     }
   },

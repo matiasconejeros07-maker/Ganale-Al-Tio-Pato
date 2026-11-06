@@ -1,4 +1,4 @@
-// Marcadores de punta a punta (juego + reglas reales de Firebase): Top 30 en todos, «Todo el tiempo», «Semanal», «Tiempo jugado» y «Millonarios» (el total de pesos ganados),
+// Marcadores de punta a punta (juego + reglas reales de Firebase): Top 30 en todos, «Todo el tiempo», «Semanal», y «Tiempo jugado»,
 // y las insignias (🦆🎩 🦆🎀 👾) que pone el administrador en roles/<uid>. Uso:  cd pruebas && npm install && node marcadores.test.js
 const fs = require('fs'), os = require('os'), path = require('path');
 const { chromium, st, newPage, playHits, registrar, JUEGO } = require('./mockfirebase.js');
@@ -19,24 +19,21 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   const { ctx, p, errs } = await newPage(b);
   const uid = await registrar(p, 'Marc Uno'); await cerrarDiario(p);
 
-  console.log('Las partidas llenan el marcador semanal y el total ganado público');
+  console.log('Las partidas llenan el marcador semanal');
   const w = WK();
   await playHits(p, 8, async () => {}); await p.waitForTimeout(6000);
   const r1 = st.db.runs[uid], s1 = st.db.weekly && st.db.weekly[w] && st.db.weekly[w][uid];
   ok(`la primera partida (${r1.h} rebotes) crea tu fila semanal: nombre, mejor de la semana y hora del servidor`, s1 && s1.n === 'Marc Uno' && s1.s === r1.h && typeof s1.t === 'number' && Object.keys(s1).length >= 3, JSON.stringify(s1));
   ok('la fila semanal coincide con tus estadísticas verificadas (wm)', st.db.stats[uid].wm === r1.h && st.db.stats[uid].w === w, JSON.stringify(st.db.stats[uid]));
-  const cartera = () => st.db.wallets[uid].c;                       // lo que se ve en «Millonarios»: el total ganado (lo gastado no se descuenta)
-  ok('tu total ganado público (scores/<uid>/w) es el de tu cartera (wallets/<uid>/c)', st.db.scores[uid].w === cartera() && cartera() > 0, `${st.db.scores[uid].w} vs ${cartera()}`);
   await playHits(p, 5, async () => {}); await p.waitForTimeout(6000);
   const r2 = st.db.runs[uid];
   ok('una partida peor no baja la marca de la semana', r2.h < r1.h ? st.db.weekly[w][uid].s === r1.h : st.db.weekly[w][uid].s === Math.max(r1.h, r2.h), JSON.stringify(st.db.weekly[w][uid]) + ' ' + r1.h + '/' + r2.h);
-  ok('y el total público se actualiza con lo que sumó la partida', st.db.scores[uid].w === cartera(), `${st.db.scores[uid].w} vs ${cartera()}`);
   await playHits(p, 12, async () => {}); await p.waitForTimeout(6000);
   const r3 = st.db.runs[uid];
   ok(`una partida mejor (${r3.h}) sube la marca de la semana`, st.db.weekly[w][uid].s === Math.max(r1.h, r2.h, r3.h) && st.db.weekly[w][uid].s >= r3.h, JSON.stringify(st.db.weekly[w][uid]));
   ok('sin denegados ni errores de página en todo el recorrido', st.denied.length === 0 && errs.length === 0, st.denied.join(' || ') + errs.join('|'));
 
-  console.log('Los cuatro marcadores (con 40 jugadores sembrados)');
+  console.log('Los tres marcadores (con 40 jugadores sembrados)');
   const base = { s: 0, t: 1000 };
   for (let i = 1; i <= 40; i++) {
     st.db.scores['x' + i] = { n: 'Jug ' + i, k: 'jug.' + i, s: i, t: 1000 + i, ms: i * 600000, ml: 1, w: i * 1000000 };
@@ -44,7 +41,7 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
   st.db.roles = { x40: 'tio', x39: 'tia', x38: 'dev', zz: 'dev' };
   await abrirMarcador(p);
-  ok('aparecen las 4 pestañas: Todo el tiempo, Semanal, Tiempo jugado y Millonarios', await p.evaluate(() => ['kindR', 'kindW', 'kindT', 'kindM'].map(i => document.getElementById(i).textContent).join('|')) === '🏆 Todo el tiempo|📅 Semanal|⏱️ Tiempo jugado|💰 Millonarios');
+  ok('aparecen las 3 pestañas: Todo el tiempo, Semanal y Tiempo jugado (ya no hay «Millonarios»)', await p.evaluate(() => ['kindR', 'kindW', 'kindT'].map(i => document.getElementById(i).textContent).join('|')) === '🏆 Todo el tiempo|📅 Semanal|⏱️ Tiempo jugado' && !(await p.evaluate(() => !!document.getElementById('kindM'))));
   let f = await filas(p);
   ok('«Todo el tiempo» muestra 30 jugadores (no 25), el mejor primero', f.length === 30 && f[0].n === 'Jug 40' && f[0].sc === '40', JSON.stringify(f.slice(0, 2)));
   ok('con 🥇🥈🥉 y después el número', f[0].rk === '🥇' && f[1].rk === '🥈' && f[2].rk === '🥉' && f[3].rk === '4' && f[29].rk === '30');
@@ -63,13 +60,6 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   f = await filas(p);
   ok('«Tiempo jugado»: también 30 jugadores, el que más tiempo lleva primero', f.length === 30 && f[0].n === 'Jug 40' && /d|h/.test(f[0].sc) && f[0].rb === '🦆🎩', JSON.stringify(f[0]));
 
-  await pestana(p, 'kindM');
-  f = await filas(p);
-  ok('«Millonarios»: 30 jugadores ordenados por total ganado, con el monto en pesos', f.length === 30 && f[0].n === 'Jug 40' && f[0].sc === money(40000000) && f[1].sc === money(39000000), JSON.stringify(f.slice(0, 2)));
-  ok('«Millonarios» lleva las insignias y la nota explica qué se ve', f[0].rb === '🦆🎩' && /más pesos han ganado en total/.test(await nota(p)) && /no se descuenta/.test(await nota(p)), await nota(p));
-  mi = await miFila(p);
-  ok('tu total ganado (el tuyo de verdad) aparece debajo si no estás entre los 30', mi && mi.n === 'Marc Uno' && mi.sc === money(cartera()), JSON.stringify(mi) + ' ' + cartera());
-  ok('al abrir «Millonarios» se actualiza tu total público', st.db.scores[uid].w === cartera());
   await pestana(p, 'kindR');
   f = await filas(p);
   ok('al volver a «Todo el tiempo» se ven los rebotes otra vez', f[0].sc === '40' && /Top 30/.test(await nota(p)));
@@ -88,11 +78,10 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       const r = await fetch(`${url}/${ruta}.json?auth=${encodeURIComponent(sess.id)}`, { method: m, body: JSON.stringify(body) }); return r.status;
     }, [m, ruta, body, url]);
     const wk = WK();
-    ok('ponerte un total inventado en el marcador de millonarios', await hit('PATCH', `scores/${u2}`, { w: 999999999 }) === 401);
+    ok('guardar un total o una billetera en tu fila del marcador (el top de millonarios ya no existe)', await hit('PATCH', `scores/${u2}`, { w: 999999999 }) === 401);
     ok('ponerte 10.000 rebotes en el marcador semanal', await hit('PUT', `weekly/${wk}/${u2}`, { n: 'Marc Dos', s: 500, t: { '.sv': 'timestamp' } }) === 401);
     ok('escribir en la semana pasada', await hit('PUT', `weekly/${wk - 1}/${u2}`, { n: 'Marc Dos', s: st.db.stats[u2].wm, t: { '.sv': 'timestamp' } }) === 401);
     ok('ponerte una insignia de desarrollador', await hit('PUT', `roles/${u2}`, 'dev') === 401);
-    ok('el total real sí se acepta', await hit('PATCH', `scores/${u2}`, { w: st.db.wallets[u2].c }) === 200);
     st.denied.length = 0;
     await c2.close();
   }
@@ -110,8 +99,6 @@ const money = n => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     ok('«Todo el tiempo» sigue funcionando', (await filas(p3)).length > 0 && /Top/.test(await nota(p3)), await nota(p3));
     await pestana(p3, 'kindW');
     ok('«Semanal» avisa que faltan las reglas nuevas', /Falta publicar las reglas nuevas/.test(await nota(p3)), await nota(p3));
-    await pestana(p3, 'kindM');
-    ok('«Millonarios» avisa que faltan las reglas nuevas', /Falta publicar las reglas nuevas/.test(await nota(p3)), await nota(p3));
     ok('sin errores de página', e3.length === 0, e3.join('|'));
     fs.unlinkSync(f2); st.rulesFile = null; st.denied.length = 0; await c3.close();
   }

@@ -85,7 +85,7 @@ window.TIENDA = {
 
   // vip: true = artículo para millonarios (la tienda los separa y los marca con 💎; el precio ya los deja fuera del alcance de quien recién empieza).
   bg: [
-    { id: 'clasico',   n: 'Clásico',          price: 0,   base: '#fff6c0', note: 'Cambia de color con tus puntos' },
+    { id: 'clasico',   n: 'Clásico',          price: 0,   base: '#003454', dark: true, note: 'Parte azul y cambia de color con tus puntos' },
     { id: 'atardecer', n: 'Atardecer',        price: 200, base: '#ffb199', note: 'Sol sobre el mar y nubes que pasan' },
     { id: 'cristal',   n: 'Cristal helado',   price: 220, base: '#dcecff', note: 'Témpanos, escarcha y destellos' },
     { id: 'aurora',    n: 'Aurora boreal',    price: 300, base: '#0b1b34', dark: true, note: 'Cortinas de luz sobre las montañas' },
@@ -131,5 +131,20 @@ window.TIENDA = {
     { id: 'plata',   n: 'Lingote de plata', price: 50000,   rate: 100,   img: 'skins/plata.webp',    fx: 'jump', w: 1.7, asp: 0.594, trail: '#cfd6e2', nom: 'lingote de plata', gen: 'm', note: 'Un lingote de verdad' },
     { id: 'oro',     n: 'Lingote de oro',   price: 500000,  rate: 500,   img: 'skins/oro.webp',     fx: 'jump', w: 1.7, asp: 0.594, trail: '#ffd54a', nom: 'lingote de oro', gen: 'm' },
     { id: 'diamante', n: 'Diamante',        price: 1000000, rate: 5000,  img: 'skins/diamante.webp', fx: 'jump', w: 1.15, asp: 1.04, trail: '#8fd3ff', nom: 'diamante', gen: 'm', note: 'La joya de la corona' }
+  ],
+
+  // Colores del juego: pintan el inicio, la tienda y los marcadores (el fondo de la partida se elige en «Fondos»). El primero es el de siempre (gratis); los demás se compran y se cambian cuando uno quiere.
+  // c = [arriba, medio, abajo] del degradado de fondo · s = [centro, medio, borde] del círculo del Pato · dark = fondo oscuro (el texto va claro; sin dark, el texto va oscuro).
+  // Opcionales: on = color del texto sobre el fondo · on2 = el texto más suave · g = [1, 2] del lema dorado · t = [1, 2] del título. vip = solo para millonarios (se muestran aparte).
+  th: [
+    { id: 'oceano',   n: 'Azul profundo',   price: 0,       dark: true, c: ['#00223b', '#003454', '#001d35'], s: ['#0a6b8a', '#0a4e65', '#06384d'], note: 'El de siempre: azul marino con toques dorados' },
+    { id: 'clasico',  n: 'Amarillo clásico', price: 100,    c: ['#ffec96', '#fff7c2', '#fff7c2'], s: ['#fffef0', '#fff1a8', '#f7d85a'], note: 'El amarillo de antes' },
+    { id: 'bosque',   n: 'Verde bosque',    price: 200,     dark: true, c: ['#05261a', '#0b3d2b', '#04201a'], s: ['#1f8a5c', '#126343', '#0a3f2b'], note: 'Verde profundo, como de noche en el bosque' },
+    { id: 'rosa',     n: 'Rosa chicle',     price: 200,     c: ['#ffc2e0', '#ffd9ec', '#ffd0e8'], s: ['#fff5fb', '#ffc2e0', '#f58fc4'], on: '#3d0a2a', on2: '#8a3a68', g: ['#b0156b', '#e0458f'], t: ['#3d0a2a', '#9a1560'], note: 'Dulce y brillante' },
+    { id: 'violeta',  n: 'Violeta',         price: 300,     dark: true, c: ['#1f0a3d', '#341a63', '#1a0838'], s: ['#7a45d6', '#5329a6', '#341a63'], note: 'Morado intenso con aire de magia' },
+    { id: 'fuego',    n: 'Rojo fuego',      price: 350,     dark: true, c: ['#2e0505', '#6b1410', '#2a0705'], s: ['#e8572a', '#b02a12', '#6b1410'], note: 'Brasas y llamas' },
+    { id: 'noche',    n: 'Noche',           price: 400,     dark: true, c: ['#05050a', '#12121c', '#05050a'], s: ['#3a3a55', '#23233a', '#12121c'], note: 'Negro elegante' },
+    { id: 'oro',      n: 'Negro y oro',     price: 1000000, dark: true, vip: true, c: ['#140e02', '#2a1c04', '#100a01'], s: ['#f2c24a', '#b8860b', '#6b4a06'], on: '#fff3d0', on2: 'rgba(255, 236, 180, .78)', g: ['#ffe27a', '#ffb300'], t: ['#fff3b0', '#ffc928'], note: 'Negro con oro por todos lados' },
+    { id: 'diamante', n: 'Hielo diamante',  price: 2500000, vip: true, c: ['#d8f3ff', '#eafaff', '#cdeeff'], s: ['#ffffff', '#bfeaff', '#7fd0f5'], on: '#0a2a40', on2: '#3a6a88', g: ['#0a7aa8', '#2fb4e8'], t: ['#0a2a40', '#1a6a98'], note: 'Celeste cristalino, solo para millonarios' }
   ]
 };
