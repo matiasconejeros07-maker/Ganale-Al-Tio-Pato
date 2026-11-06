@@ -85,7 +85,7 @@ window.TIENDA = {
 
   // vip: true = artículo para millonarios (la tienda los separa y los marca con 💎; el precio ya los deja fuera del alcance de quien recién empieza).
   bg: [
-    { id: 'clasico',   n: 'Clásico',          price: 0,   base: '#fff6c0', note: 'Cambia de color con tus puntos' },
+    { id: 'clasico',   n: 'Clásico',          price: 0,   base: '#003454', dark: true, note: 'Parte azul y cambia de color con tus puntos' },
     { id: 'atardecer', n: 'Atardecer',        price: 200, base: '#ffb199', note: 'Sol sobre el mar y nubes que pasan' },
     { id: 'cristal',   n: 'Cristal helado',   price: 220, base: '#dcecff', note: 'Témpanos, escarcha y destellos' },
     { id: 'aurora',    n: 'Aurora boreal',    price: 300, base: '#0b1b34', dark: true, note: 'Cortinas de luz sobre las montañas' },

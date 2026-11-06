@@ -1281,7 +1281,7 @@
   const RANK_MS = 120000;        // tu puesto (lo más pesado: el contador de 500 casillas) se vuelve a leer cada 2 min, al abrir y cuando cambia tu récord
   const STORE_KEY = 'gana-al-tio-pato-v2';
   // El fondo cambia cada 10 rebotes (el primero a los 5): del cielo amarillo al infierno, que empieza justo cuando el Pato se enoja
-  const PALETTE = ['#fff6c0', '#ffec5c', '#ffb978', '#ffa64f', '#faa3fe', '#f478fd', '#c2312f', '#8a1620', '#5a0e14', '#3a070b', '#2a0508'];
+  const PALETTE = ['#003454', '#033d66', '#074a80', '#17479a', '#4a3aa8', '#8f2a9c', '#c2312f', '#8a1620', '#5a0e14', '#3a070b', '#2a0508'];      // fondo «Clásico» de la partida: azul de siempre → índigo → morado → rojo → casi negro (todos oscuros: el texto va claro)
 
   const DB = String(window.DINERO_DB_URL || '').trim().replace(/\/+$/, '');
   const ONLINE = DB !== '';
@@ -3336,7 +3336,7 @@
   let themeActive = false, themePremium = false, themeDark = false, trailColor = '#ffc928';
   function syncTheme() {
     document.body.classList.toggle('themed', themeActive && themePremium);
-    document.body.classList.toggle('dark', themeActive && themePremium && themeDark);
+    document.body.classList.toggle('dark', themeActive && themeDark);
   }
   function setThemeActive(on) { themeActive = on; syncTheme(); }      // el fondo premium solo se ve mientras juegas
   function applyBall() {
@@ -3389,7 +3389,7 @@
       else pv.textContent = '🦆';
     } else if (shopTab === 'bg') {
       pv.className = 'pv bgx'; pv.dataset.bg = it.id; pv.innerHTML = '<i></i><i></i><i></i><i></i><i></i>';
-      if (it.id === DEF.bg) pv.style.background = 'linear-gradient(135deg, #fff6c0 0%, #ffb978 35%, #f478fd 65%, #c2312f 100%)';
+      if (it.id === DEF.bg) pv.style.background = 'linear-gradient(135deg, #003454 0%, #17479a 30%, #8f2a9c 62%, #c2312f 100%)';
     } else if (shopTab === 'th') {                                               // el color: un inicio en miniatura (fondo, círculo del Pato y dos renglones)
       pv.className = 'pv thpv';
       const d = !!it.dark, g = it.g || (d ? ['#ffd54a', '#f2a900'] : ['#a86a00', '#e0a000']);
@@ -3854,7 +3854,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v66';
+  const BUILD = 'v67';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];

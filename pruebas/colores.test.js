@@ -14,6 +14,16 @@ const tocar = (p, nombre) => p.evaluate(n => { const c = [...document.querySelec
 const estado = p => p.evaluate(() => ({ dark: document.body.classList.contains('th-dark'), bg: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(), meta: document.getElementById('themeColor').getAttribute('content') }));
 let n = 0; const nombre = () => 'Col' + (++n) + 'x' + String(Date.now()).slice(-4);
 
+// El fondo «Clásico» de la partida (PALETTE en index.html) es todo oscuro: el marcador es blanco al 80% y son números grandes (24 px en negrita = «texto grande» de WCAG), así que cada color tiene que darle contraste de al menos 3:1 (los azules del inicio dan más de 9:1)
+{
+  const html = fs.readFileSync(JUEGO + 'index.html', 'utf8'), m = /const PALETTE = \[([^\]]+)\]/.exec(html), pal = m ? m[1].match(/#[0-9a-fA-F]{6}/g) : [];
+  const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  ok('el fondo de la partida tiene 11 colores y parte en el azul del inicio (#003454)', pal.length === 11 && pal[0].toLowerCase() === '#003454', JSON.stringify(pal));
+  const malos = pal.filter(h => { const c = rgb(h), mez = c.map(v => 255 * .8 + v * .2), l1 = lum(mez), l2 = lum(c); return (l1 + .05) / (l2 + .05) < 3; });
+  ok('el marcador blanco se lee sobre cada color del fondo de la partida (contraste ≥ 3 para texto grande)', malos.length === 0, malos.join(' '));
+}
+
 (async () => {
   const b = await chromium.launch(fs.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {});
 

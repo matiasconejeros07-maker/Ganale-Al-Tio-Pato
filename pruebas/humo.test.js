@@ -50,6 +50,23 @@ const jugar = async p => { await p.fill('#name', 'Prueba'); await p.tap('#play')
     await ctx.close();
   }
 
+  console.log('El fondo de la partida parte en azul y pasa por índigo, morado y rojo');
+  {
+    const { ctx, p, errs } = await abrir(b, 390, 844);
+    await jugar(p); await p.waitForTimeout(1500);
+    await p.evaluate(() => { window.__auto = true; window.__g.quiet(); });
+    const fondo = async n => { await p.evaluate(n => window.__g.set(n), n); await p.waitForTimeout(250); return p.evaluate(() => ({ bg: document.body.style.backgroundColor, dark: document.body.classList.contains('dark'), hell: document.body.classList.contains('hell') })); };
+    let f = await fondo(0);
+    ok('al empezar (0 rebotes) el fondo es el azul del inicio (#003454) y el texto va claro', f.bg === 'rgb(0, 52, 84)' && f.dark && !f.hell, JSON.stringify(f));
+    f = await fondo(25); ok('con 25 rebotes se vuelve azul más vivo (#17479a)', f.bg === 'rgb(23, 71, 154)' && f.dark && !f.hell, JSON.stringify(f));
+    f = await fondo(45); ok('con 45 rebotes, morado (#8f2a9c)', f.bg === 'rgb(143, 42, 156)' && f.dark && !f.hell, JSON.stringify(f));
+    f = await fondo(60); ok('desde el 55 entra el infierno: rojo (#c2312f)', f.bg === 'rgb(194, 49, 47)' && f.dark && f.hell, JSON.stringify(f));
+    f = await fondo(100); ok('con 100 rebotes, casi negro (#2a0508)', f.bg === 'rgb(42, 5, 8)' && f.dark && f.hell, JSON.stringify(f));
+    await p.evaluate(() => { window.__auto = false; });
+    ok('sin errores de página', errs.length === 0, errs.join('|'));
+    await ctx.close();
+  }
+
   console.log('Potenciadores (10 s cada uno): burbujas, hielo cristal y barra grande');
   {
     const { ctx, p, errs } = await abrir(b, 390, 844);
