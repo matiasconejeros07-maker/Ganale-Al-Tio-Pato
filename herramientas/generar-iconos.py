@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Genera los íconos de la app (carpeta icons/) a partir del logo.
 
-El logo puede ser un dibujo con fondo transparente (se le pone el fondo amarillo del juego) o una imagen cuadrada con su propio fondo (se usa tal cual).
+El logo puede ser una imagen cuadrada con su propio fondo azul (se usa tal cual: es lo que se usa hoy, `herramientas/logo.jpg`) o un dibujo con fondo transparente (se le pone el fondo azul del juego).
 
 Uso (desde la carpeta del juego):  python3 herramientas/generar-iconos.py logo.png
 Crea icon-192.png, icon-512.png, maskable-512.png (con margen de seguridad para Android), apple-touch-icon.png (iOS, sin transparencia)
@@ -18,8 +18,10 @@ if (a < 250).any():                                                    # dibujo 
     ys, xs = np.where(a > 8)
     logo = logo.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
 else:                                                                  # imagen con su propio fondo: se usa entera
-    cuadrado = logo.convert('RGB'); fondo_color = cuadrado.getpixel((4, 4))
-    d = np.abs(np.array(cuadrado).astype(int) - np.array(fondo_color)).sum(2) > 60
+    cuadrado = logo.convert('RGB'); px = np.array(cuadrado).astype(int)
+    borde = np.concatenate([px[:8].reshape(-1, 3), px[-8:].reshape(-1, 3), px[:, :8].reshape(-1, 3), px[:, -8:].reshape(-1, 3)])
+    fondo_color = tuple(int(v) for v in np.median(borde, axis=0))                                   # color del borde (el fondo tiene un degradado suave, no es plano)
+    d = ~((px[:, :, 0] < 45) & (px[:, :, 2] >= px[:, :, 1]) & (px[:, :, 2] > 40))                  # figura = todo lo que no es el azul del fondo (ni su sombra)
     fy, fx = np.where(d); lado = round(max(fx.max() - fx.min(), fy.max() - fy.min()) * 1.1)      # recuadro de la figura (para los favicons, que se ven más grandes)
     cx, cy = (fx.min() + fx.max()) // 2, (fy.min() + fy.max()) // 2
     W = cuadrado.width
@@ -30,18 +32,22 @@ else:                                                                  # imagen 
         im.resize((S, S), Image.LANCZOS).save(f'icons/{nombre}.png', optimize=True); print(nombre, S)
     guardar('icon-512', 512, cuadrado); guardar('icon-192', 192, cuadrado)
     guardar('apple-touch-icon', 180, cuadrado)
-    mk = Image.new('RGB', (512, 512), fondo_color); m = round(512 * .66)                          # maskable: la figura queda dentro de la zona segura (Android recorta en círculo)
-    mk.paste(cuadrado.resize((m, m), Image.LANCZOS), ((512 - m) // 2, (512 - m) // 2)); mk.save('icons/maskable-512.png', optimize=True); print('maskable-512 512')
+    m = round(512 * .66); pad = (512 - m) // 2                                                    # maskable: la figura queda dentro de la zona segura (Android recorta en círculo)
+    chico = cuadrado.resize((m, m), Image.LANCZOS)
+    ext = np.pad(np.array(chico), ((pad, 512 - m - pad), (pad, 512 - m - pad), (0, 0)), mode='edge')   # el fondo del propio logo se estira hacia afuera (así no se nota el cuadrado)
+    mk = Image.fromarray(ext).filter(ImageFilter.GaussianBlur(pad / 4))
+    f = round(m * .025); suave = Image.new('L', (m, m), 0); ImageDraw.Draw(suave).rectangle((f, f, m - f, m - f), fill=255); suave = suave.filter(ImageFilter.GaussianBlur(f / 2.5))
+    mk.paste(chico, (pad, pad), suave); mk.save('icons/maskable-512.png', optimize=True); print('maskable-512 512')
     guardar('favicon-64', 64, caras); guardar('favicon-32', 32, caras)
     sys.exit(0)
 
 
 def fondo(S, redondo=False):
-    """Amarillo del juego: centro claro y bordes más cálidos, con un brillo suave."""
+    """Azul del juego: centro más claro y bordes más oscuros, con un brillo suave."""
     yy, xx = np.mgrid[0:S, 0:S].astype(float)
     d = np.sqrt((xx - S * .5) ** 2 + (yy - S * .46) ** 2) / (S * .72)
     d = np.clip(d, 0, 1)[..., None]
-    c0, c1 = np.array([255, 244, 170]), np.array([255, 201, 40])
+    c0, c1 = np.array([0, 107, 138]), np.array([0, 52, 84])
     rgb = (c0 * (1 - d) + c1 * d).astype(np.uint8)
     im = Image.fromarray(np.dstack([rgb, np.full((S, S), 255, np.uint8)]), 'RGBA')
     if redondo:                                           # esquinas redondeadas con bordes suaves (se dibuja 4 veces más grande y se reduce)
