@@ -198,7 +198,7 @@ Revisión hecha con las skills de seguridad y calidad de jeffallan (escaneo est�
 
 - Cada cuenta guarda **solo su mejor puntaje** (si rebota más veces, se actualiza; si rebota menos, no baja). El puntaje son los rebotes: cada vez que la barra toca la pelota suma uno.
   Gana quien más rebotes aguante contra el personaje. Se guarda junto con los pesos al terminar cada partida.
-- Muestra el **Top 30** ordenado por rebotes (**🏆 Todo el tiempo**; hay otras tres pestañas, ver más abajo). Si no estás entre ellos, debajo aparecen tres puntos y tu fila fija con **tu puesto en el mundo** (`#4.321`) y tu puntaje.
+- Muestra el **Top 30** ordenado por rebotes (**🏆 Top global**; hay otras tres pestañas, ver más abajo). Si no estás entre ellos, debajo aparecen tres puntos y tu fila fija con **tu puesto en el mundo** (`#4.321`) y tu puntaje.
 - **Cómo calcula el puesto sin bajar la lista de jugadores:** Firebase guarda un contador `hist` con cuántas cuentas hay en cada puntaje (0 a 500). Tu puesto es 1 + la suma de las casillas de arriba de tu puntaje:
   se leen unos 500 números (~4 KB) vengan 100 o 100.000 jugadores. Cada cuenta se cuenta sola, una vez, y al mejorar pasa de casilla (`scores/<uid>/c` guarda dónde está contada; las reglas exigen que
   el contador solo se mueva de a 1 y solo para tu propia cuenta). Las cuentas que ya existían antes de que hubiera contador se cuentan la próxima vez que entran al juego; hasta entonces el puesto
@@ -212,14 +212,16 @@ Revisión hecha con las skills de seguridad y calidad de jeffallan (escaneo est�
 
 | Pestaña | Qué muestra |
 |---|---|
-| 🏆 **Todo el tiempo** | Los mejores rebotes de la historia, con tu puesto en el mundo debajo si no estás |
+| 🏆 **Top global** | Los mejores rebotes de la historia, con tu puesto en el mundo debajo si no estás (la nota dice «Top global 30 de 241 jugadores») |
 | 📅 **Semanal** | La mejor partida de **esta semana** (empieza el lunes, hora de Chile); la nota dice cuánto falta para que se reinicie |
+| 🗓️ **Mensual** | La mejor partida de **este mes calendario** (se reinicia el día 1 a medianoche, hora de Chile); la nota dice cuánto falta: «se reinicia el 1 de diciembre (en 24 días y 23 horas)» y, si falta menos de un día, solo las horas («en 7 horas», «en menos de 1 hora») |
 | ⏱️ **Tiempo jugado** | Quienes más tiempo llevan jugando (ver abajo) |
 
 - **Semanal** (`weekly/<semana>/<uid>` = `n`, `s`, `t`, `a`): se escribe sola al terminar una partida que es tu **nueva mejor de la semana**, aparte del cobro. Las reglas solo dejan escribir en la semana en curso, `s` tiene que ser exactamente tu mejor partida de la semana que ya llevan tus estadísticas verificadas (`stats/<uid>/wm`), no baja nunca y el nombre es el de tu fila del marcador. Cada semana es un nodo nuevo: los de semanas viejas quedan guardados (pesan casi nada) y se pueden borrar desde la consola cuando quieras.
+- **Mensual** (`monthly/<AAAAMM>/<uid>` = `n`, `s`, `t`, `a`; p. ej. `monthly/202611/…`): funciona igual que el semanal pero con el mes calendario. Sus propias estadísticas son `stats/<uid>/mo` (el mes de los contadores), `mm` (tu mejor partida del mes) y `ml` (la última partida sumada al mes; cada partida cuenta una sola vez y solo si llegó a `minRebotes`). **Se escriben en un envío aparte** del de las misiones: así, mientras las reglas nuevas no estén publicadas, solo falla el mensual (el cliente lo reintenta 3 veces y lo deja) y las misiones, los pesos y los demás marcadores siguen igual. Las reglas calculan el mes del servidor con una fórmula de solo aritmética (no tienen variables ni funciones): el año cuenta desde el 1 de marzo y se repite cada 4 años, y vale de **1972 a 2099**. Una prueba la compara con el calendario real en 140.076 instantes (todos los días de 1972 a 2099 a las 00:00, las 12:00 y las 23:59:59 de Chile). Las cuentas que ya existían empiezan el mes de cero: el marcador mensual se llena con las partidas que se jueguen desde que se publican las reglas.
 - **El top «Millonarios» se quitó** (ya no hay pestaña, ni consulta, ni se copia la billetera a `scores/<uid>/w`). Las reglas ya no aceptan ese campo; los valores que quedaron guardados en `scores/<uid>/w` de antes no molestan (se pueden borrar desde la consola cuando quieras).
 - **Insignias junto al nombre** en todas las pestañas: **🦆🎩 Tío Patito**, **🦆🎀 Tía Patita** y **👾 desarrolladores**. Las pone **solo el administrador desde la consola de Firebase** (`roles/<uid>` = `tio`, `tia` o `dev`; nadie puede escribirlas desde el juego). Pasos: Realtime Database → Datos → `roles` → «+» → nombre = el **uid** de la cuenta (se ve en Authentication → Usuarios) y valor = `tio`, `tia` o `dev`. Para que nadie más use los nombres «TIOPATITO» o «Tia Patita», regístralos tú: `names` → «+» → nombre `tiopatito` (y `tia,patita` para «Tia Patita»: en minúsculas y con los espacios/puntos como coma) y valor = tu uid.
-- **Reglas nuevas** (`weekly` y `roles`): hay que volver a pegar `firebase-rules.json`. Sin ellas, «Todo el tiempo» sigue igual y «Semanal» avisa que faltan publicarlas.
+- **Reglas nuevas** (`weekly`, `monthly` y `roles`): hay que volver a pegar `firebase-rules.json`. Sin ellas, «Top global» sigue igual y «Semanal» y «Mensual» avisan que faltan publicarlas.
 - **Pruebas:** `pruebas/marcadores.test.js` (juego + reglas reales) y la sección «Marcadores: semanal e insignias» de `pruebas/reglas.test.js`.
 
 ### Marcador «Tiempo jugado» (horas jugadas)

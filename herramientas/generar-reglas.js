@@ -78,6 +78,14 @@ const pickJ = k => `(((${TODAY}) * 5 + ${2 * k}) % 7 % 3)`;
 const condDia = k => { const j = pickJ(k), d = M.dia[k].de; return `(${j} === 0 ? newData.parent().child('${STAT[d[0][0]]}').val() >= ${d[0][1]} : ${j} === 1 ? newData.parent().child('${STAT[d[1][0]]}').val() >= ${d[1][1]} : newData.parent().child('${STAT[d[2][0]]}').val() >= ${d[2][1]})`; };
 // misiones de la semana: la semana empieza el lunes (el día 0 de la cuenta es jueves); en cada casilla se elige 1 de 5 misiones según la semana, igual para todos
 const WEEK = `((${TODAY} + 3 - (${TODAY} + 3) % 7) / 7)`;
+// mes calendario (hora de Chile) como número AAAAMM (p. ej. 202611). Las reglas no tienen variables ni funciones, así que la fórmula va completa y en 4 pasos:
+// el año se cuenta desde el 1 de marzo (el 29 de febrero cae al final del año y los meses salen con una sola división) y se repite cada 4 años (vale de 1972 a 2099).
+//   E = días desde el 1/3/1972 (día 790) · C = ciclos de 4 años · R = día dentro del ciclo · YC = año del ciclo (0 a 3; el último tiene 366 días) · DOY = día del año · MP = mes (0 = marzo … 11 = febrero)
+const mE = `(${TODAY} - 790)`, mR = `(${mE} % 1461)`, mC = `((${mE} - ${mR}) / 1461)`;
+const mYC = `(${mR} >= 1095 ? 3 : (${mR} - ${mR} % 365) / 365)`, mDOY = `(${mR} - 365 * ${mYC})`, mMP = `((5 * ${mDOY} + 2 - (5 * ${mDOY} + 2) % 153) / 153)`;
+const MONTH = `(${mMP} < 10 ? (1972 + 4 * ${mC} + ${mYC}) * 100 + ${mMP} + 3 : (1973 + 4 * ${mC} + ${mYC}) * 100 + ${mMP} - 9)`;
+const MSAME = `(${OLDP}.child('mo').exists() && ${OLDP}.child('mo').val() === newData.parent().child('mo').val())`;       // el contador del mes ya era de este mes
+const MFRESH = `newData.parent().child('ml').val() === ${RV('s')} && (!${OLDP}.child('ml').exists() || ${OLDP}.child('ml').val() < ${RV('s')})`;      // la partida se cuenta una sola vez en el mes
 const WSAME = `(${OLDP}.child('w').exists() && ${OLDP}.child('w').val() === newData.parent().child('w').val())`;       // el contador de la semana ya era de esta semana
 const SEM = M.semana, WSTAT = { g: 'wg', r: 'wr', m: 'wm' };
 const pickW = k => `((${WEEK} * 13 + ${7 * k}) % 17 % ${SEM.de[k].length})`;
@@ -166,6 +174,24 @@ const rules = { rules: {
         '.validate': "newData.hasChildren(['n', 's', 't'])",
         n: { '.validate': `newData.isString() && newData.val() === newData.parent().parent().parent().parent().child('scores').child($uid).child('n').val()` },
         s: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && newData.val() <= ${ECO.hMax} && newData.val() === newData.parent().parent().parent().parent().child('stats').child($uid).child('wm').val() && newData.parent().parent().parent().parent().child('stats').child($uid).child('w').val() === ${WEEK} && (!data.exists() || newData.val() >= data.val())` },
+        t: { '.validate': 'newData.val() === now' },
+        a: { '.validate': AVATAR },
+        $other: { '.validate': false }
+      }
+    }
+  },
+
+  // ---- marcador mensual: monthly/<AAAAMM>/<uid> = tu mejor partida de ese mes calendario (hora de Chile). Igual que el semanal: solo se escribe en el mes en curso, `s` tiene que ser
+  //      exactamente tu mejor partida del mes que ya llevan las estadísticas (`stats/<uid>/mm`, que sale de partidas verificadas), nunca baja y el nombre es el de tu fila del marcador. ----
+  monthly: {
+    '.read': true,
+    $mo: {
+      '.indexOn': ['s'],
+      $uid: {
+        '.write': `auth != null && auth.uid === $uid && $mo === ${MONTH} + ''`,
+        '.validate': "newData.hasChildren(['n', 's', 't'])",
+        n: { '.validate': `newData.isString() && newData.val() === newData.parent().parent().parent().parent().child('scores').child($uid).child('n').val()` },
+        s: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 1 && newData.val() <= ${ECO.hMax} && newData.val() === newData.parent().parent().parent().parent().child('stats').child($uid).child('mm').val() && newData.parent().parent().parent().parent().child('stats').child($uid).child('mo').val() === ${MONTH} && (!data.exists() || newData.val() >= data.val())` },
         t: { '.validate': 'newData.val() === now' },
         a: { '.validate': AVATAR },
         $other: { '.validate': false }
@@ -270,6 +296,11 @@ const rules = { rules: {
     wc: { '.validate': `newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 7 && ((!${WSAME} && newData.val() === 0) || (${WSAME} && ${P}.child('w').val() === ${WEEK} && newData.val() >= ${'(data.exists() ? data.val() : 0)'}`
       + ' && ' + SEM.premios.map((x, k) => `!(${bit('(data.exists() ? data.val() : 0)', k)} && !${bit('newData.val()', k)})`).join(' && ')
       + ' && ' + SEM.premios.map((x, k) => `(!(${bit('newData.val()', k)} && !${bit('(data.exists() ? data.val() : 0)', k)}) || (${condSem(k)}))`).join(' && ') + '))' },
+    // mes: mo = mes de los contadores (AAAAMM) · mm = mejor partida de este mes · ml = última partida sumada al mes. Se escriben aparte de las demás estadísticas y son opcionales
+    //      (así, mientras las reglas nuevas no estén publicadas, las misiones siguen funcionando igual). Cada partida cuenta una sola vez (ml) y solo si llegó a `minRebotes`.
+    ml: { '.validate': `newData.isNumber() && newData.val() === ${RV('s')} && ${W_ROOT}.child('lr').val() === newData.val() && ${RUN}.child('e').exists() && ${RV('h')} >= ${M.minRebotes} && (!data.exists() || newData.val() > data.val())` },
+    mo: { '.validate': `newData.isNumber() && newData.val() === ${MONTH} && ${MFRESH}` },
+    mm: { '.validate': `newData.isNumber() && newData.val() === (${MSAME} && ${OLDP}.child('mm').val() > ${RV('h')} ? ${OLDP}.child('mm').val() : ${RV('h')}) && ${MFRESH}` },
     $other: { '.validate': false }
   } },
 

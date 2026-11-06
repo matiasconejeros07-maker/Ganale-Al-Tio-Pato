@@ -568,9 +568,11 @@
   #list .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #list .sc { font-weight: 800; font-variant-numeric: tabular-nums; }
   #list li.top .rk { font-size: 22px; }
-  .boardseg { flex: none; width: min(100%, 380px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; border-radius: 24px; }
-  .boardseg button { font-size: 12.5px; padding: 6px 2px; min-height: 40px; line-height: 1.15; }
-  @media (max-width: 360px) { .boardseg button { font-size: 11.5px; } }
+  .boardseg { flex: none; width: min(100%, 420px); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; border-radius: 24px; }      /* 4 pestañas: el emoji arriba y el nombre abajo, siempre del mismo ancho */
+  .boardseg button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 0; min-height: 52px; padding: 5px 1px 6px; font-size: 12px; line-height: 1.1; }
+  .boardseg button i { font-style: normal; font-size: 18px; line-height: 1.1; }
+  .boardseg button span { max-width: 100%; text-align: center; }
+  @media (max-width: 360px) { .boardseg button { font-size: 11px; } .boardseg button i { font-size: 16px; } }
   .rb { display: inline-block; margin-left: 5px; font-size: .9em; line-height: 1; vertical-align: 1px; }
   #list .nm .rb, #myRow .nm .rb { flex: none; margin-left: -6px; }
   #list .sc.tm, #myRow .sc.tm { font-size: 15px; white-space: nowrap; }
@@ -1142,7 +1144,7 @@
     <!-- marcadores -->
     <section class="screen" id="board">
       <h1>🏆 Marcadores</h1>
-      <div class="seg boardseg" id="boardKind" role="tablist" hidden><button type="button" id="kindR" class="on" role="tab" aria-selected="true">🏆 Todo el tiempo</button><button type="button" id="kindW" role="tab" aria-selected="false">📅 Semanal</button><button type="button" id="kindT" role="tab" aria-selected="false">⏱️ Tiempo jugado</button></div>
+      <div class="seg boardseg" id="boardKind" role="tablist" hidden><button type="button" id="kindR" class="on" role="tab" aria-selected="true"><i>🏆</i><span>Top global</span></button><button type="button" id="kindW" role="tab" aria-selected="false"><i>📅</i><span>Semanal</span></button><button type="button" id="kindM" role="tab" aria-selected="false"><i>🗓️</i><span>Mensual</span></button><button type="button" id="kindT" role="tab" aria-selected="false"><i>⏱️</i><span>Tiempo jugado</span></button></div>
       <div class="board-note" id="boardNote"></div>
       <div class="board-note" id="boardLeft"></div>
       <ul id="list" aria-live="polite"></ul>
@@ -1828,6 +1830,30 @@
       .map(([id, v]) => ({ id, n: cleanName(v.n) || '—', a: typeof v.a === 'string' ? v.a : '', s: v.s, t: +v.t || 0 }))
       .sort((a, b) => b.s - a.s || a.t - b.t);
   }
+  const monthOf = day => { const d = new Date(day * DAYMS); return d.getUTCFullYear() * 100 + d.getUTCMonth() + 1; };      // mes calendario (AAAAMM, p. ej. 202611) del día de Chile `day`
+  const monthNow = () => monthOf(dayOf(srvNow()));
+  const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  // Cuánto falta para que se reinicie el marcador mensual (el 1 del mes que viene, a medianoche de Chile): «12 días y 5 horas» · si falta menos de un día, solo las horas: «7 horas» («menos de 1 hora» al final)
+  function monthLeft(now = srvNow()) {
+    const today = dayOf(now), d = new Date(today * DAYMS), nextDay = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) / DAYMS;
+    const ms = (nextDay - today - 1) * DAYMS + streakInfo(now).toNext, days = Math.floor(ms / DAYMS), hours = Math.floor((ms % DAYMS) / 3600000);
+    const pl = (n, u) => `${n} ${u}${n === 1 ? '' : 's'}`;
+    return { name: MESES[(d.getUTCMonth() + 1) % 12], text: days >= 1 ? pl(days, 'día') + (hours ? ` y ${pl(hours, 'hora')}` : '') : hours >= 1 ? pl(hours, 'hora') : 'menos de 1 hora' };
+  }
+  async function fetchTopMonth(limit = TOP_N) {                    // las mejores partidas de ESTE mes (monthly/<AAAAMM>, índice `s`)
+    const r = await http(`${DB}/monthly/${monthNow()}.json?orderBy=%22s%22&limitToLast=${limit}`);
+    if (!r.ok) throw new Error('http ' + r.status);
+    const data = (await r.json()) || {};
+    return Object.entries(data)
+      .filter(([, v]) => v && typeof v.s === 'number' && typeof v.n === 'string')
+      .map(([id, v]) => ({ id, n: cleanName(v.n) || '—', a: typeof v.a === 'string' ? v.a : '', s: v.s, t: +v.t || 0 }))
+      .sort((a, b) => b.s - a.s || a.t - b.t);
+  }
+  async function fetchMyMonth() {                                  // tu mejor partida del mes (para mostrarla debajo si no estás entre los primeros)
+    if (!AUTH || !session) return 0;
+    const r = await http(`${DB}/monthly/${monthNow()}/${session.uid}/s.json`);
+    const v = r.ok ? await r.json() : 0; return typeof v === 'number' ? v : 0;
+  }
   async function fetchMyWeek() {                                   // tu mejor partida de la semana (para mostrarla debajo si no estás entre los primeros)
     if (!AUTH || !session) return 0;
     const r = await http(`${DB}/weekly/${weekNow()}/${session.uid}/s.json`);
@@ -1886,15 +1912,15 @@
     const m = Math.floor(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
     return ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : h < 1 ? `${m} min` : d < 1 ? `${h} h ${String(m % 60).padStart(2, '0')} min` : `${d} d ${h % 24} h`;
   };
-  let boardKind = 'r';                                             // 'r' = todo el tiempo (rebotes) · 'w' = semanal (rebotes) · 't' = más tiempo jugado
-  const BOARD_TABS = [['kindR', 'r'], ['kindW', 'w'], ['kindT', 't']];
+  let boardKind = 'r';                                             // 'r' = top global (rebotes) · 'w' = semanal (rebotes) · 'm' = mensual (rebotes) · 't' = más tiempo jugado
+  const BOARD_TABS = [['kindR', 'r'], ['kindW', 'w'], ['kindM', 'm'], ['kindT', 't']];
   const paintKindTabs = () => BOARD_TABS.forEach(([id, k]) => { $(id).classList.toggle('on', k === boardKind); $(id).setAttribute('aria-selected', String(k === boardKind)); });
   const boardVal = (row, k = boardKind) => k === 't' ? fmtPlayed(row.ms) : row.s;
   function renderBoard(rows, me, myVal) {
     const K = boardKind, small = K === 't', ul = $('list'); ul.textContent = '';
     if (!rows.length) {
       const li = document.createElement('li'); li.className = 'empty';
-      li.textContent = K === 't' ? 'Todavía nadie suma tiempo. ¡Juega una partida y sé el primero!' : K === 'w' ? 'Esta semana nadie le ha ganado al Tío Pato todavía. ¡Sé el primero!' : 'Todavía nadie le gana al Tío Pato. ¡Sé el primero!';
+      li.textContent = K === 't' ? 'Todavía nadie suma tiempo. ¡Juega una partida y sé el primero!' : K === 'w' ? 'Esta semana nadie le ha ganado al Tío Pato todavía. ¡Sé el primero!' : K === 'm' ? 'Este mes nadie le ha ganado al Tío Pato todavía. ¡Sé el primero!' : 'Todavía nadie le gana al Tío Pato. ¡Sé el primero!';
       ul.appendChild(li);
     }
     const medals = ['🥇', '🥈', '🥉'];
@@ -1924,7 +1950,7 @@
       const tx = document.createElement('span'); tx.className = 't'; tx.textContent = cleanName(player.name || (session && session.name)) || 'Tú';
       const you = document.createElement('small'); you.textContent = '(tú)'; nm.append(pv, tx, you);
       const rb = roleBadge(player.id); if (rb) nm.appendChild(rb);
-      const sc = document.createElement('span'); sc.className = small ? 'sc tm' : 'sc'; sc.textContent = K === 't' ? fmtPlayed(myVal) : K === 'w' ? myVal : player.best;
+      const sc = document.createElement('span'); sc.className = small ? 'sc tm' : 'sc'; sc.textContent = K === 'r' ? player.best : K === 't' ? fmtPlayed(myVal) : myVal;
       li.append(rk, nm, sc); list.appendChild(li); box.append(dots, list);
     }
     const mine = ul.querySelector('.mine');
@@ -1978,10 +2004,10 @@
     const note = $('boardNote'), kind = boardKind;
     if (first) note.textContent = ONLINE ? 'Actualizando…' : 'Modo local: aquí solo aparece tu mejor puntaje en este dispositivo.';
     try {
-      if (kind !== 'r') {                                         // semanal · tiempo jugado: mismo formato, misma frecuencia y mismo límite de tiempo que el de rebotes
+      if (kind !== 'r') {                                         // semanal · mensual · tiempo jugado: mismo formato, misma frecuencia y mismo límite de tiempo que el de rebotes
         syncRun();
-        const [rows, mine] = await Promise.all([kind === 't' ? fetchTopTime(TOP_N) : fetchTopWeek(TOP_N),
-          (kind === 't' ? fetchMyTime() : fetchMyWeek()).catch(() => 0), fetchRoles(), fetchMarcos()]);
+        const [rows, mine] = await Promise.all([kind === 't' ? fetchTopTime(TOP_N) : kind === 'm' ? fetchTopMonth(TOP_N) : fetchTopWeek(TOP_N),
+          (kind === 't' ? fetchMyTime() : kind === 'm' ? fetchMyMonth() : fetchMyWeek()).catch(() => 0), fetchRoles(), fetchMarcos()]);
         if (kind !== boardKind) return;                           // cambió de pestaña mientras cargaba
         const sig = JSON.stringify([kind, rows.map(r => [r.id, r.ms || r.s, r.n, roles[r.id], goldOf(r.id)]), mine]);
         if (sig !== lastSig) {
@@ -1989,6 +2015,7 @@
           renderBoard(rows, null, mine); ul.scrollTop = top;
           const n = Math.min(rows.length, TOP_N);
           note.textContent = kind === 't' ? `Top ${n} · gana quien más tiempo lleva jugando (la suma de todas sus partidas, desde que existe este marcador)`
+            : kind === 'm' ? (f => `Top ${n} del mes · gana quien llega más alto en una partida · se reinicia el 1 de ${f.name} (en ${f.text})`)(monthLeft())
             : `Top ${n} de la semana · gana quien llega más alto en una partida · se reinicia el lunes (en ${fmtWait(streakInfo().toNext + (6 - (dayOf(srvNow()) + 3) % 7) * DAYMS)})`;
         }
         return;
@@ -2005,7 +2032,7 @@
         renderBoard(rows, lastMe); ul.scrollTop = top;
         if (ONLINE) {
           const tot = lastMe && lastMe.total > TOP_N ? ` de ${lastMe.total.toLocaleString('es-CL')} jugadores` : '';
-          note.textContent = `Top ${Math.min(rows.length, TOP_N)}${tot} · gana quien más rebotes aguante`;
+          note.textContent = `Top global ${Math.min(rows.length, TOP_N)}${tot} · gana quien más rebotes aguante`;
         }
       }
     } catch (e) {
@@ -2727,18 +2754,18 @@
   //  · su tiempo jugado a `scores/<uid>/ms` (marcador «Tiempo jugado») y
   //  · sus números a `stats/<uid>` (misiones: partidas, rebotes, lo de hoy).
   // Hay que hacerlo antes de empezar la siguiente partida (la anterior desaparece de `runs/` al empezar otra), por eso beginRun lo espera.
-  let timing = false;
+  let timing = false, monthStats = null;                           // monthStats: { mo, mm } = lo último que se anotó en las estadísticas del mes
   const TIME_KEY = () => 'gana-al-tio-pato-tiempo-' + (session ? session.uid : 'local');
   const getTimePend = () => { try { return JSON.parse(localStorage.getItem(TIME_KEY()) || 'null'); } catch (e) { return null; } };
   const setTimePend = v => { try { v ? localStorage.setItem(TIME_KEY(), JSON.stringify(v)) : localStorage.removeItem(TIME_KEY()); } catch (e) {} };
-  const markRun = (s, t) => { const o = getTimePend(); if (!o || o.s !== s) setTimePend({ s, t: t > 0 ? Math.round(t) : 0, tm: 1, st: 1, nt: 0, ns: 0, wk: 0, nw: 0 }); };
+  const markRun = (s, t) => { const o = getTimePend(); if (!o || o.s !== s) setTimePend({ s, t: t > 0 ? Math.round(t) : 0, tm: 1, st: 1, nt: 0, ns: 0, wk: 0, nw: 0, mt: 1, nmt: 0, mk: 0, nmk: 0 }); };
   const denied4 = r => r.status === 401 || r.status === 403;
   async function syncRun() {
     const pend = AUTH && session ? getTimePend() : null; if (!pend || timing) return;
     timing = true;
     try {
       const uid = session.uid, tok = encodeURIComponent(await idToken());
-      const [rr, sr, qr] = await Promise.all([http(`${DB}/runs/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}.json`), pend.st && MIS ? http(`${DB}/stats/${uid}.json?auth=${tok}`) : Promise.resolve(null)]);
+      const [rr, sr, qr] = await Promise.all([http(`${DB}/runs/${uid}.json?auth=${tok}`), http(`${DB}/scores/${uid}.json`), (pend.st || pend.mt) && MIS ? http(`${DB}/stats/${uid}.json?auth=${tok}`) : Promise.resolve(null)]);
       if (!rr.ok || !sr.ok) return;                                // sin conexión: se reintenta
       const run = await rr.json(), row = await sr.json();
       if (!run || run.s !== pend.s || typeof run.e !== 'number' || typeof run.h !== 'number') { setTimePend(null); return; }     // esa partida ya no está: no se puede contar
@@ -2753,12 +2780,14 @@
           else if (denied4(w) && ++pend.nt >= 3) pend.tm = 0;                                                                     // (también pasa si aún no se publicaron las reglas nuevas)
         }
       }
+      let sOld;                                                     // lo que había en stats/<uid> (se lee una sola vez: el cuerpo de la respuesta no se puede leer dos veces)
+      const getOld = async () => { if (sOld === undefined) sOld = qr && qr.ok ? await qr.json() : null; return sOld; };
       // --- estadísticas de las misiones
       if (pend.st) {
         if (!MIS || run.h < MIS.minRebotes) pend.st = 0;                                                                         // las partidas muy cortas no cuentan
         else if (qr && !qr.ok) { if (denied4(qr)) pend.st = 0; }                                                                 // reglas viejas: no hay misiones todavía
         else if (qr) {
-          const old = await qr.json(), o = old || {};
+          const old = await getOld(), o = old || {};
           if (o.sl === run.s) pend.st = 0;                                                                                       // ya estaba contada
           else {
             const day = dayOf(srvNow()), same = !!old && o.d === day, wk = weekOf(day), wsame = !!old && o.w === wk;
@@ -2786,7 +2815,34 @@
           if (w.ok) pend.wk = 0; else if (denied4(w) && ++pend.nw >= 3) pend.wk = 0;                                         // (también pasa si aún no se publicaron las reglas nuevas)
         }
       }
-      setTimePend(pend.tm || pend.st || pend.wk ? pend : null);
+      // --- marcador mensual: igual que el semanal, pero con el mes calendario. Sus estadísticas (`mo`, `mm`, `ml`) se escriben aparte de las de las misiones: si las reglas nuevas
+      //     todavía no están publicadas, solo falla esto (las misiones y los pesos no se ven afectados)
+      if (pend.mt) {
+        if (!MIS || run.h < MIS.minRebotes) pend.mt = 0;
+        else if (qr && !qr.ok) { if (denied4(qr)) pend.mt = 0; }
+        else if (qr) {
+          const old = await getOld(), o = old || {};
+          if (o.ml === run.s) pend.mt = 0;                                                                                       // ya estaba contada en el mes
+          else {
+            const mo = monthNow(), msame = !!old && o.mo === mo, mm = msame ? Math.max(+o.mm || 0, run.h) : run.h;
+            const w = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify({ [`stats/${uid}/mo`]: mo, [`stats/${uid}/mm`]: mm, [`stats/${uid}/ml`]: run.s }) });
+            if (w.ok) { pend.mt = 0; pend.mk = run.h > (msame ? +o.mm || 0 : 0) ? 1 : 0; pend.nmk = 0; monthStats = { mo, mm }; }                // ¿es tu nueva mejor del mes? entonces también va al marcador mensual
+            else if (denied4(w) && ++pend.nmt >= 3) pend.mt = 0;
+          }
+        }
+      }
+      if (pend.mk) {                                                                                                             // tu mejor partida del mes (las reglas exigen que sea igual a `mm` de tus estadísticas y que sea el mes en curso)
+        let ms2 = monthStats;
+        if (!ms2) { const r = await http(`${DB}/stats/${uid}.json?auth=${tok}`); ms2 = r.ok ? await r.json() : null; }
+        if (!row || typeof row.s !== 'number' || !ms2 || ms2.mo !== monthNow() || typeof ms2.mm !== 'number') pend.mk = 0;
+        else {
+          const mb = { [`monthly/${ms2.mo}/${uid}/n`]: row.n, [`monthly/${ms2.mo}/${uid}/s`]: ms2.mm, [`monthly/${ms2.mo}/${uid}/t`]: SV };
+          if (avParse(row.a)) mb[`monthly/${ms2.mo}/${uid}/a`] = row.a;
+          const w = await http(`${DB}/.json?auth=${tok}&print=silent`, { method: 'PATCH', headers: JSONH, body: JSON.stringify(mb) });
+          if (w.ok) pend.mk = 0; else if (denied4(w) && ++pend.nmk >= 3) pend.mk = 0;                                         // (también pasa si aún no se publicaron las reglas nuevas)
+        }
+      }
+      setTimePend(pend.tm || pend.st || pend.wk || pend.mt || pend.mk ? pend : null);
     } catch (e) {} finally { timing = false; }
   }
   let claiming = null;
@@ -3892,7 +3948,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v70';
+  const BUILD = 'v71';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
@@ -4003,7 +4059,7 @@
 
   $('authForm').addEventListener('submit', submitAuth);
   $('tabIn').addEventListener('click', () => setAuthMode('in'));
-  $('kindR').addEventListener('click', () => setBoardKind('r')); $('kindW').addEventListener('click', () => setBoardKind('w')); $('kindT').addEventListener('click', () => setBoardKind('t'));
+  $('kindR').addEventListener('click', () => setBoardKind('r')); $('kindW').addEventListener('click', () => setBoardKind('w')); $('kindM').addEventListener('click', () => setBoardKind('m')); $('kindT').addEventListener('click', () => setBoardKind('t'));
   $('forgot').addEventListener('click', () => { setAuthMode('reset'); $('acctMail').focus(); });
   $('mailBtn').addEventListener('click', () => { closeSettings(); openMail(); });
   $('mailBannerGo').addEventListener('click', openMail);
