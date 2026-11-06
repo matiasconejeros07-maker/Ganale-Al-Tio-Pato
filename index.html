@@ -30,6 +30,7 @@
     --score: #6f6a3a;
     --ghost: rgba(140, 130, 50, .38);
     --lose: #c0392b;
+    --end-bg: linear-gradient(135deg, #002a47 0%, #0a5a8f 18%, #1a56b0 36%, #0a6b8a 54%, #003454 72%, #0b4f86 88%, #002a47 100%);      /* degradado del final de la partida: el azul de siempre (applyTheme lo reemplaza con el color elegido en la tienda) */
     --h: 205;                                       /* tono de las tarjetas, botones y textos de los menús: sale del color elegido en la tienda (ver applyTheme) */
     --card: hsl(var(--h) 100% 97%);
     --paper2: hsl(var(--h) 80% 91%);
@@ -54,7 +55,7 @@
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
   }
   #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
-  body.end { background: linear-gradient(135deg, #002a47 0%, #0a5a8f 18%, #1a56b0 36%, #0a6b8a 54%, #003454 72%, #0b4f86 88%, #002a47 100%); background-size: 300% 300%; animation: endFlow 16s ease-in-out infinite alternate; transition: none; }      /* final: azul degradado en movimiento */
+  body.end { background: var(--end-bg); background-size: 300% 300%; animation: endFlow 16s ease-in-out infinite alternate; transition: none; }      /* final: degradado en movimiento del color elegido en la tienda (azul por defecto) */
   @keyframes endFlow { 0% { background-position: 0% 0%; } 50% { background-position: 100% 35%; } 100% { background-position: 30% 100%; } }
   body.end #close svg, body.hell #close svg { stroke: #fff; }
   body.end .num, body.hell .num { color: rgba(255,255,255,.78); }
@@ -542,6 +543,15 @@
   #result .status.err { color: #ffd6d0; }
   #result .best { color: rgba(255,255,255,.85); }
   #result .status, #result .best, #result .link { text-shadow: 0 1px 6px rgba(0,25,55,.6); }
+  /* final con un color claro de la tienda (amarillo, rosa, hielo): el degradado es de ese color y el texto, los botones y la barra de arriba van oscuros */
+  body.end:not(.th-dark) #close svg { stroke: var(--on); }
+  body.end:not(.th-dark) .num { color: var(--on); }
+  body.end:not(.th-dark) :focus-visible { outline-color: var(--on); }
+  body:not(.th-dark) #result { color: var(--on); }
+  body:not(.th-dark) .verdict, body:not(.th-dark) .final { text-shadow: 0 2px 12px rgba(255,255,255,.6); }
+  body:not(.th-dark) .sub, body:not(.th-dark) #result .status, body:not(.th-dark) #result .best, body:not(.th-dark) #result .link { color: var(--on); text-shadow: 0 1px 6px rgba(255,255,255,.7); }
+  body:not(.th-dark) #result .btn.ghost { background: rgba(255,255,255,.35); color: var(--on); border-color: var(--on); }
+  body:not(.th-dark) #result .status.err { color: #b3261e; }
   #diagOut { margin: 0; width: min(100%, 340px); text-align: left; white-space: pre-wrap; word-break: break-word; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; color: #fff; background: rgba(0,20,45,.6); border-radius: 12px; padding: 10px 12px; -webkit-user-select: text; user-select: text; }
   #diagOut[hidden], #diagBtn[hidden] { display: none; }
 
@@ -2102,7 +2112,8 @@
     const c = PALETTE[Math.min(Math.floor((hits + 5) / 10), PALETTE.length - 1)];
     document.body.style.backgroundColor = c; setTheme(c);
   }
-  function setEnd(on) { document.body.classList.toggle('end', on); if (on) setTheme('#0a4e82'); }
+  let themeEnd = '#0a4e82';                                        // color de la barra del navegador en la pantalla final (applyTheme lo cambia según el color elegido)
+  function setEnd(on) { document.body.classList.toggle('end', on); if (on) setTheme(themeEnd); }
   function bump(el) { el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 140); }
   /* ---------- foto de perfil: emblema 100% personalizable ----------
      Un emblema = forma + color de fondo + color de borde + diseño + hasta 5 símbolos (emoji o la inicial) puestos, girados y agrandados como quiera el jugador.
@@ -3444,6 +3455,27 @@
     while (lumAt(l) < .3 && l < .8) l += .02;                // tonos medios (rosa, rojo): se aclara hasta que el texto oscuro se lea
     return { l, white: false };
   }
+  /* Pantalla final: el degradado en movimiento toma el color elegido en la tienda. El azul de siempre es el de la hoja de estilos (--end-bg). Los colores oscuros se calculan con su
+     tono y quedan lo bastante oscuros para el texto blanco (luminosidad ≤ 0,11 → contraste ≥ 4,5:1); los claros (amarillo, rosa, hielo) usan sus propios colores y el texto va oscuro. */
+  const hex2rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const rgb2hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+  function hslRgb(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+    const v = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+    return v.map(k => (k + m) * 255);
+  }
+  const lumRgb = c => { const f = k => { k /= 255; return k <= .03928 ? k / 12.92 : Math.pow((k + .055) / 1.055, 2.4); }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+  const satOf = hex => { const [r, g, b] = hex2rgb(hex).map(k => k / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; return mx === mn ? 0 : (mx - mn) / (1 - Math.abs(2 * l - 1)); };
+  const darkStop = (h, s, lum) => { let lo = 0, hi = .95; for (let i = 0; i < 18; i++) { const mid = (lo + hi) / 2; if (lumRgb(hslRgb(h, s, mid)) < lum) lo = mid; else hi = mid; } return rgb2hex(hslRgb(h, s, lo)); };
+  const END_PERFIL = [[0, 1, .018], [2, .87, .09], [14, .74, .10], [-8, .87, .11], [0, 1, .03], [4, .86, .08], [0, 1, .018]];        // [giro de tono, saturación, luminosidad]: la misma forma que el azul de siempre
+  const endGrad = cols => `linear-gradient(135deg, ${cols.map((c, i) => `${c} ${[0, 18, 36, 54, 72, 88, 100][i]}%`).join(', ')})`;
+  function endFor(t) {
+    if (t.id === DEF.th) return { bg: null, meta: '#0a4e82' };                                           // el azul de siempre: el de la hoja de estilos
+    if (!t.dark) return { bg: endGrad([t.c[0], t.s[1], t.s[2], t.c[1], t.s[0], t.s[1], t.c[0]]), meta: t.s[1] };
+    const h = hueOf(t.s[1]), k = Math.min(1, satOf(t.s[1]) / .82), cols = END_PERFIL.map(([dh, ds, lum]) => darkStop(h + dh, Math.min(1, ds * k), lum));
+    return { bg: endGrad(cols), meta: cols[1] };
+  }
   function applyTheme() {
     const t = themeOf(), d = !!t.dark, st = document.documentElement.style;
     const on = t.on || (d ? '#fff' : '#111'), on2 = t.on2 || (d ? 'rgba(255, 255, 255, .72)' : 'var(--muted)');
@@ -3458,6 +3490,7 @@
     st.setProperty('--stage-bg', `radial-gradient(circle at 50% 40%, ${t.s[0]} 0%, ${t.s[1]} 55%, ${t.s[2]} 100%)`);
     st.setProperty('--on', on); st.setProperty('--on2', on2); st.setProperty('--g1', g[0]); st.setProperty('--g2', g[1]); st.setProperty('--t1', tt[0]); st.setProperty('--t2', tt[1]);
     document.body.classList.toggle('th-dark', d);
+    const en = endFor(t); if (en.bg) st.setProperty('--end-bg', en.bg); else st.removeProperty('--end-bg'); themeEnd = en.meta;
     if (!document.body.classList.contains('ingame')) setTheme(t.c[0]);       // color de la barra del navegador (en la partida lo maneja el fondo del juego)
   }
   function applyCosmetics() {
@@ -3948,7 +3981,7 @@
   }
 
   // Prueba paso a paso lo que Firebase deja hacer a esta cuenta y lo muestra en pantalla (sirve para saber si las reglas están publicadas).
-  const BUILD = 'v71';
+  const BUILD = 'v72';
   const jwtBody = t => { try { return JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { return null; } };
   async function diagnose() {
     const out = $('diagOut'), lines = [`Versión del juego: ${BUILD}`, `Base de datos: ${DB.replace(/^https?:\/\//, '')}`];
