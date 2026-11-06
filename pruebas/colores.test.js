@@ -66,7 +66,7 @@ let n = 0; const nombre = () => 'Col' + (++n) + 'x' + String(Date.now()).slice(-
   ok('la tienda tiene 5 pestañas: Personajes, Fondos, Barras, Pelotas y Colores', hay.tabs.join('|') === 'Personajes|Fondos|Barras|Pelotas|Colores' && hay.on, JSON.stringify(hay.tabs));
   ok('muestra los 9 colores del catálogo (con la franja «Solo para millonarios» para los dos últimos)', hay.items.length === TH.length && hay.items.join('|') === TH.map(t => t.n).join('|') && hay.vipHead, JSON.stringify(hay.items));
   const azul = await tarjeta(p, 'Azul profundo'), amar = await tarjeta(p, 'Amarillo clásico'), oro = await tarjeta(p, 'Negro y oro');
-  ok('el azul de siempre sale «Equipado ✓» y los demás con su precio (el amarillo $100, el negro y oro $1.000.000 sin poder pagarlo)', azul && azul.on && /Equipado/.test(azul.btn) && /\$100$/.test(amar.btn) && /1\.000\.000/.test(oro.btn) && oro.vip && /no/.test(oro.cls), JSON.stringify([azul, amar, oro]));
+  ok('el azul de siempre sale «Equipado ✓» y los demás con su precio (el amarillo $1.000, el negro y oro $10.000.000 sin poder pagarlo)', azul && azul.on && /Equipado/.test(azul.btn) && /\$1\.000$/.test(amar.btn) && /10\.000\.000/.test(oro.btn) && oro.vip && /no/.test(oro.cls), JSON.stringify([azul, amar, oro]));
   ok('cada color tiene su vista previa en miniatura', await p.evaluate(() => document.querySelectorAll('#shopGrid .pv.thpv').length === 9));
   ok('las 5 pestañas caben en la barra (390 px)', await p.evaluate(() => { const bar = document.querySelector('#shop .seg').getBoundingClientRect(), t = [...document.querySelectorAll('#shop .seg button')].map(x => ({ r: x.getBoundingClientRect(), sw: x.scrollWidth, cw: x.clientWidth })); return t.every(x => x.r.left >= bar.left - .5 && x.r.right <= bar.right + .5 && x.sw <= x.cw + 1); }));
 
@@ -74,7 +74,7 @@ let n = 0; const nombre = () => 'Col' + (++n) + 'x' + String(Date.now()).slice(-
   ok('sin saldo no se compra «Negro y oro»: avisa cuánto falta', await tocar(p, 'Negro y oro') && (await p.waitForTimeout(500), /Te faltan/.test(await p.textContent('#shopMsg'))) && !(st.db.wallets[uid].own && st.db.wallets[uid].own.th_oro), await p.textContent('#shopMsg'));
   await tocar(p, 'Amarillo clásico'); await p.waitForTimeout(2500);
   const w1 = st.db.wallets[uid];
-  ok('se compra el amarillo clásico ($100): queda en la cartera, se descuentan 100 pesos y queda puesto', w1.own && w1.own.th_clasico === true && w1.sp === 100 && w1.eq && w1.eq.th === 'clasico', JSON.stringify(w1));
+  ok('se compra el amarillo clásico ($1.000): queda en la cartera, se descuentan 1.000 pesos y queda puesto', w1.own && w1.own.th_clasico === true && w1.sp === 1000 && w1.eq && w1.eq.th === 'clasico', JSON.stringify(w1));
   e = await estado(p);
   ok('la tienda cambia de color al tiro: fondo amarillo (#fff7c2) y texto oscuro', e.bg === '#fff7c2' && !e.dark && e.meta === '#ffec96', JSON.stringify(e));
   ok('el mensaje confirma la compra', /Compraste «Amarillo clásico»/.test(await p.textContent('#shopMsg')), await p.textContent('#shopMsg'));
@@ -82,9 +82,9 @@ let n = 0; const nombre = () => 'Col' + (++n) + 'x' + String(Date.now()).slice(-
   ok('el amarillo ahora sale «Equipado ✓» y el azul ofrece «Equipar» (es gratis)', /Equipado/.test((await tarjeta(p, 'Amarillo clásico')).btn) && /^Equipar$/.test((await tarjeta(p, 'Azul profundo')).btn));
   await tocar(p, 'Azul profundo'); await p.waitForTimeout(1500);
   e = await estado(p);
-  ok('volver al azul no cuesta nada y lo deja puesto en la nube', e.bg === '#003454' && e.dark && st.db.wallets[uid].eq.th === 'oceano' && st.db.wallets[uid].sp === 100, JSON.stringify(e) + JSON.stringify(st.db.wallets[uid]));
+  ok('volver al azul no cuesta nada y lo deja puesto en la nube', e.bg === '#003454' && e.dark && st.db.wallets[uid].eq.th === 'oceano' && st.db.wallets[uid].sp === 1000, JSON.stringify(e) + JSON.stringify(st.db.wallets[uid]));
   await tocar(p, 'Amarillo clásico'); await p.waitForTimeout(1500);
-  ok('y volver al amarillo ya comprado tampoco cuesta (solo «Equipar»)', st.db.wallets[uid].eq.th === 'clasico' && st.db.wallets[uid].sp === 100 && (await estado(p)).bg === '#fff7c2');
+  ok('y volver al amarillo ya comprado tampoco cuesta (solo «Equipar»)', st.db.wallets[uid].eq.th === 'clasico' && st.db.wallets[uid].sp === 1000 && (await estado(p)).bg === '#fff7c2');
   await alMenu(p);
   ok('el inicio sigue con el color elegido', (await estado(p)).bg === '#fff7c2');
   await p.reload(); await p.waitForTimeout(2800); await cerrarDiario(p);
@@ -96,7 +96,7 @@ let n = 0; const nombre = () => 'Col' + (++n) + 'x' + String(Date.now()).slice(-
   const hit = (ruta, body, m = 'PATCH') => p.evaluate(async ([url, ruta, body, tok, m]) => (await fetch(`${url}/${ruta}.json?auth=${encodeURIComponent(tok)}`, { method: m, body: JSON.stringify(body) })).status, [url, ruta, body, tok, m]);
   ok('ponerse «Negro y oro» sin comprarlo', await hit(`wallets/${uid}`, { 'eq/th': 'oro' }) === 401);
   ok('regalarse «Hielo diamante» sin pagar', await hit(`wallets/${uid}`, { 'own/th_diamante': true }) === 401);
-  ok('comprar un color pagando menos ($1 por el violeta de $300)', await hit(`wallets/${uid}`, { sp: 101, 'own/th_violeta': true }) === 401);
+  ok('comprar un color pagando menos ($1 por el violeta de $3.000)', await hit(`wallets/${uid}`, { sp: 101, 'own/th_violeta': true }) === 401);
   ok('los colores de otra cuenta no se tocan', await hit(`wallets/OTRAcuenta`, { 'eq/th': 'oro' }) === 401);
   st.denied.length = 0;
 
@@ -117,6 +117,19 @@ let n = 0; const nombre = () => 'Col' + (++n) + 'x' + String(Date.now()).slice(-
       return { ttl: peor(color('#menu .ttl')), tag: peor(color('#menu .tag')), dark: document.body.classList.contains('th-dark'), bg: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() };
     }, t);
     ok(`${t.n}: el título (contraste ${r.ttl.toFixed(1)}) y el texto del inicio (${r.tag.toFixed(1)}) se leen sobre su fondo`, r.ttl >= 4.5 && r.tag >= 3.5 && r.dark === !!t.dark && r.bg === t.c[1], JSON.stringify(r));
+    // tienda y ventanas: las tarjetas, el botón de compra y los textos salen del tono del color elegido (--h) y también se leen
+    await p.evaluate(() => document.getElementById('openShop').click()); await p.waitForTimeout(900);
+    const m = await p.evaluate(() => {
+      const rgb = s => { const x = s.match(/[\d.]+/g).map(Number); return { r: x[0], g: x[1], b: x[2] }; };
+      const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(c.r) + .7152 * f(c.g) + .0722 * f(c.b); };
+      const con = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+      const cs = sel => getComputedStyle(document.querySelector(sel));
+      const par = (sel, fondoSel) => con(rgb(cs(sel).color), rgb(cs(fondoSel || sel).backgroundColor));
+      const raiz = getComputedStyle(document.documentElement);
+      return { h: +raiz.getPropertyValue('--h'), nota: par('.item .nt', '.item'), nombre: par('.item .nm', '.item'), compra: par('.item button.lock'), equipado: par('.item button.cur'), ventana: par('.mcard .msub', '.mcard'), tarjeta: cs('.item').backgroundColor };
+    });
+    ok(`${t.n}: tono ${m.h}° · notas ${m.nota.toFixed(1)}, nombres ${m.nombre.toFixed(1)}, botón de compra ${m.compra.toFixed(1)}, «Equipado» ${m.equipado.toFixed(1)}, ventanas ${m.ventana.toFixed(1)} (todo ≥ 4,5)`, m.nota >= 4.5 && m.nombre >= 4.5 && m.compra >= 4.5 && m.equipado >= 4.5 && m.ventana >= 4.5, JSON.stringify(m));
+    await p.evaluate(() => document.getElementById('shopBack').click());
   }
   ok('sin errores de página en todo el recorrido', errs.length === 0, errs.join('|'));
   await ctx.close();
