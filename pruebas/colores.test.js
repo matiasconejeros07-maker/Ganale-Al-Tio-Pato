@@ -36,6 +36,18 @@ let n = 0; const nombre = () => 'Col' + (++n) + 'x' + String(Date.now()).slice(-
   ok('en el final ya no queda ningún morado (#7b3ff2, #b21ee0, #e0149f, #8e2bea) en el fondo ni en la barra del navegador', !/body\.end \{[^}]*(7b3ff2|b21ee0|e0149f)/i.test(html) && !/setTheme\('#8e2bea'\)/.test(html));
 }
 
+// La barra del navegador y la de Android (manifiesto) y la pantalla de carga son azules; no queda el amarillo crema de antes (#fff7c2) en lo que pinta la barra
+{
+  const man = JSON.parse(fs.readFileSync(JUEGO + 'manifest.webmanifest', 'utf8')), html = fs.readFileSync(JUEGO + 'index.html', 'utf8');
+  const meta = (/<meta name="theme-color" content="(#[0-9a-fA-F]{6})"/.exec(html) || [])[1] || '';
+  const azul = h => /^#[0-9a-fA-F]{6}$/.test(h || '') && (c => c[2] > c[0] + 40 && c[2] >= c[1])([1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)));
+  ok('el color de la barra (manifiesto y meta theme-color) y el de la pantalla de carga son azules', azul(man.theme_color) && azul(man.background_color) && azul(meta), man.theme_color + ' ' + man.background_color + ' ' + meta);
+  const viejos = ['index.html', 'manifest.webmanifest', 'sw.js'].filter(f => fs.existsSync(JUEGO + f) && /fff7c2/i.test(fs.readFileSync(JUEGO + f, 'utf8')));
+  ok('no queda el amarillo crema de antes (#fff7c2) en la página, el manifiesto ni el service worker (solo vive en la tienda, como el color «Amarillo clásico» de $100)', viejos.length === 0, viejos.join(' '));
+  const iconos = man.icons.map(i => i.src), faltan = iconos.concat(['icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/favicon-64.png']).filter(f => !fs.existsSync(JUEGO + f));
+  ok('el manifiesto trae los 3 íconos (192, 512 y maskable) y existen todos los íconos y favicons', iconos.length === 3 && faltan.length === 0, faltan.join(' '));
+}
+
 (async () => {
   const b = await chromium.launch(fs.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {});
 
