@@ -753,6 +753,71 @@ console.log('Marcadores: semanal, millonarios e insignias');
   ok('leer el marcador semanal sin sesión', targaryen.database(rules, shiftObj(ya, 0)).as(null).read(`/weekly/${WK}`), true);
   ok('leer cualquier semana vieja', targaryen.database(rules, shiftObj(ya, 0)).as(null).read(`/weekly/${WK - 3}`), true);
 
+  // ---------- mensual: monthly/<AAAAMM>/<uid> (mes calendario, hora de Chile) ----------
+  console.log(' Mensual: la fórmula del mes');
+  {
+    const wr = rules.rules.monthly.$mo.$uid['.write'], mm = /\$mo === (.*) \+ ''$/.exec(wr), fM = new Function('now', 'return ' + mm[1]);
+    const DAY = 86400000, OFFM = -3 * 3600000;
+    let malos = 0, n = 0, ej = '';
+    for (let d = Math.floor(Date.UTC(1972, 2, 1) / DAY); d <= Math.floor(Date.UTC(2099, 11, 31) / DAY); d++) {
+      for (const [hh, extra] of [[0, 0], [12, 0], [23, 3599999]]) {          // medianoche, mediodía y las 23:59:59 hora de Chile
+        const now = d * DAY - OFFM + hh * 3600000 + extra, loc = new Date(now + OFFM), esperado = loc.getUTCFullYear() * 100 + loc.getUTCMonth() + 1;
+        n++; if (fM(now) !== esperado) { malos++; if (!ej) ej = new Date(now).toISOString() + ' → ' + fM(now) + ' (esperado ' + esperado + ')'; }
+      }
+    }
+    ok(`la fórmula del mes de las reglas coincide con el calendario real en ${n} instantes (todos los días de marzo de 1972 a diciembre de 2099, a las 00:00, las 12:00 y las 23:59:59 de Chile)`, { allowed: malos === 0 }, true);
+    if (malos) console.log('     ', ej);
+    ok('el cambio de mes es a medianoche de Chile (UTC-3): 30 nov 2026 23:59:59 es 202611 y 1 dic 00:00 es 202612', { allowed: fM(Date.UTC(2026, 11 - 1, 30, 23 + 3, 59, 59)) === 202611 && fM(Date.UTC(2026, 11, 1, 3, 0, 0)) === 202612 }, true);
+    ok('febrero de un año bisiesto (2028) tiene 29 días y el de 2027 tiene 28', { allowed: fM(Date.UTC(2028, 1, 29, 12)) === 202802 && fM(Date.UTC(2028, 2, 1, 4)) === 202803 && fM(Date.UTC(2027, 1, 28, 12)) === 202702 && fM(Date.UTC(2027, 2, 1, 4)) === 202703 }, true);
+  }
+
+  console.log(' Mensual');
+  const MOn = (() => { const d = new Date(Date.now() - 3 * 3600000); return d.getUTCFullYear() * 100 + d.getUTCMonth() + 1; })(), MOprev = MOn % 100 === 1 ? MOn - 89 : MOn - 1;
+  const bm = { ...base, stats: { u1: { ...base.stats.u1, mo: MOn, mm: 70, ml: T0 - 9000 } } };
+  const men = (o = {}) => ({ n: 'Matías', s: 70, t: SV, ...o });
+  ok('tu mejor partida del mes entra al marcador mensual (n, s, t)', as(bm, { [`monthly/${MOn}/u1`]: men() }), true);
+  ok('… con tu foto de perfil', as(bm, { [`monthly/${MOn}/u1`]: men({ a: 'e4A1aGGGG' }) }), true);
+  ok('… con una foto con formato inventado', as(bm, { [`monthly/${MOn}/u1`]: men({ a: '<img src=x>' }) }), false);
+  ok('con más rebotes de los que llevan las estadísticas (s = 80, mm = 70)', as(bm, { [`monthly/${MOn}/u1`]: men({ s: 80 }) }), false);
+  ok('con menos rebotes de los que llevan las estadísticas (s = 60, mm = 70)', as(bm, { [`monthly/${MOn}/u1`]: men({ s: 60 }) }), false);
+  ok('sin estadísticas del mes (las de la semana no valen)', as(base, { [`monthly/${MOn}/u1`]: men() }), false);
+  ok('con estadísticas del mes pasado (mo = mes − 1)', as({ ...bm, stats: { u1: { ...bm.stats.u1, mo: MOprev } } }, { [`monthly/${MOn}/u1`]: men() }), false);
+  ok('en el mes pasado', as(bm, { [`monthly/${MOprev}/u1`]: men() }), false);
+  ok('en un mes futuro', as(bm, { [`monthly/${MOn + 1}/u1`]: men() }), false);
+  ok('con un nombre que no es el de tu fila del marcador', as(bm, { [`monthly/${MOn}/u1`]: men({ n: 'Otra Persona' }) }), false);
+  ok('sin tener fila en el marcador', as({ stats: bm.stats }, { [`monthly/${MOn}/u1`]: men() }), false);
+  ok('con la hora inventada', as(bm, { [`monthly/${MOn}/u1`]: men({ t: T0 - 99999 }) }), false);
+  ok('con un campo extra', as(bm, { [`monthly/${MOn}/u1`]: men({ oro: 9 }) }), false);
+  ok('sin el nombre', as(bm, { [`monthly/${MOn}/u1`]: { s: 70, t: SV } }), false);
+  ok('la fila de otra cuenta', as(bm, { [`monthly/${MOn}/u1`]: men() }, 'u2'), false);
+  const yaM = { ...bm, monthly: { [MOn]: { u1: { n: 'Matías', s: 70, t: T0 - 60000 } } } };
+  ok('actualizar tu mejor partida del mes (70 → 90) cuando las estadísticas ya dicen 90', as({ ...yaM, stats: { u1: { ...bm.stats.u1, mm: 90 } } }, { [`monthly/${MOn}/u1/s`]: 90, [`monthly/${MOn}/u1/t`]: SV }), true);
+  ok('bajar tu marca del mes (70 → 50)', as({ ...yaM, stats: { u1: { ...bm.stats.u1, mm: 50 } } }, { [`monthly/${MOn}/u1/s`]: 50, [`monthly/${MOn}/u1/t`]: SV }), false);
+  ok('escribir la fila de otra cuenta en el mes actual', as({ ...bm, scores: { u2: { ...fila, n: 'Otra' }, u1: fila }, stats: { u2: bm.stats.u1, u1: bm.stats.u1 } }, { [`monthly/${MOn}/u2`]: men({ n: 'Otra' }) }), false);
+  ok('leer el marcador mensual sin sesión', targaryen.database(rules, shiftObj(yaM, 0)).as(null).read(`/monthly/${MOn}`), true);
+  ok('leer cualquier mes viejo', targaryen.database(rules, shiftObj(yaM, 0)).as(null).read(`/monthly/${MOprev - 3}`), true);
+
+  console.log(' Mensual: las estadísticas del mes (mo, mm, ml)');
+  const runM = (h = 60, lr = T0) => ({ runs: { u1: { s: T0, b: 'peso1', r: 1, e: T0 + 60000, h, p: h } }, wallets: { u1: { c: 5000, sp: 0, lr } }, scores: { u1: { n: 'Matías', k: 'matias', s: h, t: T0 - 100, c: h } } });
+  const SM = (o = {}) => ({ g: 3, r: 100, sl: T0 - 900000, d: D, dg: 2, dr: 50, dm: 40, dc: 3, ...o });
+  const mesW = (mm, over = {}) => ({ 'stats/u1/mo': MOn, 'stats/u1/mm': mm, 'stats/u1/ml': T0, ...over });
+  ok('la primera partida del mes crea mo, mm (= sus rebotes) y ml', as({ ...runM(70), stats: { u1: SM() } }, mesW(70)), true);
+  ok('otra partida del mes: mm pasa a la mayor (50 → 70)', as({ ...runM(70), stats: { u1: SM({ mo: MOn, mm: 50, ml: T0 - 900000 }) } }, mesW(70)), true);
+  ok('la mejor del mes no baja si la nueva partida fue peor (90 se queda en 90)', as({ ...runM(60), stats: { u1: SM({ mo: MOn, mm: 90, ml: T0 - 900000 }) } }, mesW(90)), true);
+  ok('… pero no se puede bajar a 60', as({ ...runM(60), stats: { u1: SM({ mo: MOn, mm: 90, ml: T0 - 900000 }) } }, mesW(60)), false);
+  ok('mejor del mes inflada (mm = 500 con una partida de 60)', as({ ...runM(60), stats: { u1: SM() } }, mesW(500)), false);
+  ok('mes nuevo: la marca del mes pasado (90) no se arrastra, mm = 60', as({ ...runM(60), stats: { u1: SM({ mo: MOprev, mm: 90, ml: T0 - 900000 }) } }, mesW(60)), true);
+  ok('… y arrastrar los 90 del mes pasado no vale', as({ ...runM(60), stats: { u1: SM({ mo: MOprev, mm: 90, ml: T0 - 900000 }) } }, mesW(90)), false);
+  ok('un mes que no es el actual (mo = mes − 1)', as({ ...runM(70), stats: { u1: SM() } }, mesW(70, { 'stats/u1/mo': MOprev })), false);
+  ok('un mes futuro (mo = mes + 1)', as({ ...runM(70), stats: { u1: SM() } }, mesW(70, { 'stats/u1/mo': MOn + 1 })), false);
+  ok('la misma partida dos veces en el mes', as({ ...runM(70), stats: { u1: SM({ mo: MOn, mm: 70, ml: T0 }) } }, mesW(70)), false);
+  ok('sin marcar la partida (ml)', as({ ...runM(70), stats: { u1: SM() } }, { 'stats/u1/mo': MOn, 'stats/u1/mm': 70 }), false);
+  ok('marcar una partida que no es la última cobrada (ml = T0 + 7)', as({ ...runM(70), stats: { u1: SM() } }, mesW(70, { 'stats/u1/ml': T0 + 7 })), false);
+  ok('una partida que no se cobró todavía no cuenta', as({ ...runM(70, T0 - 80000), stats: { u1: SM() } }, mesW(70)), false);
+  ok('una partida de menos de ' + MI.minRebotes + ' rebotes no cuenta', as({ ...runM(MI.minRebotes - 1), stats: { u1: SM() } }, mesW(MI.minRebotes - 1)), false);
+  ok('las estadísticas del mes de otra cuenta', as({ ...runM(70), stats: { u2: SM() } }, mesW(70), 'u2'), false);
+  ok('el mes se escribe aparte de las demás estadísticas (las de las misiones no hacen falta en el mismo envío)', as({ ...runM(70), stats: { u1: SM({ sl: T0 }) } }, mesW(70)), true);
+
   console.log(' El top Millonarios ya no existe (scores/<uid>/w se rechaza)');
   const cart = { wallets: { u1: { c: 5000, sp: 1200, lr: T0 - 99999 } }, scores: { u1: fila } };
   ok('guardar un total ganado ($5.000) en tu fila del marcador', as(cart, { 'scores/u1/w': 5000 }), false);

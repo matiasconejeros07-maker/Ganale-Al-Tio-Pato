@@ -64,10 +64,10 @@ async function mocks(ctx) {
       const rd = db().read(path === '/' ? '/' : path);
       if (!rd.allowed) { st.denied.push('GET ' + path); return J(r, { error: 'Permission denied' }, 401); }
       const obq = (u.searchParams.get('orderBy') || '').replace(/"/g, '');
-      if (parts[0] === 'weekly' && parts.length === 2) {      // marcador semanal (weekly/<semana> ordenado por s)
-        const idx = parts[0] === 'scores' ? ((rules().rules.scores || {})['.indexOn'] || []) : ((((rules().rules.weekly || {})['$week']) || {})['.indexOn'] || []);
+      if ((parts[0] === 'weekly' || parts[0] === 'monthly') && parts.length === 2) {      // marcadores semanal y mensual (weekly/<semana>, monthly/<AAAAMM>: ordenados por s)
+        const idx = (((rules().rules[parts[0]] || {})[parts[0] === 'weekly' ? '$week' : '$mo']) || {})['.indexOn'] || [];
         if (obq && !idx.includes(obq)) return J(r, { error: `Index not defined, add ".indexOn": "${obq}", for path "/${parts.join('/')}", to the rules` }, 400);
-        const coll = parts[0] === 'scores' ? (st.db.scores || {}) : ((st.db.weekly || {})[parts[1]] || {});
+        const coll = (st.db[parts[0]] || {})[parts[1]] || {};
         let filas = Object.entries(coll).sort((a, b) => (typeof a[1][obq] === 'number' ? a[1][obq] : -1) - (typeof b[1][obq] === 'number' ? b[1][obq] : -1));
         if (u.searchParams.get('limitToLast')) filas = filas.slice(-u.searchParams.get('limitToLast'));
         return J(r, filas.length ? Object.fromEntries(filas) : null);

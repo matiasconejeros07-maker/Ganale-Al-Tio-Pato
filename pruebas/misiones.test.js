@@ -2,6 +2,8 @@
 // Uso:  cd pruebas && npm install && node misiones.test.js
 const fs = require('fs'), os = require('os'), path = require('path'), vm = require('vm');
 const { chromium, st, newPage, playHits, registrar } = require('./mockfirebase.js');
+// Estas pruebas reemplazan las estadísticas por otras armadas a mano (sin los contadores del mes): se borra también la fila vieja del marcador mensual, como en la vida real donde las dos cosas van juntas
+const sinMes = uid => { if (st.db.monthly) for (const m in st.db.monthly) delete st.db.monthly[m][uid]; };
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { if (c) { pass++; console.log('  ok  ', n); } else { fail++; console.log('  FALLA', n, x); } };
 const cx = { window: {} }; vm.createContext(cx); vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'tienda.js'), 'utf8'), cx);
@@ -62,7 +64,7 @@ const tab = async (p, id) => { await p.evaluate(i => document.getElementById(i).
   const cumple = { dg: MI.dia.map((_, k) => MI.dia[k].de[pickJ(D, k)]).find(d => d[0] === 'g'), };
   const sd = { g: 12, r: 800, sl: s2.sl, d: D, dg: 0, dr: 0, dm: 0, dc: 0 };
   MI.dia.forEach((x, k) => { const de = x.de[pickJ(D, k)]; sd[CAMPO[de[0]]] = Math.max(sd[CAMPO[de[0]]], de[1]); });
-  st.db.stats[uid] = sd;
+  st.db.stats[uid] = sd; sinMes(uid);
   await p.reload(); await p.waitForTimeout(2500); await cerrarDiario(p);
   ok('con las 3 cumplidas el menú avisa con una insignia', await p.isVisible('#missBadge') && +(await p.textContent('#missBadge')) >= 3, await p.textContent('#missBadge'));
   await abrir(p, 'openMiss');
@@ -91,7 +93,7 @@ const tab = async (p, id) => { await p.evaluate(i => document.getElementById(i).
     // cumplir las 3 de la semana
     const sw = { ...st.db.stats[uid], w: W, wg: 0, wr: 0, wm: 0, wc: 0 };
     quedan.forEach(([t, n]) => { sw[CAMPO_W[t]] = Math.max(sw[CAMPO_W[t]], n); });
-    st.db.stats[uid] = sw;
+    st.db.stats[uid] = sw; sinMes(uid);
     await p.reload(); await p.waitForTimeout(2500); await cerrarDiario(p);
     ok('con las 3 de la semana cumplidas el menú lo avisa con la insignia', await p.isVisible('#missBadge') && +(await p.textContent('#missBadge')) >= 3, await p.textContent('#missBadge'));
     await abrir(p, 'openMiss'); await tab(p, 'tabW');
